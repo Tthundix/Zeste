@@ -300,8 +300,9 @@ input[type=radio]{accent-color:var(--accent)}
 .avail{font-size:14px;font-weight:600}
 .avail.ok{color:var(--ok)}
 .avail.miss{color:var(--warn)}
-.ings{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.ings li{display:grid;grid-template-columns:10px 92px minmax(0,1fr);gap:10px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.ings{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);display:grid;grid-template-columns:10px max-content minmax(0,1fr);column-gap:12px}
+.ings li{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+@supports not (grid-template-columns:subgrid){.ings li{grid-template-columns:10px 112px minmax(0,1fr);gap:10px}.ings .q{white-space:normal}}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
 .dot.sub{background:transparent;border:2px solid var(--ok)}
 .dot.miss{background:var(--miss)}

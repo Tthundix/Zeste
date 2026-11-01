@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -26,7 +26,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const okColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#C9A227';
 const okPhoto = p => typeof p === 'string' && p.startsWith('data:image/') ? p : '';
-const fr = n => { const r = Math.round(n * 10) / 10; return String(r).replace('.', ','); };
+const fr = n => { const r = Math.round(n * 100) / 100; return String(r).replace('.', ','); };
 const plural = (n, w) => n > 1 ? w + 's' : w;
 const opts = (arr, sel) => arr.map(v => Array.isArray(v) ? `<option value="${esc(v[0])}"${v[0] === sel ? ' selected' : ''}>${esc(v[1])}</option>` : `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join('');
 
@@ -558,7 +558,7 @@ function rcardHTML(r, own) {
   const mi = r.ings.map((row, i) => { const st = a.rows[i].st; return `<span class="mi ${st}"><i class="dot ${st === 'ok' ? '' : st}"></i><span>${esc(ingName(row.id))}${st === 'sub' ? ' → ' + esc(ingName(a.rows[i].by)) : ''}</span></span>`; }).join('');
   return `<button class="rcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span><span class="rcard-b"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span><span class="mini-ings">${mi}</span></span></button>`;
 }
-function openCollection(cid) {
+function openCollection(cid, keep) {
   const c = findColl(cid); if (!c) return closeSheet();
   const own = ownedSet(), recs = collRecipes(c), saved = S.lists.find(l => l.from === cid), sh = $('#sheet'), mine = !COLLECTIONS.includes(c);
   const an = recs.map(r => analyze(r, own)), nOk = an.filter(x => !x.miss.length).length, nOne = an.filter(x => x.miss.length === 1).length;
@@ -594,7 +594,7 @@ function openCollection(cid) {
       </aside>
     </div>
   </div></div>`;
-  showSheet(); sh.scrollTop = 0;
+  showSheet(); if (!keep) { sh.scrollTop = 0; pushNav(); }
 }
 
 /* ---------- éditeur de collection (sur ordinateur) ---------- */
@@ -602,7 +602,7 @@ function openCollEditor(cid) {
   const src = cid && (S.collections || []).find(c => c.id === cid);
   const draft = src ? clone(src) : { id: 'c-' + Date.now().toString(36), name: '', curator: 'Moi', group: 'Mes collections', desc: '', blocks: [{ type: 'recipes', title: '', ids: [], cols: 3 }] };
   sheetState = { type: 'colled', id: cid || null, draft };
-  renderCollEditor(true);
+  renderCollEditor(true); pushNav();
 }
 function renderCollEditor(top) {
   const d = sheetState.draft, sh = $('#sheet'), st = sh.scrollTop;
@@ -662,7 +662,8 @@ function saveCollEditor() {
   S.collections = S.collections || [];
   const k = S.collections.findIndex(c => c.id === d.id);
   if (k >= 0) S.collections[k] = d; else S.collections.push(d);
-  save(); toast(k >= 0 ? 'Collection mise à jour' : 'Collection créée'); openCollection(d.id);
+  save(); toast(k >= 0 ? 'Collection mise à jour' : 'Collection créée');
+  if (k >= 0) history.back(); else { restoring = true; openCollection(d.id); restoring = false; replaceNav(); }
 }
 
 /* ---------- données ---------- */
@@ -699,8 +700,42 @@ function renderData(m) {
 
 /* ---------- feuilles ---------- */
 function showSheet() { $('#sheet').hidden = false; lockScroll(); }
-function closeSheet() { flushNote(); const sh = $('#sheet'); sh.hidden = true; sh.innerHTML = ''; sheetState = null; UI.confirm = null; unlockScroll(); render(); }
-function goBack() { if (sheetState && sheetState.back) openCollection(sheetState.back); else closeSheet(); }
+function closeSheetRaw() { flushNote(); const sh = $('#sheet'); sh.hidden = true; sh.innerHTML = ''; sheetState = null; UI.confirm = null; unlockScroll(); render(); }
+
+/* ---------- navigation et bouton « retour » du téléphone ----------
+   L'accueil est la racine : un onglet se place juste au-dessus, chaque fiche ouverte s'empile.
+   Le retour revient donc à l'écran précédent, puis à l'accueil, et ne quitte l'appli que depuis l'accueil. */
+let restoring = false;
+function navState() { return { z: 1, view: UI.view, sheet: sheetState ? { type: sheetState.type, id: sheetState.id || null, back: sheetState.back || null } : null }; }
+function pushNav() { if (!restoring) history.pushState(navState(), ''); }
+function replaceNav() { history.replaceState(navState(), ''); }
+function closeSheet() { if (history.state && history.state.z && history.state.sheet) history.back(); else closeSheetRaw(); }
+function goBack() { closeSheet(); }
+function navView(v) {
+  if (v === UI.view && !sheetState) return render();
+  const fromHome = UI.view === 'home';
+  UI.view = v; window.scrollTo(0, 0); render();
+  if (v === 'home') { if (!fromHome && history.state && history.state.z && history.state.view !== 'home') history.back(); else replaceNav(); }
+  else if (fromHome) pushNav(); else replaceNav();
+}
+window.addEventListener('popstate', e => {
+  const st = e.state; if (!st || !st.z) return;
+  if (!$('#pick').hidden) closePick();
+  if (!$('#crop').hidden) closeCrop();
+  restoring = true;
+  try {
+    UI.view = st.view || 'home';
+    const sh = st.sheet;
+    if (!sh) { if (sheetState) closeSheetRaw(); else render(); }
+    else {
+      render();
+      if (sh.type === 'detail') openDetail(sh.id, false, sh.back);
+      else if (sh.type === 'coll') openCollection(sh.id);
+      else if (sh.type === 'form') openForm(sh.id);
+      else if (sh.type === 'colled') openCollEditor(sh.id);
+    }
+  } finally { restoring = false; }
+});
 
 function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
@@ -750,6 +785,7 @@ function openDetail(id, keep, back) {
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
+  if (!keep) pushNav();
 }
 
 /* ---------- formulaire ---------- */
@@ -853,7 +889,7 @@ function openForm(id) {
     </div>
   </form></div>`;
   sh.querySelectorAll('.frow').forEach(checkNew);
-  updatePrev(); syncHSL(); showSheet(); sh.scrollTop = 0;
+  updatePrev(); syncHSL(); showSheet(); sh.scrollTop = 0; pushNav();
 }
 function currentGarn() {
   const c = $('#rf-gcut') ? $('#rf-gcut').value : 'none';
@@ -1006,7 +1042,8 @@ function saveForm() {
   };
   if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }
   if (old) S.recipes[S.recipes.indexOf(old)] = rec; else S.recipes.push(rec);
-  save(); toast(old ? 'Recette mise à jour' : 'Recette ajoutée au catalogue'); render(); openDetail(rec.id);
+  save(); toast(old ? 'Recette mise à jour' : 'Recette ajoutée au catalogue');
+  if (old) history.back(); else { render(); restoring = true; openDetail(rec.id); restoring = false; replaceNav(); }
 }
 
 /* ---------- événements ---------- */
@@ -1016,24 +1053,24 @@ document.addEventListener('click', async e => {
   const a = b.dataset.act, id = b.dataset.id;
   if (!['del', 'del-list', 'import', 'reset', 'coll-del'].includes(a)) UI.confirm = null;
   switch (a) {
-    case 'view': UI.view = b.dataset.v; window.scrollTo(0, 0); render(); break;
+    case 'view': navView(b.dataset.v); break;
     case 'new': openForm(null); break;
     case 'open': openDetail(id, false, sheetState && sheetState.type === 'coll' ? sheetState.id : null); break;
     case 'close': closeSheet(); break;
     case 'back': goBack(); break;
-    case 'back-detail': openDetail(id); break;
+    case 'back-detail': history.back(); break;
     case 'edit': openForm(id); break;
     case 'avail': UI.avail = b.dataset.v; renderCatalogue($('#view')); break;
     case 'toggle-filters': UI.filtersOpen = !UI.filtersOpen; { const f = $('.filters'); if (f) f.classList.toggle('closed', !UI.filtersOpen); const t = $('.btn-filters'); if (t) t.setAttribute('aria-expanded', UI.filtersOpen); } break;
     case 'clear-filters': UI.f = F_DEFAULT(); renderCatalogue($('#view')); break;
     case 'clear-all': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; renderCatalogue($('#view')); break;
     case 'late-ok': UI.lateOk = true; render(); break;
-    case 'go-cat': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = b.dataset.v; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
-    case 'go-base': UI.f = F_DEFAULT(); UI.f.base = b.dataset.v; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
-    case 'go-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
-    case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
-    case 'go-colls': UI.listTab = 'coll'; UI.view = 'lists'; window.scrollTo(0, 0); render(); break;
-    case 'by-tag': UI.f.tag = b.dataset.v; UI.filtersOpen = true; UI.view = 'catalogue'; closeSheet(); break;
+    case 'go-cat': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = b.dataset.v; navView('catalogue'); break;
+    case 'go-base': UI.f = F_DEFAULT(); UI.f.base = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
+    case 'go-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
+    case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
+    case 'go-colls': UI.listTab = 'coll'; navView('lists'); break;
+    case 'by-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.filtersOpen = true; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); { const fromHome = !history.state || history.state.view === 'home'; UI.view = 'catalogue'; render(); if (fromHome) replaceNav(); else replaceNav(); } break;
     case 'dismiss-example': S.example = false; save(); render(); break;
     case 'rate-clear': commitRate(id, 0); break;
     case 'tog-list': { const l = S.lists.find(x => x.id === b.dataset.list); if (!l) break; l.items = l.items.includes(id) ? l.items.filter(x => x !== id) : [...l.items, id]; save(); openDetail(id, true); break; }
@@ -1083,9 +1120,9 @@ document.addEventListener('click', async e => {
     case 'coll-edit': openCollEditor(id); break;
     case 'coll-del':
       if (UI.confirm === 'cdel:' + id) { S.collections = S.collections.filter(c => c.id !== id); UI.confirm = null; save(); closeSheet(); toast('Collection supprimée'); }
-      else { UI.confirm = 'cdel:' + id; openCollection(id); }
+      else { UI.confirm = 'cdel:' + id; openCollection(id, true); }
       break;
-    case 'ed-cancel': openCollection(sheetState.id); break;
+    case 'ed-cancel': history.back(); break;
     case 'ed-save': saveCollEditor(); break;
     case 'ed-new': sheetState.draft.blocks.push(b.dataset.v === 'recipes' ? { type: 'recipes', title: '', ids: [], cols: 3 } : { type: b.dataset.v, title: '', text: '' }); renderCollEditor(); break;
     case 'ed-del': sheetState.draft.blocks.splice(+b.dataset.bk, 1); renderCollEditor(); break;
@@ -1102,7 +1139,7 @@ document.addEventListener('click', async e => {
       const c = findColl(id); if (!c) break;
       const items = collRecipes(c).map(r => r.id), ex = S.lists.find(l => l.from === id);
       if (ex) ex.items = items; else S.lists.push({ id: 'l-' + Date.now().toString(36), name: c.name, fixed: false, from: id, items });
-      save(); toast(ex ? 'Copie mise à jour' : `« ${c.name} » ajoutée aux listes`); openCollection(id); break;
+      save(); toast(ex ? 'Copie mise à jour' : `« ${c.name} » ajoutée aux listes`); openCollection(id, true); break;
     }
     case 'add-list': {
       const n = $('#nl-name').value.trim(); if (!n) { $('#nl-name').focus(); break; }
@@ -1194,11 +1231,11 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') { e.preventDefault(); commitRate(rs.dataset.id, 0); return; }
   }
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('ed-add-i')) { e.preventDefault(); edAddRecipe(+e.target.dataset.bk); return; }
-  if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) goBack(); }
+  if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
 });
 
 new MutationObserver(enhanceSelects).observe(document.body, { childList: true, subtree: true });
 (async () => {
-  S = await load(); render(); enhanceSelects();
+  S = await load(); render(); enhanceSelects(); replaceNav();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { });
 })();
