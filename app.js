@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -122,6 +122,7 @@ window.addEventListener('pagehide', () => { if (saveT) flushSave(); });
 /* ---------- appli installable et mises à jour ---------- */
 let deferredInstall = null, swReg = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent);
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (UI.view === 'catalogue' || UI.view === 'data') render(); });
 window.addEventListener('appinstalled', () => { deferredInstall = null; toast('Zeste est installée'); render(); });
@@ -137,6 +138,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 function installBlock() {
   if (isStandalone()) return `<p>Zeste est installée sur cet appareil.</p>`;
+  if (isSamsung()) return `<p>Samsung Internet installe les applis web de façon incomplète : Google Play Protect affiche alors une fausse alerte. Pour une installation propre, ouvrir ce site dans <b>Chrome</b>, puis menu ⋮ › « Installer l'application ».</p>`;
   if (deferredInstall) return `<p>Zeste peut s'installer comme une appli, sur l'écran d'accueil, et fonctionner sans connexion.</p><div class="row-btns"><button class="btn primary small" data-act="install">Installer Zeste</button></div>`;
   if (isIOS()) return `<p>Sur iPhone ou iPad : ouvrir ce site dans Safari, puis Partager, puis « Sur l'écran d'accueil ».</p>`;
   return `<p class="hint">Si le navigateur le permet, l'option « Installer l'application » ou « Ajouter à l'écran d'accueil » se trouve dans son menu.</p>`;
@@ -302,7 +304,7 @@ function renderCatalogue(m) {
   const nf = filterCount();
   m.innerHTML = `
   ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
-  ${deferredInstall && !S.installDismissed && !isStandalone() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
+  ${deferredInstall && !S.installDismissed && !isStandalone() && !isSamsung() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
   <h1 class="view">Catalogue</h1>
   <div class="cat-layout">
     <aside class="filters${UI.filtersOpen ? '' : ' closed'}" aria-label="Filtres">
@@ -359,7 +361,7 @@ function renderResults() {
   el.innerHTML = list.length ? list.map(({ r, a }) => {
     const [cls, txt] = statusPill(a), rt = S.ratings[r.id] || 0;
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
-      <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span>${isEasy(r) ? '<span class="easy">Facile</span>' : ''}</span>
+      <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
       <span class="cb"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
       <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
@@ -493,7 +495,7 @@ function renderCollTab() {
 function rcardHTML(r, own) {
   const a = analyze(r, own), [cls, txt] = statusPill(a);
   const mi = r.ings.map((row, i) => { const st = a.rows[i].st; return `<span class="mi ${st}"><i class="dot ${st === 'ok' ? '' : st}"></i><span>${esc(ingName(row.id))}${st === 'sub' ? ' → ' + esc(ingName(a.rows[i].by)) : ''}</span></span>`; }).join('');
-  return `<button class="rcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span>${isEasy(r) ? '<span class="easy">Facile</span>' : ''}</span><span class="rcard-b"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span><span class="mini-ings">${mi}</span></span></button>`;
+  return `<button class="rcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span><span class="rcard-b"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span><span class="mini-ings">${mi}</span></span></button>`;
 }
 function openCollection(cid) {
   const c = findColl(cid); if (!c) return closeSheet();

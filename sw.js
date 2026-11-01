@@ -1,9 +1,9 @@
 /* Zeste : fonctionnement hors ligne.
    Changer VERSION à chaque mise en ligne : les appareils proposent alors la mise à jour. */
-const VERSION = 'zeste-1.2.0';
+const VERSION = 'zeste-1.2.1';
 const ASSETS = [
   './', 'index.html', 'app.css', 'app.js', 'data.js', 'manifest.webmanifest',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
+  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   "fonts/big-shoulders-display-latin-700-normal.woff2",  "fonts/big-shoulders-display-latin-800-normal.woff2",  "fonts/figtree-latin-400-normal.woff2",  "fonts/figtree-latin-500-normal.woff2",  "fonts/figtree-latin-600-normal.woff2",  "fonts/figtree-latin-700-normal.woff2",  "fonts/ibm-plex-mono-latin-400-normal.woff2",  "fonts/ibm-plex-mono-latin-500-normal.woff2"
 ];
 

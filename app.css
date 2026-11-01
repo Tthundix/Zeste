@@ -66,7 +66,7 @@
 /* ---------- base ---------- */
 /* Mise en page : une colonne sur téléphone (barre d'onglets en bas), une barre latérale et des blocs en colonnes sur grand écran. */
 :root{
-  color-scheme:light;
+  color-scheme:light dark;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#F4F2F3; --surface:#FFFFFF; --surface-2:#ECE7EA; --fg:#1C171A; --muted:#6A5F66; --line:#DDD5DA;
   --accent:#8A2F6E; --accent-fg:#FFFFFF; --amber:#B97812; --ok:#2C7A4B; --warn:#A86200; --miss:#B03636;
