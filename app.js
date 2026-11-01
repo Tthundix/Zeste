@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.3.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -18,7 +18,7 @@ const SWATCHES = [['#E8F1F2', 'Cristal'], ['#F6EBC8', 'Crème'], ['#FFE14D', 'Ci
   ['#FF6A1A', 'Orange amer'], ['#D98A2B', 'Ambre'], ['#9A4A1E', 'Acajou'], ['#3B2416', 'Café'], ['#E2232E', 'Rouge vif'], ['#B0162E', 'Rubis'], ['#F04E7A', 'Grenadine'], ['#FF8FB8', 'Rose'],
   ['#7A1745', 'Mûre'], ['#8A4FD8', 'Violette'], ['#1E9BEA', 'Curaçao'], ['#18C2B0', 'Lagon']];
 const TF_DEFAULT = () => ({ su: [0, 5], ac: [0, 5], am: [0, 5], as: [0, 5], fo: [0, 5] });
-const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', tf: TF_DEFAULT() });
+const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', base: '', tf: TF_DEFAULT() });
 
 const clone = o => JSON.parse(JSON.stringify(o));
 const $ = s => document.querySelector(s);
@@ -53,6 +53,7 @@ function upgrade(d) {
   if (!Array.isArray(d.lists)) d.lists = [];
   if (!Array.isArray(d.removed)) d.removed = [];
   if (!Array.isArray(d.collections)) d.collections = [];
+  if (!d.views || typeof d.views !== 'object') d.views = {};
   if (!d.unit) d.unit = 'ml';
   d.recipes.forEach(r => {
     if (r.origin === 'Ma création') { r.origin = 'Original'; r.by = 'me'; }
@@ -145,7 +146,7 @@ function installBlock() {
 }
 
 /* ---------- état de l'interface ---------- */
-const UI = { view: 'catalogue', q: '', avail: 'all', f: F_DEFAULT(), sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null };
+const UI = { view: 'home', q: '', avail: 'all', f: F_DEFAULT(), sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null };
 let sheetState = null, rowN = 0;
 const STAPLES = ['eau']; // toujours disponible
 const ownedSet = () => new Set([...S.owned, ...STAPLES]);
@@ -276,7 +277,7 @@ function fmtQty(row) {
 const starsHTML = n => `<span class="stars" aria-label="${fmtRating(n)} sur 5"><span class="s-bg">★★★★★</span><span class="s-fg" style="width:${n / 5 * 100}%">★★★★★</span></span>`;
 const tfActive = ([a, b]) => a > 0 || b < 5;
 const tfText = ([a, b]) => a === 0 && b === 5 ? 'Tous' : a === b ? `= ${a}` : a === 0 ? `≤ ${b}` : b === 5 ? `≥ ${a}` : `${a} à ${b}`;
-const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
+const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level', 'base'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
 
 let toastT, noteT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
@@ -288,9 +289,10 @@ function unlockScroll() { if (!sheetState && $('#crop').hidden && $('#pick').hid
 
 /* ---------- vues ---------- */
 function render() {
-  document.querySelectorAll('.nav [data-v]').forEach(b => { const on = b.dataset.v === UI.view; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  document.querySelectorAll('[data-act="view"][data-v]').forEach(b => { const on = b.dataset.v === UI.view; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   const m = $('#view');
-  if (UI.view === 'catalogue') renderCatalogue(m);
+  if (UI.view === 'home') renderHome(m);
+  else if (UI.view === 'catalogue') renderCatalogue(m);
   else if (UI.view === 'bar') renderBar(m);
   else if (UI.view === 'lists') renderLists(m);
   else renderData(m);
@@ -313,6 +315,7 @@ function renderCatalogue(m) {
         <p class="hint">Chaque cocktail est noté de 0 à 5 sur chaque goût. Il suffit de régler l'intervalle voulu, par exemple Force de 0 à 2 et Astringent de 4 à 5.</p>
         ${TASTE.map(([k, l]) => { const [a, b] = UI.f.tf[k]; return `<div class="tf-row${tfActive([a, b]) ? ' active' : ''}" data-k="${k}"><span>${l}</span><div class="dual" style="--a:${a};--b:${b}"><span class="fill"></span><input type="range" class="dr" data-k="${k}" data-e="0" min="0" max="5" step="1" value="${a}" aria-label="${l} minimum"><input type="range" class="dr" data-k="${k}" data-e="1" min="0" max="5" step="1" value="${b}" aria-label="${l} maximum"></div><span class="tv">${tfText([a, b])}</span></div>`; }).join('')}
       </div>
+      <label class="field" for="cf-base"><span>Alcool de base</span><select id="cf-base">${opts([['', 'Tous'], ...FAMILIES[0].subs.map(x => [x, x])], UI.f.base)}</select></label>
       <label class="field" for="cf-level"><span>Niveau</span><select id="cf-level">${opts([['', 'Tous'], ['easy', 'Facile : peu d’ingrédients, sans technique']], UI.f.level)}</select></label>
       <label class="field" for="cf-origin"><span>Origine</span><select id="cf-origin">${opts(ORIGIN_F, UI.f.origin)}</select></label>
       <label class="field" for="cf-method"><span>Méthode</span><select id="cf-method">${opts([['', 'Toutes'], ...METHODS.map(x => [x, x])], UI.f.method)}</select></label>
@@ -349,6 +352,7 @@ function renderResults() {
     if (F.origin === 'mine' && !(r.origin === 'Original' && r.by !== 'other')) return false;
     if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
     if (F.level === 'easy' && !isEasy(r)) return false;
+    if (F.base && !r.ings.some(i => S.ings[i.id] && S.ings[i.id].fam === 'Spiritueux' && S.ings[i.id].sub === F.base)) return false;
     for (const [k] of TASTE) { if (!tfActive(F.tf[k])) continue; const v = r.flavor[k], [lo, hi] = F.tf[k]; if (v == null || v < lo || v > hi) return false; }
     if (words.length) { const hay = norm([r.name, r.author, garnLabel(r), origLabel(r), r.method, r.glass, ...r.tags, ...r.ings.map(i => ingName(i.id)), S.notes[r.id] ? S.notes[r.id].text : ''].join(' ')); if (!words.every(w => hay.includes(w))) return false; }
     return true;
@@ -365,6 +369,63 @@ function renderResults() {
       <span class="cb"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
       <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
+}
+
+/* ---------- accueil ---------- */
+const SPIRITS = ['Gin', 'Rhum & cachaça', 'Whisky', 'Tequila & mezcal', 'Vodka', 'Brandy & cognac'];
+const SPIRIT_LABEL = { 'Gin': 'Gin', 'Rhum & cachaça': 'Rhum', 'Whisky': 'Whisky', 'Tequila & mezcal': 'Tequila', 'Vodka': 'Vodka', 'Brandy & cognac': 'Cognac' };
+function daySeed(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function shuffled(arr, seed) { const a = [...arr]; let x = seed || 1; for (let i = a.length - 1; i > 0; i--) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function moment(h) {
+  const hasTag = (r, t) => t.some(x => r.tags.includes(x));
+  const light = r => r.flavor.fo == null || r.flavor.fo <= 2;
+  if (h >= 6 && h < 11) return { key: 'matin', title: 'Ce matin', lead: 'Des recettes de brunch, légères et fruitées.', pick: r => hasTag(r, ['Brunch']) || (hasTag(r, ['Fruité']) && light(r)) };
+  if (h >= 11 && h < 17) return { key: 'aprem', title: 'Cet après-midi', lead: 'Des verres frais et peu alcoolisés pour la journée.', pick: r => hasTag(r, ['Rafraîchissant', 'Estival', 'Pétillant']) && light(r) };
+  if (h >= 17 && h < 21) return { key: 'apero', title: 'L’heure de l’apéro', lead: 'Amers, bulles et spritz pour ouvrir l’appétit.', pick: r => hasTag(r, ['Apéritif']) };
+  if (h >= 21 && h < 24) return { key: 'soiree', title: 'Ce soir', lead: 'Des classiques pour la soirée et la fin de repas.', pick: r => hasTag(r, ['Festif', 'Digestif', 'Tiki', 'Fin de soirée']) };
+  return { key: 'nuit', title: 'Fin de soirée', lead: 'À cette heure, des verres légers.', pick: r => light(r) && (estAbv(r) || 0) <= 12 };
+}
+function hcard(r, sub) {
+  return `<button class="hcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}</span><span class="hname">${esc(r.name)}</span>${sub ? `<span class="hsub">${esc(sub)}</span>` : ''}</button>`;
+}
+const hrow = (title, items, more) => items.length ? `<section class="hsec"><div class="shead"><h2>${title}</h2>${more || ''}</div><div class="hrow">${items.join('')}</div></section>` : '';
+function renderHome(m) {
+  const now = new Date(), h = now.getHours(), M = moment(h), own = ownedSet(), seed = daySeed(now.toDateString() + M.key);
+  const an = new Map(S.recipes.map(r => [r.id, analyze(r, own)]));
+  const ok = r => !an.get(r.id).miss.length;
+  const pool = S.recipes.filter(M.pick);
+  const picks = [...shuffled(pool.filter(ok), seed), ...shuffled(pool.filter(r => !ok(r)), seed)];
+  const feat = picks[0];
+  const late = (h < 6) && !UI.lateOk;
+  const ready = shuffled(S.recipes.filter(ok), seed).sort((a, b) => (S.ratings[b.id] || 0) - (S.ratings[a.id] || 0));
+  const near = shuffled(S.recipes.filter(r => an.get(r.id).miss.length === 1), seed);
+  const seen = Object.entries(S.views || {}).sort((a, b) => b[1].t - a[1].t).map(([id]) => S.recipes.find(r => r.id === id)).filter(Boolean);
+  const top = S.recipes.filter(r => S.ratings[r.id]).sort((a, b) => S.ratings[b.id] - S.ratings[a.id] || a.name.localeCompare(b.name, 'fr'));
+  const tags = Object.entries(S.recipes.reduce((o, r) => { r.tags.forEach(t => o[t] = (o[t] || 0) + 1); return o; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 12).map(x => x[0]);
+  const hour = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
+  const abv = feat ? estAbv(feat) : null;
+  m.innerHTML = `
+  ${late ? `<div class="late" role="note"><div><b>Il est ${esc(hour)}.</b> Un verre d’eau entre deux cocktails, et pas de volant ce soir. Besoin d’en parler ? Alcool Info Service : <b>0 980 980 930</b>, appel anonyme et non surtaxé, ou <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a>.</div><button class="btn small" data-act="late-ok">Compris</button></div>` : ''}
+  ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
+  ${deferredInstall && !S.installDismissed && !isStandalone() && !isSamsung() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
+  ${feat ? `<section class="moment" style="--c:${okColor(feat.color)}">
+    <button class="moment-v" data-act="open" data-id="${esc(feat.id)}" aria-label="${esc(feat.name)}">${visual(feat)}</button>
+    <div class="moment-t"><p class="eyebrow">${esc(M.title)} · ${esc(hour)}</p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
+      <p class="hint">${esc(feat.method)} · ${esc(feat.glass)}${abv != null ? ` · ≈ ${abv} % vol.` : ''} · ${ok(feat) ? 'réalisable avec le bar' : 'manquant : ' + esc(an.get(feat.id).miss.map(ingName).join(', '))}</p>
+      <div class="row-btns"><button class="btn primary" data-act="open" data-id="${esc(feat.id)}">Voir la recette</button></div></div>
+  </section>` : ''}
+  ${hrow(`Aussi pour ${M.key === 'apero' ? 'l’apéro' : M.key === 'matin' ? 'ce matin' : M.key === 'aprem' ? 'cet après-midi' : M.key === 'soiree' ? 'ce soir' : 'la fin de soirée'}`, picks.slice(1, 13).map(r => hcard(r, ok(r) ? 'Réalisable' : 'Manque ' + an.get(r.id).miss.length)))}
+  ${hrow('Réalisables avec le bar', ready.slice(0, 14).map(r => hcard(r, S.ratings[r.id] ? fmtRating(S.ratings[r.id]) + ' ★' : r.method)), `<button class="btn small ghost" data-act="go-cat" data-v="ok">Tout voir</button>`)}
+  ${hrow('À un ingrédient près', near.slice(0, 14).map(r => hcard(r, 'Manque : ' + ingName(an.get(r.id).miss[0]))), `<button class="btn small ghost" data-act="go-cat" data-v="one">Tout voir</button>`)}
+  ${hrow('Consultés récemment', seen.slice(0, 14).map(r => hcard(r, r.method)))}
+  <section class="hsec"><div class="shead"><h2>Explorer</h2></div>
+    <div class="explore"><h3 class="lbl">Par alcool</h3><div class="chips">${SPIRITS.map(s => `<button class="chip big" data-act="go-base" data-v="${esc(s)}">${esc(SPIRIT_LABEL[s])}</button>`).join('')}</div>
+    <h3 class="lbl">Par mood</h3><div class="chips">${tags.map(t => `<button class="chip" data-act="go-tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <h3 class="lbl">Par niveau</h3><div class="chips"><button class="chip" data-act="go-easy">Facile : peu d’ingrédients, sans technique</button></div></div>
+  </section>
+  ${hrow('Collections', allColls().map(c => { const it = collRecipes(c); return `<button class="hcard coll-mini" data-act="open-coll" data-id="${esc(c.id)}"><span class="mosaic">${it.slice(0, 4).map(r => `<span style="--c:${okColor(r.color)}">${visual(r)}</span>`).join('')}</span><span class="hname">${esc(c.name)}</span><span class="hsub">${esc(c.curator || '')}</span></button>`; }), `<button class="btn small ghost" data-act="go-colls">Tout voir</button>`)}
+  ${hrow('Mieux notés', top.slice(0, 14).map(r => hcard(r, fmtRating(S.ratings[r.id]) + ' ★')))}
+  <p class="pro-note">Bientôt, avec le site communautaire : les recettes les plus consultées, les plus ajoutées et les mieux notées par l’ensemble des utilisateurs.</p>`;
 }
 
 /* ---------- mon bar ---------- */
@@ -650,6 +711,7 @@ function openDetail(id, keep, back) {
   if (!r) { closeSheet(); return; }
   if (back === undefined && keep && sheetState) back = sheetState.back;
   sheetState = { type: 'detail', id, back: back || null };
+  if (!keep) { S.views = S.views || {}; const v = S.views[id] || { n: 0 }; v.n++; v.t = Date.now(); S.views[id] = v; save(); }
   const a = analyze(r, ownedSet()), abv = estAbv(r), rt = S.ratings[r.id] || 0, del = UI.confirm === 'del:' + r.id, nt = S.notes[r.id] || { text: '', pub: false }, pv = nt.pub ? '1' : '0';
   const top = !!String(nt.text || '').trim(), gl = garnLabel(r);
   const avis = cls => `<section class="sec mynote${top ? ' top' : ''} ${cls}"><div class="shead"><h2>Mon avis</h2><div class="seg mini" role="group" aria-label="Visibilité de l'avis">${[['0', 'Privé'], ['1', 'Public']].map(([v, l]) => `<button data-act="note-vis" data-id="${esc(r.id)}" data-v="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${l}</button>`).join('')}</div></div>
@@ -965,6 +1027,12 @@ document.addEventListener('click', async e => {
     case 'toggle-filters': UI.filtersOpen = !UI.filtersOpen; { const f = $('.filters'); if (f) f.classList.toggle('closed', !UI.filtersOpen); const t = $('.btn-filters'); if (t) t.setAttribute('aria-expanded', UI.filtersOpen); } break;
     case 'clear-filters': UI.f = F_DEFAULT(); renderCatalogue($('#view')); break;
     case 'clear-all': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; renderCatalogue($('#view')); break;
+    case 'late-ok': UI.lateOk = true; render(); break;
+    case 'go-cat': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = b.dataset.v; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
+    case 'go-base': UI.f = F_DEFAULT(); UI.f.base = b.dataset.v; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
+    case 'go-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
+    case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; UI.view = 'catalogue'; window.scrollTo(0, 0); render(); break;
+    case 'go-colls': UI.listTab = 'coll'; UI.view = 'lists'; window.scrollTo(0, 0); render(); break;
     case 'by-tag': UI.f.tag = b.dataset.v; UI.filtersOpen = true; UI.view = 'catalogue'; closeSheet(); break;
     case 'dismiss-example': S.example = false; save(); render(); break;
     case 'rate-clear': commitRate(id, 0); break;
@@ -1106,6 +1174,7 @@ document.addEventListener('change', e => {
     case 'cf-glass': UI.f.glass = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-tag': UI.f.tag = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-origin': UI.f.origin = t.value; refreshFilterBadge(); renderResults(); break;
+    case 'cf-base': UI.f.base = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-level': UI.f.level = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-sort': UI.sort = t.value; renderResults(); break;
     case 'rf-photo': { const f = t.files && t.files[0]; if (f) readImageFile(f); t.value = ''; break; }
