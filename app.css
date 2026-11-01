@@ -561,3 +561,4 @@ input[type=radio]{accent-color:var(--accent)}
 /* éléments cliquables : pas de sélection de texte au toucher */
 .moment,.card,.hcard,.rcard,.coll,.lrow,.chip,.btn,.nav,.seg,.acc>summary{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .moment-t{cursor:pointer}
+.facts a{color:var(--accent);font-weight:600}

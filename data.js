@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -124,6 +124,10 @@ const INGREDIENTS = [
   ['sirop-vanille', 'Sirop de vanille', 'Sirop de vanille', 'Sirops & sucres', '', 0],
   ['cordial-sureau', 'Sirop de sureau', 'Sureau', 'Sirops & sucres', '', 0],
   ['sirop-camomille', 'Sirop de camomille', 'Sirop de camomille', 'Sirops & sucres', '', 0],
+  ['sirop-menthe', 'Sirop de menthe', 'Sirop de menthe', 'Sirops & sucres', '', 0],
+  ['sirop-chocolat', 'Sirop de chocolat', 'Sirop de chocolat', 'Sirops & sucres', '', 0],
+  ['sirop-erable', "Sirop d'érable", "Sirop d'érable", 'Sirops & sucres', '', 0],
+  ['shrub-framboise', 'Shrub à la framboise', 'Shrub', 'Sirops & sucres', '', 0],
   // Jus & purées
   ['citron', 'Jus de citron jaune', 'Citron jaune', 'Jus & purées', '', 0],
   ['citron-vert', 'Jus de citron vert', 'Citron vert', 'Jus & purées', '', 0],
@@ -136,6 +140,7 @@ const INGREDIENTS = [
   ['grenade', 'Jus de grenade', 'Grenade', 'Jus & purées', '', 0],
   ['jus-canne', 'Jus de canne à sucre', 'Jus de canne', 'Jus & purées', '', 0],
   ['puree-peche', 'Purée de pêche blanche', 'Purée de pêche', 'Jus & purées', '', 0],
+  ['mangue', 'Purée de mangue', 'Mangue', 'Jus & purées', '', 0],
   // Fruits & légumes
   ['lime-quartiers', 'Citron vert', 'Citron vert entier', 'Fruits & légumes', '', 0],
   ['citron-entier', 'Citron jaune', 'Citron jaune entier', 'Fruits & légumes', '', 0],
@@ -150,6 +155,7 @@ const INGREDIENTS = [
   ['cerise-marasquin', 'Cerises au marasquin', 'Cerise confite', 'Fruits & légumes', '', 0],
   ['olive', 'Olives vertes', 'Olive', 'Fruits & légumes', '', 0],
   ['celeri', 'Céleri branche', 'Céleri', 'Fruits & légumes', '', 0],
+  ['pasteque', 'Pastèque', 'Pastèque', 'Fruits & légumes', '', 0],
   // Herbes & épices
   ['menthe', 'Menthe fraîche', 'Menthe', 'Herbes & épices', '', 0],
   ['basilic', 'Basilic', 'Basilic', 'Herbes & épices', '', 0],
@@ -160,6 +166,8 @@ const INGREDIENTS = [
   ['sel', 'Sel', 'Sel', 'Herbes & épices', '', 0],
   ['poivre', 'Poivre noir', 'Poivre', 'Herbes & épices', '', 0],
   ['sel-celeri', 'Sel de céleri', 'Sel de céleri', 'Herbes & épices', '', 0],
+  ['cardamome', 'Cardamome moulue', 'Cardamome', 'Herbes & épices', '', 0],
+  ['cumin', 'Cumin en poudre', 'Cumin', 'Herbes & épices', '', 0],
   // Bitters
   ['angostura', 'Angostura', 'Bitters aromatiques', 'Bitters', '', 44.7],
   ['peychaud', "Peychaud's", "Peychaud's", 'Bitters', '', 35],
@@ -174,6 +182,8 @@ const INGREDIENTS = [
   ['cola', 'Cola', 'Cola', 'Softs & eaux', '', 0],
   ['limonade', 'Limonade', 'Limonade', 'Softs & eaux', '', 0],
   ['soda-pamplemousse', 'Soda au pamplemousse rose', 'Soda pamplemousse', 'Softs & eaux', '', 0],
+  ['citronnade', 'Citronnade', 'Citronnade', 'Softs & eaux', '', 0],
+  ['soda-coco', 'Soda à la noix de coco', 'Soda coco', 'Softs & eaux', '', 0],
   // Épicerie
   ['blanc-oeuf', "Blanc d'œuf", "Blanc d'œuf", 'Épicerie', '', 0],
   ['jaune-oeuf', "Jaune d'œuf", "Jaune d'œuf", 'Épicerie', '', 0],
@@ -187,7 +197,19 @@ const INGREDIENTS = [
   ['worcestershire', 'Sauce Worcestershire', 'Sauce Worcestershire', 'Épicerie', '', 0],
   ['tabasco', 'Tabasco', 'Sauce piquante', 'Épicerie', '', 0],
   ['vanille', 'Extrait de vanille', 'Vanille', 'Épicerie', '', 0],
-  ['fleur-oranger', "Eau de fleur d'oranger", "Fleur d'oranger", 'Épicerie', '', 0]
+  ['fleur-oranger', "Eau de fleur d'oranger", "Fleur d'oranger", 'Épicerie', '', 0],
+  ['the-noir', 'Thé noir infusé', 'Thé noir', 'Épicerie', '', 0],
+  ['the-vert', 'Thé vert infusé', 'Thé vert', 'Épicerie', '', 0],
+  ['infusion-hibiscus', "Infusion d'hibiscus", 'Hibiscus', 'Épicerie', '', 0],
+  ['cold-brew', 'Café infusé à froid', 'Café froid', 'Épicerie', '', 0],
+  ['cafe-soluble', 'Café soluble', 'Café soluble', 'Épicerie', '', 0],
+  ['lait-riz', 'Lait de riz', 'Lait végétal', 'Épicerie', '', 0],
+  ['lait-concentre', 'Lait concentré sucré', 'Lait concentré', 'Épicerie', '', 0],
+  ['yaourt', 'Yaourt nature', 'Yaourt', 'Épicerie', '', 0],
+  ['vinaigre-cidre', 'Vinaigre de cidre', 'Vinaigre', 'Épicerie', '', 0],
+  ['vinaigre-blanc', 'Vinaigre de vin blanc', 'Vinaigre', 'Épicerie', '', 0],
+  ['tamarin', 'Pâte de tamarin', 'Tamarin', 'Épicerie', '', 0],
+  ['chia', 'Graines de chia', 'Chia', 'Épicerie', '', 0]
 ];
 
 /* Garnitures dessinées. Les fruits se déclinent en rondelle, quartier ou zeste. */
@@ -582,6 +604,147 @@ const RECIPES = [
     ['Remplir le verre de glaçons.', 'Verser le prosecco, puis le Campari.', 'Ajouter un trait d’eau gazeuse et une rondelle d’orange.'])
 ];
 
+/* ---------- Sans alcool ----------
+   Des boissons conçues sans alcool : classiques, recettes traditionnelles du monde et créations de bars, avec leur source. */
+const WIKI = 'https://fr.wikipedia.org/wiki/';
+function NA(r, source, url) { return Object.assign(r, { source: source || '', url: url || '' }); }
+function BY(r, author, url) { return Object.assign(r, { origin: 'Original', by: 'other', author, url: url || '' }); }
+RECIPES.push(
+  // Classiques
+  NA(R('shirley-temple', 'Shirley Temple', '', 'D', 'Highball', 'cherry', '', '', '#F59A9A', '41000', 'Festif,Fruité',
+    [['ginger-ale', 150, 'ml', { alts: ['limonade'] }], ['grenadine', 15]],
+    ['Remplir un verre highball de glaçons.', 'Verser le ginger ale puis la grenadine.', 'Remuer une fois et ajouter une cerise.'],
+    'Nommé d’après l’actrice Shirley Temple dans les années 1930.'), 'Classique américain', 'https://en.wikipedia.org/wiki/Shirley_Temple_(drink)'),
+  NA(R('roy-rogers', 'Roy Rogers', '', 'D', 'Highball', 'cherry', '', '', '#5A2A20', '40000', 'Festif',
+    [['cola', 150], ['grenadine', 15]],
+    ['Remplir un verre highball de glaçons.', 'Verser le cola puis la grenadine.', 'Remuer une fois et ajouter une cerise.'],
+    'Années 1940, nommé d’après l’acteur Roy Rogers, qui ne buvait pas d’alcool.'), 'Classique américain', 'https://en.wikipedia.org/wiki/Roy_Rogers_(drink)'),
+  NA(R('arnold-palmer', 'Arnold Palmer', '', 'D', 'Highball', 'wedge-lemon', '', '', '#C98A3A', '32120', 'Rafraîchissant,Estival',
+    [['the-noir', 120], ['citronnade', 120]],
+    ['Infuser un thé noir et le laisser refroidir.', 'Remplir un verre de glaçons, verser le thé glacé puis la citronnade.', 'Remuer et ajouter un quartier de citron.'],
+    'Nommé d’après le golfeur Arnold Palmer, qui le commandait ainsi.'), 'Classique américain', 'https://en.wikipedia.org/wiki/Arnold_Palmer_(drink)'),
+  BY(R('pussyfoot', 'Pussyfoot', '', 'S', 'Highball', 'wheel-orange', '', '', '#F59A4A', '33010', 'Fruité,Brunch',
+    [['menthe', 7, 'feuille'], ['orange', 120], ['citron', 15], ['citron-vert', 15], ['grenadine', 15], ['jaune-oeuf', 15]],
+    ['Secouer tous les ingrédients avec des glaçons.', 'Filtrer, reverser dans le shaker et secouer de nouveau sans glace.', 'Filtrer finement dans un verre highball rempli de glace.'],
+    'Créé en 1920 à l’Embassy Club de Londres, nommé d’après William « Pussyfoot » Johnson, militant de la Prohibition.'), 'Robert Vermeire, Embassy Club (Londres) · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/1620/pussyfoot-mocktail'),
+  NA(R('cinderella', 'Cinderella', '', 'S', 'Highball', 'wheel-orange', '', '', '#F6B65A', '33000', 'Fruité,Festif',
+    [['orange', 30], ['ananas', 30], ['citron', 30], ['grenadine', 5], ['eau-gazeuse', 0, 'à compléter']],
+    ['Secouer les jus et la grenadine avec des glaçons.', 'Filtrer dans un verre highball rempli de glace.', 'Compléter avec l’eau gazeuse.']), 'Classique sans alcool'),
+  NA(R('lime-rickey', 'Lime Rickey', '', 'D', 'Highball', 'wheel-lime', '', '', '#E6F0C8', '24000', 'Rafraîchissant',
+    [['citron-vert', 30], ['sirop-sucre', 20, 'ml', 's'], ['eau-gazeuse', 120]],
+    ['Remplir un verre highball de glaçons.', 'Verser le jus de citron vert et le sirop, puis l’eau gazeuse.', 'Remuer et ajouter une rondelle de citron vert.'],
+    'Version sans alcool servie dans les soda fountains américaines, notamment à Boston.'), 'Classique des soda fountains', 'https://en.wikipedia.org/wiki/Rickey_(cocktail)'),
+  NA(R('egg-cream', 'Egg Cream', '', 'D', 'Highball', '', '', '', '#8A6A4E', '40000', 'Crémeux',
+    [['lait', 60], ['sirop-chocolat', 30], ['eau-gazeuse', 120]],
+    ['Verser le sirop de chocolat et le lait froid dans le verre.', 'Ajouter l’eau gazeuse d’un coup en remuant vivement pour faire mousser.'],
+    'Classique des soda fountains de Brooklyn. Malgré son nom, il ne contient ni œuf ni crème.'), 'Classique new-yorkais', 'https://en.wikipedia.org/wiki/Egg_cream'),
+  BY(R('espresso-tonic', 'Espresso Tonic', '', 'D', 'Highball', 'zest-orange', '', '', '#5A3A24', '12320', 'Rafraîchissant,Brunch',
+    [['tonic', 120], ['expresso', 30]],
+    ['Remplir un verre de glaçons et verser le tonic bien froid.', 'Verser l’expresso doucement par-dessus pour créer deux couches.'],
+    'Apparu en 2007 : préparé à Oslo, puis mis à la carte par Koppi à Helsingborg sous le nom « Kaffe & Tonic ».'), 'Koppi (Helsingborg, Suède)', 'https://en.wikipedia.org/wiki/Espresso_and_tonic'),
+  NA(R('diabolo-menthe', 'Diabolo menthe', '', 'D', 'Highball', 'mint', '', '', '#7FD18A', '41000', 'Rafraîchissant,Estival',
+    [['sirop-menthe', 20], ['limonade', 200]],
+    ['Verser le sirop de menthe au fond du verre.', 'Ajouter des glaçons puis la limonade bien froide.']), 'Classique français'),
+  NA(R('diabolo-grenadine', 'Diabolo grenadine', '', 'D', 'Highball', '', '', '', '#F2667A', '41000', 'Rafraîchissant,Fruité',
+    [['grenadine', 20], ['limonade', 200]],
+    ['Verser la grenadine au fond du verre.', 'Ajouter des glaçons puis la limonade bien froide.']), 'Classique français'),
+  NA(R('citronnade-maison', 'Citronnade maison', '', 'D', 'Highball', 'wheel-lemon', '', '', '#F5EDB0', '34000', 'Rafraîchissant,Estival',
+    [['citron', 40], ['sirop-sucre', 30, 'ml', 's'], ['eau', 150], ['menthe', 4, 'feuille', 'o']],
+    ['Mélanger le jus de citron et le sirop dans le verre.', 'Ajouter des glaçons, l’eau fraîche et quelques feuilles de menthe.', 'Remuer et ajouter une rondelle de citron.']), 'Recette traditionnelle'),
+  // Tour du monde
+  NA(R('agua-jamaica', 'Agua de Jamaica', '', 'D', 'Highball', 'wheel-lime', '', '', '#9E1B3A', '33020', 'Rafraîchissant,Floral',
+    [['infusion-hibiscus', 200], ['sirop-sucre', 30, 'ml', 's'], ['citron-vert', 10, 'ml', 'o']],
+    ['Infuser 15 g de fleurs d’hibiscus séchées dans 500 ml d’eau chaude pendant 15 minutes, puis filtrer et refroidir.', 'Sucrer l’infusion, ajouter le citron vert si on le souhaite.', 'Servir sur beaucoup de glace.'],
+    'Une des « aguas frescas » servies partout au Mexique.'), 'Recette traditionnelle mexicaine', 'https://fr.wikipedia.org/wiki/Agua_de_Jamaica'),
+  NA(R('agua-sandia', 'Agua de sandía', '', 'B', 'Highball', 'wedge-lime', '', '', '#F5677A', '31000', 'Rafraîchissant,Estival,Fruité',
+    [['pasteque', 250, 'g'], ['citron-vert', 15], ['sirop-sucre', 15, 'ml', 'o'], ['eau', 100]],
+    ['Mixer la pastèque épépinée avec l’eau.', 'Filtrer, puis ajouter le jus de citron vert et le sirop selon la douceur du fruit.', 'Servir sur glace.']), 'Recette traditionnelle mexicaine'),
+  NA(R('agua-pepino', 'Agua de pepino', '', 'B', 'Highball', 'wheel-lime', '', '', '#CFE8B0', '23000', 'Rafraîchissant,Herbacé',
+    [['concombre', 150, 'g'], ['citron-vert', 30], ['sirop-sucre', 30, 'ml', 's'], ['eau', 150], ['menthe', 4, 'feuille', 'o']],
+    ['Mixer le concombre avec l’eau, le citron vert, le sirop et la menthe.', 'Filtrer finement.', 'Servir sur glace.']), 'Recette traditionnelle mexicaine'),
+  NA(R('horchata', 'Horchata', '', 'D', 'Highball', '', 'Cannelle en poudre', '', '#EFE6D6', '40000', 'Crémeux,Réconfortant',
+    [['lait-riz', 200], ['sirop-sucre', 20, 'ml', 's'], ['cannelle', 1, 'pincée'], ['vanille', 2, 'goutte', 'o']],
+    ['Mélanger le lait de riz, le sirop, la cannelle et la vanille.', 'Servir très frais sur glace, saupoudré de cannelle.'],
+    'Version simplifiée : la recette traditionnelle fait tremper du riz une nuit avec de la cannelle avant de le mixer et de le filtrer.'), 'Recette traditionnelle mexicaine', 'https://fr.wikipedia.org/wiki/Horchata'),
+  NA(R('limonada-suica', 'Limonada suíça', '', 'B', 'Highball', 'wheel-lime', '', '', '#E8F0D0', '43010', 'Crémeux,Rafraîchissant',
+    [['lime-quartiers', 4, 'quartier'], ['lait-concentre', 30], ['sucre-blanc', 2, 'c. à café', 'o'], ['eau', 200]],
+    ['Mixer brièvement les quartiers de citron vert (avec la peau) avec l’eau et le sucre, quelques secondes seulement pour éviter l’amertume.', 'Filtrer, puis mixer de nouveau avec le lait concentré.', 'Servir aussitôt sur glace.']), 'Recette traditionnelle brésilienne'),
+  NA(R('switchel', 'Switchel', '', 'D', 'Highball', 'wedge-lemon', '', '', '#E0C080', '23000', 'Rafraîchissant',
+    [['vinaigre-cidre', 15], ['sirop-gingembre', 15, 'ml', { alts: ['gingembre'] }], ['sirop-erable', 20, 'ml', { alts: ['miel'] }], ['eau', 150]],
+    ['Mélanger le vinaigre, le gingembre et le sirop d’érable.', 'Ajouter l’eau fraîche et de la glace, puis remuer.'],
+    'Boisson des moissonneurs de Nouvelle-Angleterre au XVIIIe siècle, aussi appelée « haymaker’s punch ».'), 'Recette traditionnelle américaine', 'https://en.wikipedia.org/wiki/Switchel'),
+  NA(R('mango-lassi', 'Mango lassi', '', 'B', 'Highball', '', 'Cardamome en poudre', '', '#F7C04A', '42010', 'Crémeux,Fruité,Brunch',
+    [['mangue', 100], ['yaourt', 100], ['lait', 50], ['sirop-sucre', 10, 'ml', 'o'], ['cardamome', 1, 'pincée']],
+    ['Mixer tous les ingrédients avec quelques glaçons jusqu’à obtenir une texture lisse.', 'Servir aussitôt, saupoudré de cardamome.']), 'Recette traditionnelle indienne', 'https://fr.wikipedia.org/wiki/Lassi'),
+  NA(R('nimbu-pani', 'Nimbu pani', '', 'D', 'Highball', 'wheel-lime', '', '', '#EEF2D0', '34000', 'Rafraîchissant,Estival',
+    [['citron-vert', 30], ['sirop-sucre', 25, 'ml', 's'], ['sel', 1, 'pincée'], ['cumin', 1, 'pincée'], ['eau', 200], ['menthe', 4, 'feuille', 'o']],
+    ['Mélanger le jus de citron vert, le sirop, le sel et le cumin dans le verre.', 'Ajouter l’eau fraîche, des glaçons et la menthe, puis remuer.'],
+    'La citronnade salée et épicée des étals indiens, traditionnellement au sel noir.'), 'Recette traditionnelle indienne'),
+  NA(R('sekanjabin', 'Sekanjabin', '', 'D', 'Highball', 'mint', '', '', '#DDEBC8', '34010', 'Rafraîchissant,Herbacé',
+    [['sirop-sucre', 40, 'ml', 's'], ['vinaigre-blanc', 15, 'ml', 's'], ['menthe', 6, 'feuille'], ['concombre', 3, 'tranche', 'o'], ['eau', 150]],
+    ['Froisser la menthe avec le sirop et le vinaigre au fond du verre.', 'Ajouter le concombre, des glaçons et l’eau fraîche, puis remuer.'],
+    'Sirop aigre-doux à la menthe, l’une des plus anciennes boissons persanes.'), 'Recette traditionnelle iranienne', 'https://en.wikipedia.org/wiki/Sekanjabin'),
+  NA(R('thai-iced-tea', 'Thé glacé thaï', '', 'D', 'Highball', '', '', '', '#E08A4A', '40120', 'Crémeux,Réconfortant',
+    [['the-noir', 150], ['lait-concentre', 30], ['lait', 30]],
+    ['Infuser un thé noir très fort, le sucrer avec le lait concentré et le laisser refroidir.', 'Verser sur beaucoup de glace.', 'Ajouter le lait sur le dessus sans remuer.']), 'Recette traditionnelle thaïlandaise', 'https://en.wikipedia.org/wiki/Thai_tea'),
+  NA(R('limonana', 'Limonana', '', 'B', 'Highball', 'mint', '', '', '#C8E6A0', '34010', 'Rafraîchissant,Estival,Herbacé',
+    [['citron', 45], ['sirop-sucre', 40, 'ml', 's'], ['menthe', 10, 'feuille'], ['eau', 100]],
+    ['Mixer tous les ingrédients avec une bonne poignée de glaçons.', 'Servir aussitôt, comme une granita.']), 'Recette traditionnelle du Proche-Orient', 'https://en.wikipedia.org/wiki/Limonana'),
+  NA(R('cafe-frappe', 'Café frappé', '', 'S', 'Highball', '', '', '', '#7A5034', '20320', 'Brunch',
+    [['cafe-soluble', 2, 'c. à café'], ['sucre-blanc', 2, 'c. à café', 'o'], ['eau', 160], ['lait', 30, 'ml', 'o']],
+    ['Secouer le café soluble, le sucre et 60 ml d’eau froide jusqu’à obtenir une mousse épaisse.', 'Verser dans un verre rempli de glace.', 'Compléter avec le reste de l’eau froide, et le lait si on le souhaite.'],
+    'Inventé en 1957 à Thessalonique, lors d’une foire où un employé de Nestlé improvisa un café au shaker.'), 'Classique grec', 'https://fr.wikipedia.org/wiki/Caf%C3%A9_frapp%C3%A9'),
+  NA(R('ca-phe-sua-da', 'Cà phê sữa đá', '', 'D', 'Old fashioned', '', '', '', '#6A4028', '40320', 'Réconfortant,Brunch',
+    [['cafe', 60], ['lait-concentre', 30]],
+    ['Préparer un café très fort, idéalement au filtre phin, directement sur le lait concentré.', 'Mélanger, puis verser sur un verre rempli de glace.']), 'Recette traditionnelle vietnamienne', 'https://en.wikipedia.org/wiki/Vietnamese_iced_coffee'),
+  NA(R('chai-glace', 'Masala chai glacé', '', 'D', 'Highball', '', 'Bâton de cannelle', '', '#C8946A', '30120', 'Réconfortant',
+    [['the-noir', 150], ['lait', 60], ['sirop-sucre', 20, 'ml', 's'], ['cannelle', 1, 'pincée'], ['cardamome', 1, 'pincée'], ['gingembre', 1, 'tranche', 'o']],
+    ['Infuser un thé noir fort avec la cannelle, la cardamome et le gingembre, puis filtrer et refroidir.', 'Ajouter le sirop et le lait.', 'Servir sur glace.']), 'Recette traditionnelle indienne', 'https://fr.wikipedia.org/wiki/Masala_chai'),
+  NA(R('shrub-soda', 'Shrub soda à la framboise', '', 'D', 'Highball', 'berry', '', '', '#D9405A', '33000', 'Rafraîchissant,Fruité',
+    [['shrub-framboise', 30], ['eau-gazeuse', 150]],
+    ['Verser le shrub dans un verre rempli de glace.', 'Compléter avec l’eau gazeuse et remuer.'],
+    'Shrub : 250 g de framboises écrasées et 250 g de sucre macérés deux jours, puis 250 ml de vinaigre de cidre ; filtrer et garder au frais.'), 'Recette traditionnelle américaine', 'https://en.wikipedia.org/wiki/Shrub_(drink)'),
+  NA(R('mazagran', 'Mazagran', '', 'D', 'Highball', 'wheel-lemon', '', '', '#5A3828', '23310', 'Rafraîchissant',
+    [['cafe', 100], ['citron', 20], ['sirop-sucre', 15, 'ml', 's']],
+    ['Préparer un café et le laisser refroidir.', 'Le verser sur de la glace avec le jus de citron et le sirop, puis remuer.'],
+    'Café froid qui tient son nom de la forteresse de Mazagran, en Algérie, au XIXe siècle ; très populaire au Portugal.'), 'Recette traditionnelle', 'https://fr.wikipedia.org/wiki/Mazagran'),
+  NA(R('agua-tamarindo', 'Agua de tamarindo', '', 'D', 'Highball', '', '', '', '#9A6A3A', '33010', 'Rafraîchissant',
+    [['tamarin', 30, 'g'], ['sirop-sucre', 30, 'ml', 's'], ['eau', 200]],
+    ['Délayer la pâte de tamarin dans l’eau, puis filtrer.', 'Sucrer et servir sur glace.']), 'Recette traditionnelle mexicaine'),
+  NA(R('agua-limon-chia', 'Agua de limón con chía', '', 'D', 'Highball', 'wheel-lime', '', '', '#E8F0C8', '33000', 'Rafraîchissant',
+    [['citron-vert', 40], ['sirop-sucre', 30, 'ml', 's'], ['chia', 1, 'c. à soupe'], ['eau', 200]],
+    ['Faire gonfler les graines de chia 15 minutes dans l’eau.', 'Ajouter le jus de citron vert et le sirop, puis servir sur glace.']), 'Recette traditionnelle mexicaine'),
+  NA(R('holunderschorle', 'Holunderblütenschorle', '', 'D', 'Verre à vin', 'wheel-lemon', 'Feuilles de menthe', '', '#EEF0D0', '31000', 'Rafraîchissant,Floral,Pétillant',
+    [['cordial-sureau', 30], ['eau-gazeuse', 200]],
+    ['Verser le sirop de sureau sur des glaçons.', 'Compléter avec l’eau gazeuse et ajouter une rondelle de citron.']), 'Recette traditionnelle allemande'),
+  NA(R('apfelschorle', 'Apfelschorle', '', 'D', 'Highball', '', '', '', '#E8C870', '31000', 'Rafraîchissant,Pétillant',
+    [['pomme', 120], ['eau-gazeuse', 120]],
+    ['Verser le jus de pomme sur des glaçons.', 'Compléter avec la même quantité d’eau gazeuse.']), 'Recette traditionnelle allemande', 'https://fr.wikipedia.org/wiki/Apfelschorle'),
+  NA(R('the-menthe-glace', 'Thé à la menthe glacé', '', 'D', 'Highball', 'mint', '', '', '#B8C878', '31120', 'Rafraîchissant,Herbacé',
+    [['the-vert', 200], ['menthe', 8, 'feuille'], ['sirop-sucre', 20, 'ml', 's']],
+    ['Infuser le thé vert avec la menthe, sucrer, puis laisser refroidir.', 'Servir sur glace avec un brin de menthe.']), 'Inspiré du thé à la menthe maghrébin'),
+  NA(R('the-glace-peche', 'Thé glacé à la pêche', '', 'D', 'Highball', 'wedge-lemon', '', '', '#E8A860', '32120', 'Rafraîchissant,Estival,Fruité',
+    [['the-noir', 150], ['puree-peche', 40], ['citron', 10], ['sirop-sucre', 10, 'ml', 'o']],
+    ['Infuser un thé noir et le laisser refroidir.', 'Mélanger avec la purée de pêche, le citron et le sirop.', 'Servir sur glace.']), 'Recette courante'),
+  NA(R('pamplemousse-romarin', 'Pamplemousse & romarin', '', 'D', 'Highball', '', 'Brin de romarin', '', '#F2A090', '23200', 'Rafraîchissant,Herbacé',
+    [['pamplemousse', 90], ['sirop-sucre', 10, 'ml', 's'], ['romarin', 1, 'brin'], ['eau-gazeuse', 90]],
+    ['Froisser le romarin avec le sirop au fond du verre.', 'Ajouter des glaçons et le jus de pamplemousse.', 'Compléter avec l’eau gazeuse et remuer.']), 'Recette courante'),
+  // Créations de bars
+  BY(R('cloudy-tokyo', 'Cloudy Tokyo', '', 'D', 'Highball', '', '', '', '#DDE6C8', '21020', 'Rafraîchissant',
+    [['the-vert', 150], ['lait-coco', 15], ['soda-coco', 150]],
+    ['Mélanger le thé vert froid et le lait de coco dans le verre.', 'Compléter avec le soda à la noix de coco bien froid.']), 'Christopher Harris, Entente (Chicago) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+  BY(R('distinguished-guest', 'Distinguished Guest', '', 'S', 'Coupe', '', 'Rondelle de concombre', '', '#D9405A', '33010', 'Fruité',
+    [['cranberry', 60], ['citron-vert', 22.5], ['sirop-sucre', 22.5, 'ml', 's'], ['concombre', 2, 'tranche'], ['sel', 1, 'pincée']],
+    ['Secouer tous les ingrédients avec des glaçons.', 'Filtrer finement dans une coupe et décorer d’une rondelle de concombre.'],
+    'La recette d’origine utilise 5 gouttes de solution saline à 10 % ; une petite pincée de sel s’en approche.'), 'Alex Howell, Easy Bistro & Bar (Chattanooga) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+  BY(R('cold-brew-julep', 'Cold Brew Julep', '', 'D', 'Timbale', 'mint', '', '', '#4A2E1E', '20320', 'Réconfortant',
+    [['menthe', 10, 'feuille'], ['sirop-sucre', 15, 'ml', 's'], ['cold-brew', 90]],
+    ['Écraser doucement la moitié de la menthe au fond du verre.', 'Remplir de glace pilée, ajouter le sirop et le café et remuer.', 'Décorer avec le reste de la menthe.']), 'Hayley Charles, Carbon (Denver) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+  BY(R('sparkling-almond', 'Sparkling Almond', '', 'D', 'Highball', 'wheel-lemon', 'Brin de menthe', '', '#F0EAD8', '43000', 'Rafraîchissant,Pétillant',
+    [['citron', 30], ['orgeat', 45], ['eau-gazeuse', 120]],
+    ['Remplir un verre de glace pilée.', 'Verser le jus de citron et le sirop d’orgeat, puis compléter avec l’eau gazeuse.', 'Décorer d’une rondelle de citron et de menthe.']), 'Erick Castro, Polite Provisions (San Diego) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/')
+);
+
 /* Exemple de création personnelle */
 RECIPES.push(Object.assign(
   R('potion-soin', 'Potion de soin', '', 'S', 'Highball', 'mint', '', '', '#C41E4A', '33012', 'Univers JV,Festif',
@@ -594,7 +757,7 @@ RECIPES.push(Object.assign(
 /* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
    { type: 'recipes', title, ids, cols }, { type: 'text', title, text }, { type: 'tip', text }.
    Les collections sans blocs listent simplement leurs recettes (ids ou filter). */
-const COLL_GROUPS = ['Pour commencer', 'Sélections Zeste', 'Liste officielle IBA'];
+const COLL_GROUPS = ['Pour commencer', 'Sans alcool', 'Sélections Zeste', 'Liste officielle IBA'];
 const COLLECTIONS = [
   { id: 'debutants', group: 'Pour commencer', name: 'Premiers cocktails', curator: 'Sélection Zeste', desc: 'Peu d’ingrédients, aucun geste technique : de quoi se lancer avec un verre, des glaçons et une cuillère.',
     blocks: [
@@ -640,6 +803,18 @@ const COLLECTIONS = [
       { type: 'recipes', title: 'Spritz et bulles', cols: 3, ids: ['spritz', 'campari-spritz', 'negroni-sbagliato'] },
       { type: 'recipes', title: 'Amers', cols: 3, ids: ['americano', 'negroni', 'campari-orange'] },
       { type: 'tip', text: 'Le prosecco doit être très froid et versé en premier dans un spritz : les bulles remontent et mélangent le verre sans remuer.' }
+    ] },
+  { id: 'sans-alcool-classiques', group: 'Sans alcool', name: 'Les classiques sans alcool', curator: 'Sélection Zeste', desc: 'Des boissons pensées sans alcool dès le départ, du Shirley Temple aux créations de bars.',
+    blocks: [
+      { type: 'recipes', title: 'Les grands classiques', cols: 3, ids: ['shirley-temple', 'roy-rogers', 'arnold-palmer', 'pussyfoot', 'cinderella', 'lime-rickey', 'egg-cream', 'diabolo-menthe', 'citronnade-maison'] },
+      { type: 'tip', text: 'Un verre sans alcool mérite le même soin : glaçons en quantité, agrumes pressés au dernier moment et verre refroidi.' },
+      { type: 'recipes', title: 'Créations de bars', cols: 3, ids: ['espresso-tonic', 'cloudy-tokyo', 'distinguished-guest', 'cold-brew-julep', 'sparkling-almond'] }
+    ] },
+  { id: 'sans-alcool-monde', group: 'Sans alcool', name: 'Tour du monde sans alcool', curator: 'Sélection Zeste', desc: 'Aguas frescas, lassi, café frappé, sekanjabin : les boissons fraîches des cinq continents.',
+    blocks: [
+      { type: 'recipes', title: 'Mexique et Amérique latine', cols: 3, ids: ['agua-jamaica', 'agua-sandia', 'agua-pepino', 'horchata', 'agua-tamarindo', 'agua-limon-chia', 'limonada-suica'] },
+      { type: 'recipes', title: 'Asie et Moyen-Orient', cols: 3, ids: ['mango-lassi', 'nimbu-pani', 'sekanjabin', 'limonana', 'thai-iced-tea', 'chai-glace', 'ca-phe-sua-da'] },
+      { type: 'recipes', title: 'Europe et Amérique du Nord', cols: 3, ids: ['cafe-frappe', 'mazagran', 'holunderschorle', 'apfelschorle', 'switchel', 'shrub-soda'] }
     ] },
   { id: 'aperitivo', group: 'Sélections Zeste', name: 'L’aperitivo italien', curator: 'Sélection Zeste', desc: 'Amers, vermouths et bulles pour ouvrir l’appétit.', ids: ['negroni', 'americano', 'spritz', 'boulevardier', 'hugo-spritz', 'bellini', 'hanky-panky', 'campari-orange', 'limoncello-spritz'] },
   { id: 'tiki', group: 'Sélections Zeste', name: 'Soirée tiki', curator: 'Sélection Zeste', desc: 'Rhums, fruits exotiques et verres qui débordent.', ids: ['mai-tai', 'zombie', 'pina-colada', 'singapore-sling', 'planters-punch', 'dark-n-stormy', 'barracuda'] },

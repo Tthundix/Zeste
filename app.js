@@ -1,9 +1,9 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 const KEY = 'zeste-v1';
-const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
+const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
 const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café': 5, 'c. à soupe': 15, 'à compléter': 60 };
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Blender': .4 };
@@ -18,7 +18,7 @@ const SWATCHES = [['#E8F1F2', 'Cristal'], ['#F6EBC8', 'Crème'], ['#FFE14D', 'Ci
   ['#FF6A1A', 'Orange amer'], ['#D98A2B', 'Ambre'], ['#9A4A1E', 'Acajou'], ['#3B2416', 'Café'], ['#E2232E', 'Rouge vif'], ['#B0162E', 'Rubis'], ['#F04E7A', 'Grenadine'], ['#FF8FB8', 'Rose'],
   ['#7A1745', 'Mûre'], ['#8A4FD8', 'Violette'], ['#1E9BEA', 'Curaçao'], ['#18C2B0', 'Lagon']];
 const TF_DEFAULT = () => ({ su: [0, 5], ac: [0, 5], am: [0, 5], as: [0, 5], fo: [0, 5] });
-const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', base: '', tf: TF_DEFAULT() });
+const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', base: '', alc: '', tf: TF_DEFAULT() });
 
 const clone = o => JSON.parse(JSON.stringify(o));
 const $ = s => document.querySelector(s);
@@ -244,6 +244,8 @@ function analyze(r, owned) {
   const rows = r.ings.map(row => { const s = rowStatus(row, owned); if (s.st === 'miss') miss.push(row.id); if (s.st === 'sub') subs++; return s; });
   return { rows, miss, subs };
 }
+/* Sans alcool : aucun ingrédient alcoolisé. */
+const isNA = r => r.ings.every(i => !(S.ings[i.id] && +S.ings[i.id].abv));
 /* Facile : peu d'ingrédients, pas de blanc d'œuf ni de blender. */
 function isEasy(r) {
   const main = r.ings.filter(i => !i.opt && !STAPLES.includes(i.id));
@@ -280,7 +282,7 @@ function fmtQty(row) {
 const starsHTML = n => `<span class="stars" aria-label="${fmtRating(n)} sur 5"><span class="s-bg">★★★★★</span><span class="s-fg" style="width:${n / 5 * 100}%">★★★★★</span></span>`;
 const tfActive = ([a, b]) => a > 0 || b < 5;
 const tfText = ([a, b]) => a === 0 && b === 5 ? 'Tous' : a === b ? `= ${a}` : a === 0 ? `≤ ${b}` : b === 5 ? `≥ ${a}` : `${a} à ${b}`;
-const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level', 'base'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
+const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level', 'base', 'alc'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
 
 let toastT, noteT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
@@ -318,6 +320,7 @@ function renderCatalogue(m) {
         <p class="hint">Chaque cocktail est noté de 0 à 5 sur chaque goût. Il suffit de régler l'intervalle voulu, par exemple Force de 0 à 2 et Astringent de 4 à 5.</p>
         ${TASTE.map(([k, l]) => { const [a, b] = UI.f.tf[k]; return `<div class="tf-row${tfActive([a, b]) ? ' active' : ''}" data-k="${k}"><span>${l}</span><div class="dual" style="--a:${a};--b:${b}"><span class="fill"></span><input type="range" class="dr" data-k="${k}" data-e="0" min="0" max="5" step="1" value="${a}" aria-label="${l} minimum"><input type="range" class="dr" data-k="${k}" data-e="1" min="0" max="5" step="1" value="${b}" aria-label="${l} maximum"></div><span class="tv">${tfText([a, b])}</span></div>`; }).join('')}
       </div>
+      <label class="field" for="cf-alc"><span>Alcool</span><select id="cf-alc">${opts([['', 'Avec et sans alcool'], ['na', 'Sans alcool'], ['alc', 'Avec alcool']], UI.f.alc)}</select></label>
       <label class="field" for="cf-base"><span>Alcool de base</span><select id="cf-base">${opts([['', 'Tous'], ...FAMILIES[0].subs.map(x => [x, x])], UI.f.base)}</select></label>
       <label class="field" for="cf-level"><span>Niveau</span><select id="cf-level">${opts([['', 'Tous'], ['easy', 'Facile : peu d’ingrédients, sans technique']], UI.f.level)}</select></label>
       <label class="field" for="cf-origin"><span>Origine</span><select id="cf-origin">${opts(ORIGIN_F, UI.f.origin)}</select></label>
@@ -355,9 +358,11 @@ function renderResults() {
     if (F.origin === 'mine' && !(r.origin === 'Original' && r.by !== 'other')) return false;
     if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
     if (F.level === 'easy' && !isEasy(r)) return false;
+    if (F.alc === 'na' && !isNA(r)) return false;
+    if (F.alc === 'alc' && isNA(r)) return false;
     if (F.base && !r.ings.some(i => S.ings[i.id] && S.ings[i.id].fam === 'Spiritueux' && S.ings[i.id].sub === F.base)) return false;
     for (const [k] of TASTE) { if (!tfActive(F.tf[k])) continue; const v = r.flavor[k], [lo, hi] = F.tf[k]; if (v == null || v < lo || v > hi) return false; }
-    if (words.length) { const hay = norm([r.name, r.author, garnLabel(r), origLabel(r), r.method, r.glass, ...r.tags, ...r.ings.map(i => ingName(i.id)), S.notes[r.id] ? S.notes[r.id].text : ''].join(' ')); if (!words.every(w => hay.includes(w))) return false; }
+    if (words.length) { const hay = norm([r.name, r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, r.glass, ...r.tags, ...r.ings.map(i => ingName(i.id)), S.notes[r.id] ? S.notes[r.id].text : ''].join(' ')); if (!words.every(w => hay.includes(w))) return false; }
     return true;
   });
   const byName = (x, y) => x.r.name.localeCompare(y.r.name, 'fr');
@@ -370,7 +375,7 @@ function renderResults() {
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
       <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
       <span class="cb"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
-      <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
+      <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${isNA(r) ? '<span class="otag">Sans alcool</span>' : r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
 }
 
@@ -396,7 +401,7 @@ function moment(h) {
   if (h >= 11 && h < 17) return { key: 'aprem', title: 'Cet après-midi', lead: 'Des verres frais et peu alcoolisés pour la journée.', pick: r => hasTag(r, ['Rafraîchissant', 'Estival', 'Pétillant']) && light(r) };
   if (h >= 17 && h < 21) return { key: 'apero', title: 'L’heure de l’apéro', lead: 'Amers, bulles et spritz pour ouvrir l’appétit.', pick: r => hasTag(r, ['Apéritif']) };
   if (h >= 21 && h < 24) return { key: 'soiree', title: 'Ce soir', lead: 'Des classiques pour la soirée et la fin de repas.', pick: r => hasTag(r, ['Festif', 'Digestif', 'Tiki', 'Fin de soirée']) };
-  return { key: 'nuit', title: 'Fin de soirée', lead: 'À cette heure, des verres légers.', pick: r => light(r) && (estAbv(r) || 0) <= 12 };
+  return { key: 'nuit', title: 'Fin de soirée', lead: 'À cette heure, plutôt sans alcool.', pick: r => isNA(r) };
 }
 function hcard(r, sub) {
   return `<button class="hcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}</span><span class="hname">${esc(r.name)}</span>${sub ? `<span class="hsub">${esc(sub)}</span>` : ''}</button>`;
@@ -411,6 +416,7 @@ function renderHome(m) {
   const feat = picks[0];
   const late = (h < 6) && !UI.lateOk;
   const ready = shuffled(S.recipes.filter(ok), seed).sort((a, b) => (S.ratings[b.id] || 0) - (S.ratings[a.id] || 0));
+  const naList = shuffled(S.recipes.filter(isNA), seed);
   const near = shuffled(S.recipes.filter(r => an.get(r.id).miss.length === 1), seed);
   const seen = Object.entries(S.views || {}).sort((a, b) => b[1].t - a[1].t).map(([id]) => S.recipes.find(r => r.id === id)).filter(Boolean);
   const top = S.recipes.filter(r => S.ratings[r.id]).sort((a, b) => S.ratings[b.id] - S.ratings[a.id] || a.name.localeCompare(b.name, 'fr'));
@@ -430,11 +436,12 @@ function renderHome(m) {
   ${hrow(`Aussi pour ${M.key === 'apero' ? 'l’apéro' : M.key === 'matin' ? 'ce matin' : M.key === 'aprem' ? 'cet après-midi' : M.key === 'soiree' ? 'ce soir' : 'la fin de soirée'}`, picks.slice(1, 13).map(r => hcard(r, ok(r) ? 'Réalisable' : 'Manque ' + an.get(r.id).miss.length)))}
   ${hrow('Réalisables avec le bar', ready.slice(0, 14).map(r => hcard(r, S.ratings[r.id] ? fmtRating(S.ratings[r.id]) + ' ★' : r.method)), `<button class="btn small ghost" data-act="go-cat" data-v="ok">Tout voir</button>`)}
   ${hrow('À un ingrédient près', near.slice(0, 14).map(r => hcard(r, 'Manque : ' + ingName(an.get(r.id).miss[0]))), `<button class="btn small ghost" data-act="go-cat" data-v="one">Tout voir</button>`)}
+  ${hrow('Sans alcool', naList.slice(0, 14).map(r => hcard(r, r.source || r.author || r.method)), `<button class="btn small ghost" data-act="go-na">Tout voir</button>`)}
   ${hrow('Consultés récemment', seen.slice(0, 14).map(r => hcard(r, r.method)))}
   <section class="hsec"><div class="shead"><h2>Explorer</h2></div>
     <div class="explore"><h3 class="lbl">Par alcool</h3><div class="chips">${SPIRITS.map(s => `<button class="chip big" data-act="go-base" data-v="${esc(s)}">${esc(SPIRIT_LABEL[s])}</button>`).join('')}</div>
     <h3 class="lbl">Par mood</h3><div class="chips">${tags.map(t => `<button class="chip" data-act="go-tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-    <h3 class="lbl">Par niveau</h3><div class="chips"><button class="chip" data-act="go-easy">Facile : peu d’ingrédients, sans technique</button></div></div>
+    <h3 class="lbl">Par niveau</h3><div class="chips"><button class="chip" data-act="go-easy">Facile : peu d’ingrédients, sans technique</button><button class="chip" data-act="go-na">Sans alcool</button></div></div>
   </section>
   ${hrow('Collections', allColls().map(c => { const it = collRecipes(c); return `<button class="hcard coll-mini" data-act="open-coll" data-id="${esc(c.id)}"><span class="mosaic">${it.slice(0, 4).map(r => `<span style="--c:${okColor(r.color)}">${visual(r)}</span>`).join('')}</span><span class="hname">${esc(c.name)}</span><span class="hsub">${esc(c.curator || '')}</span></button>`; }), `<button class="btn small ghost" data-act="go-colls">Tout voir</button>`)}
   ${hrow('Mieux notés', top.slice(0, 14).map(r => hcard(r, fmtRating(S.ratings[r.id]) + ' ★')))}
@@ -786,7 +793,7 @@ function openDetail(id, keep, back) {
     <div class="d-right cols dz">
       <div class="d-head dz">
       <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
-      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div></dl>
+      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${r.source || (r.url && r.by === 'other') ? `<div class="wide"><dt>Source</dt><dd>${esc(r.source || r.author || '')}${/^https:\/\//.test(r.url || '') ? ` · <a href="${esc(r.url)}" target="_blank" rel="noopener">voir la source</a>` : ''}</dd></div>` : ''}</dl>
       <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
     </div>
       <section class="sec ings-sec o5"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
@@ -1081,6 +1088,7 @@ document.addEventListener('click', async e => {
     case 'go-cat': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = b.dataset.v; navView('catalogue'); break;
     case 'go-base': UI.f = F_DEFAULT(); UI.f.base = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
+    case 'go-na': UI.f = F_DEFAULT(); UI.f.alc = 'na'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-colls': UI.listTab = 'coll'; navView('lists'); break;
     case 'by-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.filtersOpen = true; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); { const fromHome = !history.state || history.state.view === 'home'; UI.view = 'catalogue'; render(); if (fromHome) replaceNav(); else replaceNav(); } break;
@@ -1224,6 +1232,7 @@ document.addEventListener('change', e => {
     case 'cf-glass': UI.f.glass = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-tag': UI.f.tag = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-origin': UI.f.origin = t.value; refreshFilterBadge(); renderResults(); break;
+    case 'cf-alc': UI.f.alc = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-base': UI.f.base = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-level': UI.f.level = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-sort': UI.sort = t.value; renderResults(); break;
