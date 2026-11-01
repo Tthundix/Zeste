@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.3.3';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -410,7 +410,7 @@ function renderHome(m) {
   ${deferredInstall && !S.installDismissed && !isStandalone() && !isSamsung() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
   ${feat ? `<section class="moment" style="--c:${okColor(feat.color)}">
     <button class="moment-v" data-act="open" data-id="${esc(feat.id)}" aria-label="${esc(feat.name)}">${visual(feat)}</button>
-    <div class="moment-t"><p class="eyebrow">${esc(M.title)} · ${esc(hour)}</p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
+    <div class="moment-t" data-act="open" data-id="${esc(feat.id)}"><p class="eyebrow">${esc(M.title)} · ${esc(hour)}</p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
       <p class="hint">${esc(feat.method)} · ${esc(feat.glass)}${abv != null ? ` · ≈ ${abv} % vol.` : ''} · ${ok(feat) ? 'réalisable avec le bar' : 'manquant : ' + esc(an.get(feat.id).miss.map(ingName).join(', '))}</p>
       <div class="row-btns"><button class="btn primary" data-act="open" data-id="${esc(feat.id)}">Voir la recette</button></div></div>
   </section>` : ''}
