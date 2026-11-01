@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -14,8 +14,11 @@ const FAM_MAP = { 'Liqueurs & apéritifs': 'Liqueurs', 'Agrumes & jus': 'Jus & p
 const FAM_IDS = FAMILIES.map(f => f.id);
 const PLACES = FAMILIES.flatMap(f => f.subs ? f.subs.map(s => [f.id + '|' + s, f.id + ' › ' + s]) : [[f.id + '|', f.id]]);
 const BUILTIN = new Map(RECIPES.map(r => [r.id, r]));
-const SWATCHES = [['#F3EBC4', 'Crème'], ['#E4E2B0', 'Citron pâle'], ['#D6DE98', 'Citron vert'], ['#B4C477', 'Chartreuse'], ['#F2C14E', 'Doré'], ['#F07A2B', 'Orange amer'], ['#C9802E', 'Ambre'], ['#8C3B1E', 'Acajou'], ['#3A2418', 'Café'], ['#B3202A', 'Rubis'], ['#C41E4A', 'Grenadine'], ['#E87CA0', 'Rose'], ['#6E1F3F', 'Mûre'], ['#7B4FA8', 'Violette'], ['#2F8FCB', 'Curaçao'], ['#D3E6E4', 'Cristal']];
+const SWATCHES = [['#E8F1F2', 'Cristal'], ['#F6EBC8', 'Crème'], ['#FFE14D', 'Citron'], ['#FFC21A', 'Jaune doré'], ['#C8E04A', 'Citron vert'], ['#7CC242', 'Menthe'], ['#9FB33A', 'Chartreuse'], ['#FF9A1F', 'Orange'],
+  ['#FF6A1A', 'Orange amer'], ['#D98A2B', 'Ambre'], ['#9A4A1E', 'Acajou'], ['#3B2416', 'Café'], ['#E2232E', 'Rouge vif'], ['#B0162E', 'Rubis'], ['#F04E7A', 'Grenadine'], ['#FF8FB8', 'Rose'],
+  ['#7A1745', 'Mûre'], ['#8A4FD8', 'Violette'], ['#1E9BEA', 'Curaçao'], ['#18C2B0', 'Lagon']];
 const TF_DEFAULT = () => ({ su: [0, 5], ac: [0, 5], am: [0, 5], as: [0, 5], fo: [0, 5] });
+const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', tf: TF_DEFAULT() });
 
 const clone = o => JSON.parse(JSON.stringify(o));
 const $ = s => document.querySelector(s);
@@ -38,7 +41,7 @@ function seed() {
     v: 2, dataVersion: DATA_VERSION, ings: builtinIngs(), recipes: clone(RECIPES), removed: [],
     owned: ['gin', 'vodka', 'rhum-blanc', 'bourbon', 'campari', 'vermouth-rouge', 'triple-sec', 'creme-cassis', 'angostura', 'citron', 'citron-vert', 'sirop-sucre', 'eau-gazeuse', 'tonic', 'menthe', 'prosecco', 'orange', 'cola'],
     lists: [{ id: 'fav', name: 'Favoris', fixed: true, items: ['negroni', 'daiquiri'] }, { id: 'try', name: 'À essayer', fixed: true, items: ['last-word', 'mai-tai'] }],
-    ratings: { negroni: 5, daiquiri: 4, bramble: 4.5 },
+    ratings: { negroni: 5, daiquiri: 4, bramble: 4.5 }, collections: [],
     notes: { negroni: { text: 'Parfait en apéro. Avec un vermouth plus vanillé, il devient plus rond. À tester avec un gin plus agrumes.', pub: false, at: Date.now() } },
     unit: 'ml', example: true
   };
@@ -49,6 +52,7 @@ function upgrade(d) {
   if (!Array.isArray(d.owned)) d.owned = [];
   if (!Array.isArray(d.lists)) d.lists = [];
   if (!Array.isArray(d.removed)) d.removed = [];
+  if (!Array.isArray(d.collections)) d.collections = [];
   if (!d.unit) d.unit = 'ml';
   d.recipes.forEach(r => {
     if (r.origin === 'Ma création') { r.origin = 'Original'; r.by = 'me'; }
@@ -110,7 +114,7 @@ async function flushSave() {
   clearTimeout(saveT); saveT = null;
   if (!IDB.db) { storageOK = false; return; }
   try { await idbSet('state', S); storageOK = true; }
-  catch (e) { storageOK = false; toast("Sauvegarde impossible : l'espace de stockage est plein ou bloqué. Télécharge une sauvegarde depuis l'onglet Données."); }
+  catch (e) { storageOK = false; toast("Sauvegarde impossible : l'espace de stockage est plein ou bloqué. Une sauvegarde peut être téléchargée depuis l'onglet Données."); }
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && saveT) flushSave(); });
 window.addEventListener('pagehide', () => { if (saveT) flushSave(); });
@@ -133,13 +137,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 function installBlock() {
   if (isStandalone()) return `<p>Zeste est installée sur cet appareil.</p>`;
-  if (deferredInstall) return `<p>Installe Zeste pour l'ouvrir comme une appli, depuis ton écran d'accueil, même sans connexion.</p><div class="row-btns"><button class="btn primary small" data-act="install">Installer Zeste</button></div>`;
-  if (isIOS()) return `<p>Sur iPhone ou iPad, ouvre ce site dans Safari, touche le bouton Partager, puis « Sur l'écran d'accueil ».</p>`;
-  return `<p class="hint">Si ton navigateur le permet, l'option « Installer l'application » ou « Ajouter à l'écran d'accueil » se trouve dans son menu.</p>`;
+  if (deferredInstall) return `<p>Zeste peut s'installer comme une appli, sur l'écran d'accueil, et fonctionner sans connexion.</p><div class="row-btns"><button class="btn primary small" data-act="install">Installer Zeste</button></div>`;
+  if (isIOS()) return `<p>Sur iPhone ou iPad : ouvrir ce site dans Safari, puis Partager, puis « Sur l'écran d'accueil ».</p>`;
+  return `<p class="hint">Si le navigateur le permet, l'option « Installer l'application » ou « Ajouter à l'écran d'accueil » se trouve dans son menu.</p>`;
 }
 
 /* ---------- état de l'interface ---------- */
-const UI = { view: 'catalogue', q: '', avail: 'all', f: { method: '', glass: '', tag: '', origin: '', tf: TF_DEFAULT() }, sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null };
+const UI = { view: 'catalogue', q: '', avail: 'all', f: F_DEFAULT(), sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null };
 let sheetState = null, rowN = 0;
 const STAPLES = ['eau']; // toujours disponible
 const ownedSet = () => new Set([...S.owned, ...STAPLES]);
@@ -205,7 +209,7 @@ function rimSVG(rim, G) {
 }
 function glassSVG(g, color, garn, rim) {
   const G = GLASS[g] || GLASS['Coupe'], ln = (a, w) => `<line x1="${a[0]}" y1="${a[1]}" x2="${a[2]}" y2="${a[3]}" stroke="currentColor" stroke-width="${w}" stroke-linecap="round"/>`;
-  let s = `<svg class="glass" viewBox="-6 -14 72 94" aria-hidden="true"><path d="${G.l}" fill="${color}" fill-opacity=".88"/>`;
+  let s = `<svg class="glass" viewBox="-6 -14 72 94" aria-hidden="true"><path d="${G.l}" fill="${color}"/>`;
   if (G.ice) s += `<rect x="${G.ice[0]}" y="${G.ice[1]}" width="${G.ice[2]}" height="${G.ice[3]}" rx="2" fill="#FFFFFF" fill-opacity=".28" stroke="#FFFFFF" stroke-opacity=".5"/>`;
   if (garn === 'olive' || garn === 'celery') s += garnSVG(garn, G);
   s += `<path d="${G.o}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -233,6 +237,12 @@ function analyze(r, owned) {
   const miss = []; let subs = 0;
   const rows = r.ings.map(row => { const s = rowStatus(row, owned); if (s.st === 'miss') miss.push(row.id); if (s.st === 'sub') subs++; return s; });
   return { rows, miss, subs };
+}
+/* Facile : peu d'ingrédients, pas de blanc d'œuf ni de blender. */
+function isEasy(r) {
+  const main = r.ings.filter(i => !i.opt && !STAPLES.includes(i.id));
+  if (r.method === 'Blender' || main.some(i => ['blanc-oeuf', 'jaune-oeuf'].includes(i.id))) return false;
+  return r.method === 'Dans le verre' ? main.length <= 4 : main.length <= 3;
 }
 function origLabel(r) {
   if (r.origin === 'Original') return 'Original · ' + (r.by === 'other' ? (r.author || 'Autre barman') : 'Ma création');
@@ -264,11 +274,11 @@ function fmtQty(row) {
 const starsHTML = n => `<span class="stars" aria-label="${fmtRating(n)} sur 5"><span class="s-bg">★★★★★</span><span class="s-fg" style="width:${n / 5 * 100}%">★★★★★</span></span>`;
 const tfActive = ([a, b]) => a > 0 || b < 5;
 const tfText = ([a, b]) => a === 0 && b === 5 ? 'Tous' : a === b ? `= ${a}` : a === 0 ? `≤ ${b}` : b === 5 ? `≥ ${a}` : `${a} à ${b}`;
-const filterCount = () => ['method', 'glass', 'tag', 'origin'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
+const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
 
 let toastT, noteT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
-function noteHint(n) { const d = n && n.at && n.text ? ' · Modifié le ' + new Date(n.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''; return (n && n.pub ? "Public : partagé avec la communauté quand le site existera. Pour l'instant, tout reste sur ton appareil." : 'Privé : visible par toi seulement.') + d; }
+function noteHint(n) { const d = n && n.at && n.text ? ' · Modifié le ' + new Date(n.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''; return (n && n.pub ? "Public : partagé avec la communauté quand le site communautaire existera. Pour l'instant, tout reste sur cet appareil." : 'Privé : visible uniquement sur cet appareil.') + d; }
 function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function flushNote() { if (noteT) { clearTimeout(noteT); noteT = null; save(); } }
 function lockScroll() { document.body.classList.add('locked'); }
@@ -291,16 +301,17 @@ function renderCatalogue(m) {
   const tags = [...new Set(S.recipes.flatMap(r => r.tags))].sort((a, b) => a.localeCompare(b, 'fr'));
   const nf = filterCount();
   m.innerHTML = `
-  ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Ton bar, tes notes et tes listes sont pré-remplis pour tester. Modifie-les librement.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
-  ${deferredInstall && !S.installDismissed && !isStandalone() ? `<div class="note-banner install"><p><b>Installe Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
+  ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
+  ${deferredInstall && !S.installDismissed && !isStandalone() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
   <h1 class="view">Catalogue</h1>
   <div class="cat-layout">
     <aside class="filters${UI.filtersOpen ? '' : ' closed'}" aria-label="Filtres">
-      <div class="fhead"><h2>Filtres</h2><div class="row-btns"><button class="btn small ghost" data-act="clear-filters" id="f-clear"${nf ? '' : ' hidden'}>Effacer</button><button class="btn small ghost fclose" data-act="toggle-filters">Fermer</button></div></div>
+      <div class="fhead"><h2>Filtres</h2><div class="row-btns"><button class="btn small ghost" data-act="clear-filters" id="f-clear" style="visibility:${nf ? 'visible' : 'hidden'}">Effacer</button><button class="btn small ghost fclose" data-act="toggle-filters">Fermer</button></div></div>
       <div class="tf"><h3 class="lbl">Profil de goût</h3>
-        <p class="hint">Chaque cocktail est noté de 0 à 5 sur chaque goût. Règle l'intervalle voulu : par exemple Force de 0 à 2 et Astringent de 4 à 5.</p>
+        <p class="hint">Chaque cocktail est noté de 0 à 5 sur chaque goût. Il suffit de régler l'intervalle voulu, par exemple Force de 0 à 2 et Astringent de 4 à 5.</p>
         ${TASTE.map(([k, l]) => { const [a, b] = UI.f.tf[k]; return `<div class="tf-row${tfActive([a, b]) ? ' active' : ''}" data-k="${k}"><span>${l}</span><div class="dual" style="--a:${a};--b:${b}"><span class="fill"></span><input type="range" class="dr" data-k="${k}" data-e="0" min="0" max="5" step="1" value="${a}" aria-label="${l} minimum"><input type="range" class="dr" data-k="${k}" data-e="1" min="0" max="5" step="1" value="${b}" aria-label="${l} maximum"></div><span class="tv">${tfText([a, b])}</span></div>`; }).join('')}
       </div>
+      <label class="field" for="cf-level"><span>Niveau</span><select id="cf-level">${opts([['', 'Tous'], ['easy', 'Facile : peu d’ingrédients, sans technique']], UI.f.level)}</select></label>
       <label class="field" for="cf-origin"><span>Origine</span><select id="cf-origin">${opts(ORIGIN_F, UI.f.origin)}</select></label>
       <label class="field" for="cf-method"><span>Méthode</span><select id="cf-method">${opts([['', 'Toutes'], ...METHODS.map(x => [x, x])], UI.f.method)}</select></label>
       <label class="field" for="cf-glass"><span>Verre</span><select id="cf-glass">${opts([['', 'Tous'], ...GLASSES.map(x => [x, x])], UI.f.glass)}</select></label>
@@ -320,7 +331,7 @@ function renderCatalogue(m) {
 }
 function refreshFilterBadge() {
   const nf = filterCount(), b = $('#nf-badge'), c = $('#f-clear');
-  if (b) b.textContent = nf ? ` · ${nf}` : ''; if (c) c.hidden = !nf;
+  if (b) b.textContent = nf ? ` · ${nf}` : ''; if (c) c.style.visibility = nf ? 'visible' : 'hidden';
 }
 function renderResults() {
   const el = $('#results'); if (!el) return;
@@ -335,7 +346,8 @@ function renderResults() {
     if (F.origin === 'iba' && !r.iba) return false;
     if (F.origin === 'mine' && !(r.origin === 'Original' && r.by !== 'other')) return false;
     if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
-    for (const [k] of TASTE) { const v = r.flavor[k] || 0, [lo, hi] = F.tf[k]; if (v < lo || v > hi) return false; }
+    if (F.level === 'easy' && !isEasy(r)) return false;
+    for (const [k] of TASTE) { if (!tfActive(F.tf[k])) continue; const v = r.flavor[k], [lo, hi] = F.tf[k]; if (v == null || v < lo || v > hi) return false; }
     if (words.length) { const hay = norm([r.name, r.author, garnLabel(r), origLabel(r), r.method, r.glass, ...r.tags, ...r.ings.map(i => ingName(i.id)), S.notes[r.id] ? S.notes[r.id].text : ''].join(' ')); if (!words.every(w => hay.includes(w))) return false; }
     return true;
   });
@@ -347,7 +359,7 @@ function renderResults() {
   el.innerHTML = list.length ? list.map(({ r, a }) => {
     const [cls, txt] = statusPill(a), rt = S.ratings[r.id] || 0;
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
-      <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
+      <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span>${isEasy(r) ? '<span class="easy">Facile</span>' : ''}</span>
       <span class="cb"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
       <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
@@ -420,7 +432,7 @@ function renderBarList() {
     } else body = items.map(id => ownRow(id, own)).join('');
     return accHTML('f:' + fid, fid, items, own, body);
   }).join('');
-  el.innerHTML = html || `<p class="muted">Aucun ingrédient trouvé. Tu peux l'ajouter avec « Ajouter un ingrédient ».</p>`;
+  el.innerHTML = html || `<p class="muted">Aucun ingrédient trouvé. Il peut être créé avec « Ajouter un ingrédient ».</p>`;
 }
 function updateAccCounts(input) {
   let d = input.closest('details.acc');
@@ -436,40 +448,158 @@ function lrowHTML(r, own) {
   const a = analyze(r, own), rt = S.ratings[r.id] || 0, nt = S.notes[r.id] && String(S.notes[r.id].text || '').trim();
   return `<button class="lrow" data-act="open" data-id="${esc(r.id)}"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><span class="lname">${esc(r.name)}<small>${esc(r.method)} · ${statusPill(a)[1]}</small>${nt ? `<span class="lnote">${esc(nt)}</span>` : ''}</span>${rt ? starsHTML(rt) : '<span></span>'}</button>`;
 }
-const collItems = c => (c.ids ? c.ids.map(id => S.recipes.find(r => r.id === id)) : S.recipes.filter(c.filter).sort((a, b) => a.name.localeCompare(b.name, 'fr'))).filter(Boolean);
 function renderLists(m) {
   const own = ownedSet();
   const tabs = `<div class="seg tabs" role="tablist" aria-label="Listes">${[['mine', 'Mes listes'], ['coll', 'Collections']].map(([v, l]) => `<button role="tab" data-act="list-tab" data-v="${v}" class="${UI.listTab === v ? 'on' : ''}" aria-selected="${UI.listTab === v}">${l}</button>`).join('')}</div>`;
-  if (UI.listTab === 'coll') {
-    m.innerHTML = `<h1 class="view">Listes</h1>${tabs}
-    <p class="pro-note">Ces collections sont proposées par Zeste. Bientôt, des bars et des créateurs de contenu pourront publier les leurs ici.</p>
-    <div class="coll-grid">${COLLECTIONS.map(c => { const it = collItems(c); return `<button class="coll" data-act="open-coll" data-id="${esc(c.id)}"><span class="mosaic">${it.slice(0, 4).map(r => `<span style="--c:${okColor(r.color)}">${visual(r)}</span>`).join('')}</span><span class="coll-b"><span class="curator">${esc(c.curator)}</span><strong>${esc(c.name)}</strong><p>${esc(c.desc)}</p><span class="coll-meta">${it.length} ${plural(it.length, 'recette')}</span></span></button>`; }).join('')}</div>`;
-    return;
-  }
+  if (UI.listTab === 'coll') { m.innerHTML = `<h1 class="view">Listes</h1>${tabs}${renderCollTab()}`; return; }
   const rated = S.recipes.filter(r => S.ratings[r.id]).sort((a, b) => S.ratings[b.id] - S.ratings[a.id] || a.name.localeCompare(b.name, 'fr'));
   m.innerHTML = `<h1 class="view">Listes</h1>${tabs}
   <div class="lists-grid">
   ${S.lists.map(l => {
     const items = l.items.map(id => S.recipes.find(r => r.id === id)).filter(Boolean), del = UI.confirm === 'list:' + l.id;
     return `<section class="sec"><div class="shead"><h2>${esc(l.name)}</h2><span class="count">${items.length}</span>${l.fixed ? '' : `<button class="btn small ghost danger" data-act="del-list" data-list="${esc(l.id)}">${del ? 'Confirmer la suppression' : 'Supprimer'}</button>`}</div>
-    ${items.length ? `<div class="lrows">${items.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Vide pour l'instant. Ajoute des recettes depuis leur fiche.</p>`}</section>`;
+    ${items.length ? `<div class="lrows">${items.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Liste vide. Les recettes s'ajoutent depuis leur fiche.</p>`}</section>`;
   }).join('')}
   <section class="sec"><div class="shead"><h2>Mieux notés</h2><span class="count">${rated.length}</span></div>
-  ${rated.length ? `<div class="lrows">${rated.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Note une recette depuis sa fiche pour la voir ici.</p>`}</section>
+  ${rated.length ? `<div class="lrows">${rated.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Les recettes notées apparaissent ici.</p>`}</section>
   <section class="sec"><h2>Nouvelle liste</h2><div class="inline-form"><input id="nl-name" type="text" placeholder="ex. Soirée ciné, Hiver, Pour les potes"><button class="btn primary small" data-act="add-list">Créer</button></div></section>
   </div>`;
 }
+/* collections : intégrées (data.js) et créées sur l'appareil */
+const allColls = () => [...COLLECTIONS, ...(S.collections || [])];
+const findColl = cid => allColls().find(c => c.id === cid);
+const byRecName = (a, b) => a.name.localeCompare(b.name, 'fr');
+function collBlocks(c) {
+  if (c.blocks && c.blocks.length) return c.blocks;
+  const ids = c.ids || S.recipes.filter(c.filter).sort(byRecName).map(r => r.id);
+  return [{ type: 'recipes', title: '', ids, cols: 3 }];
+}
+function collRecipes(c) {
+  const seen = new Set(), out = [];
+  collBlocks(c).forEach(b => { if (b.type === 'recipes') (b.ids || []).forEach(id => { const r = S.recipes.find(x => x.id === id); if (r && !seen.has(id)) { seen.add(id); out.push(r); } }); });
+  return out;
+}
+const paras = t => String(t || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
+function collCard(c) {
+  const it = collRecipes(c);
+  return `<button class="coll" data-act="open-coll" data-id="${esc(c.id)}"><span class="mosaic">${it.slice(0, 4).map(r => `<span style="--c:${okColor(r.color)}">${visual(r)}</span>`).join('')}</span><span class="coll-b"><span class="curator">${esc(c.curator || '')}</span><strong>${esc(c.name)}</strong><p>${esc(c.desc || '')}</p><span class="coll-meta">${it.length} ${plural(it.length, 'recette')}</span></span></button>`;
+}
+function renderCollTab() {
+  const groups = [...COLL_GROUPS];
+  allColls().forEach(c => { const g = c.group || 'Mes collections'; if (!groups.includes(g)) groups.push(g); });
+  return `<div class="ctl-row"><p class="pro-note grow">Collections proposées par Zeste. Bientôt, des bars et des créateurs de contenu pourront publier les leurs ici.</p><button class="btn primary desk-only" data-act="coll-new">Créer une collection</button></div>
+  <div class="coll-groups">${groups.map(g => { const cs = allColls().filter(c => (c.group || 'Mes collections') === g); return cs.length ? `<section class="coll-group"><div class="shead"><h2>${esc(g)}</h2><span class="count">${cs.length}</span></div><div class="coll-grid">${cs.map(collCard).join('')}</div></section>` : ''; }).join('')}</div>`;
+}
+function rcardHTML(r, own) {
+  const a = analyze(r, own), [cls, txt] = statusPill(a);
+  const mi = r.ings.map((row, i) => { const st = a.rows[i].st; return `<span class="mi ${st}"><i class="dot ${st === 'ok' ? '' : st}"></i><span>${esc(ingName(row.id))}${st === 'sub' ? ' → ' + esc(ingName(a.rows[i].by)) : ''}</span></span>`; }).join('');
+  return `<button class="rcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span>${isEasy(r) ? '<span class="easy">Facile</span>' : ''}</span><span class="rcard-b"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span><span class="mini-ings">${mi}</span></span></button>`;
+}
 function openCollection(cid) {
-  const c = COLLECTIONS.find(x => x.id === cid); if (!c) return closeSheet();
-  const it = collItems(c), own = ownedSet(), saved = S.lists.find(l => l.from === cid), sh = $('#sheet');
+  const c = findColl(cid); if (!c) return closeSheet();
+  const own = ownedSet(), recs = collRecipes(c), saved = S.lists.find(l => l.from === cid), sh = $('#sheet'), mine = !COLLECTIONS.includes(c);
+  const an = recs.map(r => analyze(r, own)), nOk = an.filter(x => !x.miss.length).length, nOne = an.filter(x => x.miss.length === 1).length;
+  const need = new Map();
+  recs.forEach((r, k) => r.ings.forEach((row, i) => {
+    if (row.opt || STAPLES.includes(row.id)) return;
+    const st = an[k].rows[i].st, e = need.get(row.id) || { st: 'ok', recs: [] };
+    if (st === 'miss') e.st = 'miss'; else if (st === 'sub' && e.st !== 'miss') e.st = 'sub';
+    e.recs.push(r.name); need.set(row.id, e);
+  }));
+  const list = st => [...need].filter(([, e]) => e.st === st).sort((x, y) => y[1].recs.length - x[1].recs.length || ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
+  const shopUl = (arr, cls) => `<ul>${arr.map(([id, e]) => `<li><i class="dot ${cls}"></i><span>${esc(ingName(id))}<small>${e.recs.length} ${plural(e.recs.length, 'recette')} : ${esc(e.recs.slice(0, 3).join(', '))}${e.recs.length > 3 ? '…' : ''}</small></span></li>`).join('')}</ul>`;
+  const miss = list('miss'), sub = list('sub'), ok = list('ok');
   sheetState = { type: 'coll', id: cid };
+  const blocks = collBlocks(c).map(b => {
+    if (b.type === 'text') return `<section class="blk-text">${b.title ? `<h2>${esc(b.title)}</h2>` : ''}${paras(b.text)}</section>`;
+    if (b.type === 'tip') return `<aside class="blk-tip"><h3 class="lbl">Astuce</h3>${paras(b.text)}</aside>`;
+    const rs = (b.ids || []).map(id => S.recipes.find(r => r.id === id)).filter(Boolean);
+    return `<section class="sec">${b.title ? `<h2>${esc(b.title)}</h2>` : ''}<div class="rgrid c${b.cols || 3}">${rs.map(r => rcardHTML(r, own)).join('')}</div></section>`;
+  }).join('');
+  const del = UI.confirm === 'cdel:' + cid;
   sh.innerHTML = `
-  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="close">‹ Retour</button><span class="grow"></span><button class="btn small${saved ? '' : ' primary'}" data-act="save-coll" data-id="${esc(cid)}">${saved ? 'Mettre à jour ma copie' : 'Enregistrer dans mes listes'}</button></div></div>
-  <div class="sheet-body"><div class="inner detail">
-    <header class="dhead"><p class="eyebrow"><span class="curator">${esc(c.curator)}</span></p><h1>${esc(c.name)}</h1><p>${esc(c.desc)}</p><p class="coll-meta">${it.length} ${plural(it.length, 'recette')} · ${it.filter(r => !analyze(r, own).miss.length).length} réalisables avec ton bar</p></header>
-    <div class="lrows">${it.map(r => lrowHTML(r, own)).join('')}</div>
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="close">‹ Retour</button><span class="grow"></span>${mine ? `<button class="btn small desk-only" data-act="coll-edit" data-id="${esc(cid)}">Modifier</button><button class="btn small ghost danger" data-act="coll-del" data-id="${esc(cid)}">${del ? 'Confirmer' : 'Supprimer'}</button>` : ''}<button class="btn small${saved ? '' : ' primary'}" data-act="save-coll" data-id="${esc(cid)}">${saved ? 'Mettre à jour la copie' : 'Enregistrer dans mes listes'}</button></div></div>
+  <div class="sheet-body"><div class="coll-page">
+    <header class="coll-hero"><span class="curator">${esc(c.curator || '')}</span><h1>${esc(c.name)}</h1>${c.desc ? `<p class="lead">${esc(c.desc)}</p>` : ''}
+      <div class="coll-sum"><span><b>${recs.length}</b> ${plural(recs.length, 'recette')}</span><span><b>${nOk}</b> ${plural(nOk, 'réalisable')} avec le bar</span><span><b>${nOne}</b> à 1 ingrédient près</span><span><b>${miss.length}</b> ${plural(miss.length, 'ingrédient')} ${plural(miss.length, 'manquant')}</span></div></header>
+    <div class="coll-body">
+      <div class="blocks">${blocks}</div>
+      <aside class="coll-side panel shop"><h2>Ingrédients</h2><p class="hint">Tout ce qu'il faut pour cette collection, du plus utile au moins utile.</p>
+        ${miss.length ? `<h3 class="lbl">Manquants (${miss.length})</h3>${shopUl(miss, 'miss')}` : '<p class="avail ok">Rien ne manque : tout est dans le bar.</p>'}
+        ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${shopUl(sub, 'sub')}` : ''}
+        ${ok.length ? `<details><summary class="lbl" style="cursor:pointer">Dans le bar (${ok.length})</summary>${shopUl(ok, '')}</details>` : ''}
+      </aside>
+    </div>
   </div></div>`;
   showSheet(); sh.scrollTop = 0;
+}
+
+/* ---------- éditeur de collection (sur ordinateur) ---------- */
+function openCollEditor(cid) {
+  const src = cid && (S.collections || []).find(c => c.id === cid);
+  const draft = src ? clone(src) : { id: 'c-' + Date.now().toString(36), name: '', curator: 'Moi', group: 'Mes collections', desc: '', blocks: [{ type: 'recipes', title: '', ids: [], cols: 3 }] };
+  sheetState = { type: 'colled', id: cid || null, draft };
+  renderCollEditor(true);
+}
+function renderCollEditor(top) {
+  const d = sheetState.draft, sh = $('#sheet'), st = sh.scrollTop;
+  const groups = [...new Set([...COLL_GROUPS, 'Mes collections', ...allColls().map(c => c.group).filter(Boolean)])];
+  const tools = i => `<span class="row-btns"><button type="button" class="btn small ghost" data-act="ed-up" data-bk="${i}" aria-label="Monter le bloc"${i ? '' : ' disabled'}>↑</button><button type="button" class="btn small ghost" data-act="ed-down" data-bk="${i}" aria-label="Descendre le bloc"${i < d.blocks.length - 1 ? '' : ' disabled'}>↓</button><button type="button" class="btn small ghost danger" data-act="ed-del" data-bk="${i}">Retirer</button></span>`;
+  const blk = (b, i) => {
+    if (b.type === 'text') return `<div class="ed-blk"><div class="ed-blk-h"><span class="lbl">Bloc de texte</span>${tools(i)}</div>
+      <label class="field" for="ed-t${i}"><span>Titre</span><input type="text" id="ed-t${i}" data-bk="${i}" data-f="title" value="${esc(b.title)}" placeholder="ex. Un peu d'histoire"></label>
+      <label class="field" for="ed-x${i}"><span>Texte (une ligne vide sépare les paragraphes)</span><textarea id="ed-x${i}" data-bk="${i}" data-f="text" rows="5">${esc(b.text)}</textarea></label></div>`;
+    if (b.type === 'tip') return `<div class="ed-blk"><div class="ed-blk-h"><span class="lbl">Astuce</span>${tools(i)}</div>
+      <label class="field" for="ed-x${i}"><span>Texte de l'astuce</span><textarea id="ed-x${i}" data-bk="${i}" data-f="text" rows="3">${esc(b.text)}</textarea></label></div>`;
+    return `<div class="ed-blk"><div class="ed-blk-h"><span class="lbl">Bloc de recettes</span>${tools(i)}</div>
+      <label class="field" for="ed-t${i}"><span>Titre (facultatif)</span><input type="text" id="ed-t${i}" data-bk="${i}" data-f="title" value="${esc(b.title)}" placeholder="ex. Les incontournables"></label>
+      <div class="field"><span>Recettes par ligne sur grand écran</span><div class="seg mini" role="group" aria-label="Recettes par ligne" style="align-self:flex-start">${[2, 3, 4].map(n => `<button type="button" data-act="ed-cols" data-bk="${i}" data-v="${n}" class="${(b.cols || 3) === n ? 'on' : ''}" aria-pressed="${(b.cols || 3) === n}">${n}</button>`).join('')}</div></div>
+      <div class="ed-chips">${(b.ids || []).map((id, k) => `<span class="ed-chip">${esc((S.recipes.find(r => r.id === id) || { name: id }).name)}<button type="button" data-act="ed-rm" data-bk="${i}" data-k="${k}" aria-label="Retirer">×</button></span>`).join('') || '<span class="hint">Aucune recette pour l\'instant.</span>'}</div>
+      <div class="ed-add"><input type="text" id="ed-a${i}" class="ed-add-i" data-bk="${i}" list="dl-recs" placeholder="Nom d'une recette" autocomplete="off"><button type="button" class="btn small" data-act="ed-add" data-bk="${i}">Ajouter</button></div></div>`;
+  };
+  sh.innerHTML = `
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="${sheetState.id ? 'ed-cancel' : 'close'}">Annuler</button><span class="grow sheet-title">${sheetState.id ? 'Modifier la collection' : 'Nouvelle collection'}</span><button class="btn primary small" data-act="ed-save">Enregistrer</button></div></div>
+  <div class="sheet-body"><div class="inner wide form">
+    <datalist id="dl-recs">${[...S.recipes].sort(byRecName).map(r => `<option value="${esc(r.name)}"></option>`).join('')}</datalist>
+    <datalist id="dl-groups">${groups.map(g => `<option value="${esc(g)}"></option>`).join('')}</datalist>
+    <div class="cols col-a">
+      <section class="sec"><h2>La collection</h2>
+        <label class="field" for="ed-name"><span>Nom</span><input type="text" id="ed-name" data-f="name" value="${esc(d.name)}" placeholder="ex. Cocktails d'hiver"></label>
+        <label class="field" for="ed-cur"><span>Proposée par</span><input type="text" id="ed-cur" data-f="curator" value="${esc(d.curator)}" placeholder="ex. Bar Le Zinc"></label>
+        <label class="field" for="ed-grp"><span>Catégorie</span><input type="text" id="ed-grp" data-f="group" list="dl-groups" value="${esc(d.group)}"></label>
+        <label class="field" for="ed-desc"><span>Présentation courte</span><textarea id="ed-desc" data-f="desc" rows="3">${esc(d.desc)}</textarea></label>
+      </section>
+      <section class="panel"><h2>Publier pour tous</h2><p class="hint">La collection est enregistrée sur cet appareil. Pour la rendre visible par tous les utilisateurs, son code doit être ajouté au site.</p><div><button type="button" class="btn small" data-act="ed-export">Copier le code de la collection</button></div></section>
+      <p class="err" id="ed-err" hidden></p>
+    </div>
+    <div class="cols col-b">
+      <section class="sec"><h2>Contenu</h2><p class="hint">La page se lit de haut en bas, bloc par bloc. Elle s'adapte seule au téléphone : les recettes passent alors sur une colonne.</p>
+        <div class="ed-blocks">${d.blocks.map(blk).join('') || '<p class="hint">Aucun bloc.</p>'}</div>
+        <div class="ed-tools"><button type="button" class="btn small" data-act="ed-new" data-v="recipes">+ Bloc de recettes</button><button type="button" class="btn small" data-act="ed-new" data-v="text">+ Bloc de texte</button><button type="button" class="btn small" data-act="ed-new" data-v="tip">+ Astuce</button></div>
+      </section>
+    </div>
+  </div></div>`;
+  showSheet(); sh.scrollTop = top ? 0 : st;
+}
+function edAddRecipe(i) {
+  const inp = $('#ed-a' + i); if (!inp) return;
+  const k = norm(inp.value), r = S.recipes.find(x => norm(x.name) === k);
+  if (!r) { toast('Recette introuvable : choisir un nom dans la liste.'); return; }
+  const b = sheetState.draft.blocks[i]; b.ids = b.ids || [];
+  if (!b.ids.includes(r.id)) b.ids.push(r.id);
+  renderCollEditor(); const n = $('#ed-a' + i); if (n) n.focus();
+}
+function saveCollEditor() {
+  const d = sheetState.draft, err = $('#ed-err');
+  const errs = [];
+  if (!d.name.trim()) errs.push('Le nom de la collection est requis.');
+  if (!d.blocks.some(b => b.type === 'recipes' && (b.ids || []).length)) errs.push('Au moins une recette est requise.');
+  if (errs.length) { err.textContent = errs.join('\n'); err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  d.name = d.name.trim(); d.group = (d.group || '').trim() || 'Mes collections';
+  S.collections = S.collections || [];
+  const k = S.collections.findIndex(c => c.id === d.id);
+  if (k >= 0) S.collections[k] = d; else S.collections.push(d);
+  save(); toast(k >= 0 ? 'Collection mise à jour' : 'Collection créée'); openCollection(d.id);
 }
 
 /* ---------- données ---------- */
@@ -477,25 +607,25 @@ function renderData(m) {
   m.innerHTML = `<h1 class="view">Données</h1>
   <div class="data-grid">
   <section class="panel"><h2>Sur cet appareil</h2>
-    <p>Tes recettes, ton bar, tes notes et tes listes sont enregistrés sur cet appareil, dans ce navigateur. Rien n'est envoyé en ligne.</p>
+    <p>Les recettes, le bar, les notes et les listes sont enregistrés sur cet appareil, dans ce navigateur. Rien n'est envoyé en ligne.</p>
     <p class="hint" id="st-size">Calcul de l'espace utilisé…</p>
-    ${storageOK ? '' : `<p class="warn">Ce navigateur bloque l'enregistrement : tes modifications seront perdues à la fermeture. Télécharge une sauvegarde ci-dessous.</p>`}
+    ${storageOK ? '' : `<p class="warn">Ce navigateur bloque l'enregistrement : les modifications seront perdues à la fermeture. Penser à télécharger une sauvegarde ci-dessous.</p>`}
   </section>
   <section class="panel"><h2>Appli</h2>${installBlock()}<p class="hint">Version ${APP_VERSION} · ${S.recipes.length} recettes, ${Object.keys(S.ings).length} ingrédients</p></section>
   <section class="panel"><h2>Sauvegarder</h2>
-    <p class="hint">Télécharge un fichier de sauvegarde pour ne rien perdre, ou pour passer sur un autre appareil. Les photos sont incluses.</p>
+    <p class="hint">Un fichier de sauvegarde permet de ne rien perdre, ou de passer sur un autre appareil. Les photos sont incluses.</p>
     <div class="row-btns"><button class="btn primary small" data-act="dl-exp">Télécharger une sauvegarde</button><button class="btn small" data-act="copy-exp">Copier en texte</button></div>
   </section>
   <section class="panel"><h2>Restaurer</h2>
-    <p class="hint">Remplace toutes tes données actuelles par une sauvegarde : un fichier téléchargé ici, ou le texte copié depuis l'ancienne version de Zeste.</p>
+    <p class="hint">Remplace toutes les données actuelles par une sauvegarde : un fichier téléchargé ici, ou le texte copié depuis l'ancienne version de Zeste.</p>
     <div><button type="button" class="btn small" data-act="imp-pick">Choisir un fichier de sauvegarde</button><input type="file" id="imp-file" class="file-hidden" tabindex="-1" aria-hidden="true" accept=".json,application/json,text/plain"></div>
     <p class="hint" id="imp-name">${UI.impName ? esc('Fichier prêt : ' + UI.impName) : ''}</p>
-    <label class="field" for="imp-text"><span>Ou colle le texte d'une sauvegarde</span><textarea id="imp-text" rows="4"></textarea></label>
+    <label class="field" for="imp-text"><span>Ou coller le texte d'une sauvegarde</span><textarea id="imp-text" rows="4"></textarea></label>
     <p class="err" id="imp-err" hidden></p>
-    <div class="row-btns"><button class="btn small danger" data-act="import">${UI.confirm === 'import' ? 'Confirmer : remplacer mes données' : 'Restaurer'}</button></div>
+    <div class="row-btns"><button class="btn small danger" data-act="import">${UI.confirm === 'import' ? 'Confirmer : remplacer les données' : 'Restaurer'}</button></div>
   </section>
   <section class="panel"><h2>Repartir de l'exemple</h2>
-    <p class="hint">Efface tes recettes, ton bar et tes listes, et recharge le catalogue de départ.</p>
+    <p class="hint">Efface les recettes, le bar et les listes, et recharge le catalogue de départ.</p>
     <div class="row-btns"><button class="btn small danger" data-act="reset">${UI.confirm === 'reset' ? 'Confirmer la réinitialisation' : 'Réinitialiser'}</button></div>
   </section>
   </div>`;
@@ -511,7 +641,7 @@ function goBack() { if (sheetState && sheetState.back) openCollection(sheetState
 
 function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
-  return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Ta note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Note-le'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
+  return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Pas encore noté'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
 }
 function openDetail(id, keep, back) {
   const sh = $('#sheet'), st = keep ? sh.scrollTop : 0, r = S.recipes.find(x => x.id === id);
@@ -521,35 +651,37 @@ function openDetail(id, keep, back) {
   const a = analyze(r, ownedSet()), abv = estAbv(r), rt = S.ratings[r.id] || 0, del = UI.confirm === 'del:' + r.id, nt = S.notes[r.id] || { text: '', pub: false }, pv = nt.pub ? '1' : '0';
   const top = !!String(nt.text || '').trim(), gl = garnLabel(r);
   const avis = cls => `<section class="sec mynote${top ? ' top' : ''} ${cls}"><div class="shead"><h2>Mon avis</h2><div class="seg mini" role="group" aria-label="Visibilité de l'avis">${[['0', 'Privé'], ['1', 'Public']].map(([v, l]) => `<button data-act="note-vis" data-id="${esc(r.id)}" data-v="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${l}</button>`).join('')}</div></div>
-      <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ton ressenti, ce que tu changerais, avec quoi le servir…">${esc(nt.text)}</textarea>
+      <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ressenti, ajustements, accords…">${esc(nt.text)}</textarea>
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
-  const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec ton bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec ton bar.') : `Il te manque : ${a.miss.map(ingName).join(', ')}.`;
+  const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec le bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec le bar.') : `Manquant : ${a.miss.map(ingName).join(', ')}.`;
   const rowsHTML = r.ings.map((row, i) => {
     const s = a.rows[i], info = [], ing = S.ings[row.id];
-    if (s.st === 'sub') info.push(`Tu peux utiliser : ${esc(ingName(s.by))}`);
+    if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(ingName).join(', '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans ton bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row))}</span><span class="nm">${esc(ingName(row.id))}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row))}</span><span class="nm">${esc(ingName(row.id))}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
   <div class="sheet-body"><article class="inner wide detail" style="--c:${okColor(r.color)}">
-    <div class="cols col-a">
-      <div class="dhero o1">${visual(r)}</div>
-      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
-      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div></dl>
-      <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
-      <section class="sec o6"><h2>Profil de goût</h2><div class="taste">${TASTE.map(([k, l]) => `<div class="taste-row"><span>${l}</span><span class="pips">${[1, 2, 3, 4, 5].map(n => `<i class="${n <= (r.flavor[k] || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="tv">${r.flavor[k] || 0}</span></div>`).join('')}</div></section>
+    <div class="d-left cols dz">
+      <div class="d-hero dhero o1">${visual(r)}</div>
+      <section class="sec o6"><h2>Profil de goût</h2>${TASTE.every(([k]) => r.flavor[k] == null) ? '<p class="hint">Profil de goût non renseigné.</p>' : `<div class="taste">${TASTE.map(([k, l]) => { const v = r.flavor[k]; return `<div class="taste-row"><span>${l}</span><span class="pips${v == null ? ' unk' : ''}">${[1, 2, 3, 4, 5].map(n => `<i class="${v != null && n <= v ? 'on' : ''}"></i>`).join('')}</span><span class="tv">${v == null ? '—' : v}</span></div>`; }).join('')}</div>`}</section>
+      ${top ? '' : avis('o8')}
       ${r.tags.length ? `<section class="sec o9"><h2>Mood</h2><div class="chips">${r.tags.map(t => `<button class="chip" data-act="by-tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div></section>` : ''}
     </div>
-    <div class="cols col-b">
+    <div class="d-right cols dz">
+      <div class="d-head dz">
+      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
+      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div></dl>
+      <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
+    </div>
       <section class="sec ings-sec o5"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
         <p class="avail ${a.miss.length ? 'miss' : 'ok'}">${esc(availTxt)}</p>
         <ul class="ings">${rowsHTML}</ul>
-        <p class="legend"><span><i class="dot"></i>Dans ton bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
+        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
-      ${top ? '' : avis('o8')}
       ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><p>${esc(r.note)}</p></section>` : ''}
     </div>
   </article></div>`;
@@ -566,7 +698,7 @@ function rowHTML(row) {
       <select class="f-unit" id="ri-u${n}" aria-label="Unité">${opts(UNITS, row ? row.unit : 'ml')}</select>
       <button type="button" class="icon-btn" data-act="row-del" aria-label="Retirer cet ingrédient">×</button>
     </div>
-    <div class="frow-new" hidden><span class="hint-new">Nouvel ingrédient : précise-le</span>
+    <div class="frow-new" hidden><span class="hint-new">Nouvel ingrédient : à préciser</span>
       <input type="text" class="f-cat" id="ri-c${n}" list="dl-cats" placeholder="Groupe de substitution" aria-label="Groupe de substitution">
       <select class="f-fam" id="ri-f${n}" aria-label="Rangement dans le bar">${opts(PLACES, 'Mes ingrédients|')}</select>
       <input type="number" class="f-abv" id="ri-a${n}" min="0" max="100" step="any" placeholder="% vol." aria-label="Degré d'alcool">
@@ -581,7 +713,7 @@ function checkNew(fr) { const v = fr.querySelector('.f-ing').value.trim(); fr.qu
 const CUT_KEYS = GARNISH_CUTS.map(c => c[0]);
 function openForm(id) {
   const src = id ? S.recipes.find(r => r.id === id) : null;
-  const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#C9A227', photo: '', flavor: { su: 2, ac: 2, am: 0, as: 0, fo: 2 }, tags: [], ings: [], steps: [], note: '' };
+  const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
   sheetState = { type: 'form', id: id || null, photo: okPhoto(r.photo) }; rowN = 0; UI.confirm = null;
   const rows = r.ings.length ? r.ings : [null, null, null];
   const cats = [...new Set(Object.values(S.ings).map(i => i.cat))].sort((a, b) => a.localeCompare(b, 'fr'));
@@ -603,7 +735,7 @@ function openForm(id) {
           <button type="button" class="btn small" data-act="photo-pick">Choisir une photo</button><input type="file" id="rf-photo" accept="image/*" class="file-hidden" tabindex="-1" aria-hidden="true">
           <button type="button" class="btn small" data-act="photo-crop" id="photo-crop" hidden>Recadrer</button>
           <button type="button" class="btn small ghost danger" data-act="photo-del" id="photo-del" hidden>Retirer la photo</button>
-          <p class="hint">Ou glisse une image sur cette zone. Sans photo, l'illustration reprend la couleur, le verre, la garniture et le bord choisis.</p>
+          <p class="hint">Une image peut aussi être glissée sur cette zone. Sans photo, l'illustration reprend la couleur, le verre, la garniture et le bord choisis.</p>
         </div>
       </div>
       <div class="field"><span>Couleur</span>
@@ -639,11 +771,11 @@ function openForm(id) {
     </div>
     <div class="cols col-b">
     <section class="sec"><h2>Ingrédients</h2>
-      <p class="hint">Un nom inconnu crée un nouvel ingrédient. Coche « tout son groupe convient » si n'importe quelle référence équivalente marche, par exemple une autre liqueur d'orange. Pour un soda qui allonge le verre, choisis l'unité « à compléter ».</p>
+      <p class="hint">Un nom inconnu crée un nouvel ingrédient. La case « tout son groupe convient » accepte n'importe quelle référence équivalente, par exemple une autre liqueur d'orange. Pour un soda qui allonge le verre, utiliser l'unité « à compléter ».</p>
       <div id="frows" class="frows">${rows.map(rowHTML).join('')}</div>
       <div><button type="button" class="btn small" data-act="row-add">+ Ajouter un ingrédient</button></div>
     </section>
-    <section class="sec"><h2>Profil de goût</h2><p class="hint">De 0 à 5. Ces valeurs servent aux filtres du catalogue.</p><div class="sliders">${TASTE.map(([k, l]) => `<label class="slider" for="rf-${k}"><span>${l}</span><input type="range" id="rf-${k}" min="0" max="5" step="1" value="${r.flavor[k] || 0}"><output id="ro-${k}" for="rf-${k}">${r.flavor[k] || 0}</output></label>`).join('')}</div></section>
+    <section class="sec"><h2>Profil de goût</h2><p class="hint">De 0 à 5, pour les filtres du catalogue. Un goût difficile à évaluer peut rester « non renseigné ».</p><div class="sliders">${TASTE.map(([k, l]) => { const v = r.flavor[k], u = v == null; return `<div class="slider${u ? ' unk' : ''}" id="sl-${k}"><label for="rf-${k}">${l}</label><input type="range" id="rf-${k}" min="0" max="5" step="1" value="${u ? 0 : v}"><output id="ro-${k}" for="rf-${k}">${u ? '—' : v}</output><label class="unk-l" for="uk-${k}"><input type="checkbox" id="uk-${k}" class="uk" data-k="${k}"${u ? ' checked' : ''}> Non renseigné</label></div>`; }).join('')}</div></section>
     <section class="sec"><h2>Mood et tags</h2>
       <label class="field" for="rf-tags"><span>Tags, séparés par des virgules</span><input type="text" id="rf-tags" value="${esc(r.tags.join(', '))}" autocomplete="off"></label>
       <div class="chips">${tagsAll.map(t => `<button type="button" class="chip ${r.tags.includes(t) ? 'on' : ''}" data-act="tag-sugg" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -705,7 +837,7 @@ function openCrop(src) {
     CROP.img = img; CROP.zoom = 1; $('#crop-zoom').value = 1; $('#crop-img').src = src; $('#crop').hidden = false; lockScroll();
     requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
   };
-  img.onerror = () => toast('Impossible de lire cette image. Essaie un JPEG ou un PNG.');
+  img.onerror = () => toast('Image illisible. Formats conseillés : JPEG ou PNG.');
   img.src = src;
 }
 function drawCrop() {
@@ -722,7 +854,7 @@ function finishCrop() {
 }
 function readImageFile(f) {
   if (!f || !/^image\//.test(f.type)) { toast("Ce fichier n'est pas une image."); return; }
-  const rd = new FileReader(); rd.onload = () => openCrop(rd.result); rd.onerror = () => toast('Impossible de lire cette image. Essaie un JPEG ou un PNG.'); rd.readAsDataURL(f);
+  const rd = new FileReader(); rd.onload = () => openCrop(rd.result); rd.onerror = () => toast('Image illisible. Formats conseillés : JPEG ou PNG.'); rd.readAsDataURL(f);
 }
 (() => {
   const fr = document.getElementById('crop-frame');
@@ -748,7 +880,7 @@ const RATE = { el: null, hover: null };
 function rateVal(el, x) { const r = el.getBoundingClientRect(); const p = Math.min(Math.max(x - r.left, 0), r.width) / r.width; return Math.max(.5, Math.ceil(p * 10) / 2); }
 function paintRate(el, v) {
   el.querySelector('.r-fg').style.width = (v / 5 * 100) + '%';
-  const l = el.parentElement.querySelector('.rate-l'); if (l) l.textContent = v ? fmtRating(v) + '/5' : 'Note-le';
+  const l = el.parentElement.querySelector('.rate-l'); if (l) l.textContent = v ? fmtRating(v) + '/5' : 'Pas encore noté';
 }
 function commitRate(id, v) {
   if (v) S.ratings[id] = v; else delete S.ratings[id];
@@ -774,7 +906,7 @@ function makeId(name, taken) { const base = norm(name).replace(/[^a-z0-9]+/g, '-
 function parsePlace(v) { const [fam, sub] = String(v || 'Mes ingrédients|').split('|'); return { fam: FAM_IDS.includes(fam) ? fam : 'Mes ingrédients', sub: sub || '' }; }
 function saveForm() {
   const sh = $('#sheet'), g = x => sh.querySelector('#' + x), errs = [];
-  const name = g('rf-name').value.trim(); if (!name) errs.push('Donne un nom au cocktail.');
+  const name = g('rf-name').value.trim(); if (!name) errs.push('Le nom du cocktail est requis.');
   const newIngs = {}, taken = Object.assign({}, S.ings), rows = [], unknown = [];
   const resolve = n => { const id = findIng(n); if (id) return id; const k = norm(n); return newIngs[k] ? newIngs[k].id : null; };
   sh.querySelectorAll('.frow').forEach(frw => {
@@ -792,14 +924,14 @@ function saveForm() {
     const q = parseFloat(String(frw.querySelector('.f-qty').value).replace(',', '.')), unit = frw.querySelector('.f-unit').value;
     return { id, qty: unit === 'à compléter' ? 0 : (isFinite(q) && q > 0 ? q : 0), unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: [...new Set(alts)] };
   });
-  if (!ings.length) errs.push('Ajoute au moins un ingrédient.');
-  if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Indique une quantité pour chaque ingrédient, ou choisis l’unité « à compléter ».');
-  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ajoute-les d'abord comme ingrédient (ligne du dessus ou onglet Mon bar).`);
+  if (!ings.length) errs.push('Au moins un ingrédient est requis.');
+  if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
+  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent d'abord exister comme ingrédients (ligne du dessus ou onglet Mon bar).`);
   const e = g('rf-err');
   if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   Object.values(newIngs).forEach(({ id, data }) => S.ings[id] = data);
   const tags = [...new Set(g('rf-tags').value.split(',').map(s => s.trim()).filter(Boolean))];
-  const flavor = {}; TASTE.forEach(([k]) => flavor[k] = +g('rf-' + k).value);
+  const flavor = {}; TASTE.forEach(([k]) => flavor[k] = g('uk-' + k).checked ? null : +g('rf-' + k).value);
   const old = sheetState.id && S.recipes.find(r => r.id === sheetState.id);
   const orig = g('rf-origin').value === 'Classique' ? 'Classique' : 'Original', by = orig === 'Original' ? ((sh.querySelector('input[name=rf-by]:checked') || {}).value || 'me') : '';
   const rec = {
@@ -818,7 +950,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'pick') { closePick(); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
-  if (!['del', 'del-list', 'import', 'reset'].includes(a)) UI.confirm = null;
+  if (!['del', 'del-list', 'import', 'reset', 'coll-del'].includes(a)) UI.confirm = null;
   switch (a) {
     case 'view': UI.view = b.dataset.v; window.scrollTo(0, 0); render(); break;
     case 'new': openForm(null); break;
@@ -829,8 +961,8 @@ document.addEventListener('click', async e => {
     case 'edit': openForm(id); break;
     case 'avail': UI.avail = b.dataset.v; renderCatalogue($('#view')); break;
     case 'toggle-filters': UI.filtersOpen = !UI.filtersOpen; { const f = $('.filters'); if (f) f.classList.toggle('closed', !UI.filtersOpen); const t = $('.btn-filters'); if (t) t.setAttribute('aria-expanded', UI.filtersOpen); } break;
-    case 'clear-filters': UI.f = { method: '', glass: '', tag: '', origin: '', tf: TF_DEFAULT() }; renderCatalogue($('#view')); break;
-    case 'clear-all': UI.f = { method: '', glass: '', tag: '', origin: '', tf: TF_DEFAULT() }; UI.q = ''; UI.avail = 'all'; renderCatalogue($('#view')); break;
+    case 'clear-filters': UI.f = F_DEFAULT(); renderCatalogue($('#view')); break;
+    case 'clear-all': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; renderCatalogue($('#view')); break;
     case 'by-tag': UI.f.tag = b.dataset.v; UI.filtersOpen = true; UI.view = 'catalogue'; closeSheet(); break;
     case 'dismiss-example': S.example = false; save(); render(); break;
     case 'rate-clear': commitRate(id, 0); break;
@@ -865,11 +997,11 @@ document.addEventListener('click', async e => {
     case 'pick-gfruit': $('#rf-gfruit').value = b.dataset.v; pickIn(b.parentElement, b, '.chip'); updatePrev(); break;
     case 'form-save': saveForm(); break;
     case 'orig': $('#rf-origin').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); syncOrig(); break;
-    case 'own-add': if (!S.owned.includes(id)) S.owned.push(id); save(); renderBarTop(); renderBarList(); toast(`${ingName(id)} ajouté à ton bar`); break;
+    case 'own-add': if (!S.owned.includes(id)) S.owned.push(id); save(); renderBarTop(); renderBarList(); toast(`${ingName(id)} ajouté au bar`); break;
     case 'add-ing': {
       const n = $('#ni-name').value.trim(), err = $('#ni-err');
-      if (!n) { err.textContent = 'Donne un nom à l\'ingrédient.'; err.hidden = false; break; }
-      if (findIng(n)) { err.textContent = 'Cet ingrédient existe déjà : coche-le dans la liste.'; err.hidden = false; break; }
+      if (!n) { err.textContent = 'Le nom de l\'ingrédient est requis.'; err.hidden = false; break; }
+      if (findIng(n)) { err.textContent = 'Cet ingrédient existe déjà dans la liste.'; err.hidden = false; break; }
       const abv = parseFloat(String($('#ni-abv').value).replace(',', '.')), place = parsePlace($('#ni-place').value);
       const nid = makeId(n, S.ings); S.ings[nid] = Object.assign({ name: n, cat: $('#ni-cat').value.trim() || n, abv: isFinite(abv) ? Math.min(100, Math.max(0, abv)) : 0, custom: true }, place);
       S.owned.push(nid); UI.open.add('f:' + place.fam); if (place.sub) UI.open.add('s:' + place.fam + '|' + place.sub);
@@ -877,11 +1009,30 @@ document.addEventListener('click', async e => {
     }
     case 'list-tab': UI.listTab = b.dataset.v; renderLists($('#view')); break;
     case 'open-coll': openCollection(id); break;
+    case 'coll-new': openCollEditor(null); break;
+    case 'coll-edit': openCollEditor(id); break;
+    case 'coll-del':
+      if (UI.confirm === 'cdel:' + id) { S.collections = S.collections.filter(c => c.id !== id); UI.confirm = null; save(); closeSheet(); toast('Collection supprimée'); }
+      else { UI.confirm = 'cdel:' + id; openCollection(id); }
+      break;
+    case 'ed-cancel': openCollection(sheetState.id); break;
+    case 'ed-save': saveCollEditor(); break;
+    case 'ed-new': sheetState.draft.blocks.push(b.dataset.v === 'recipes' ? { type: 'recipes', title: '', ids: [], cols: 3 } : { type: b.dataset.v, title: '', text: '' }); renderCollEditor(); break;
+    case 'ed-del': sheetState.draft.blocks.splice(+b.dataset.bk, 1); renderCollEditor(); break;
+    case 'ed-up': case 'ed-down': { const bl = sheetState.draft.blocks, i = +b.dataset.bk, j = a === 'ed-up' ? i - 1 : i + 1; if (j < 0 || j >= bl.length) break; [bl[i], bl[j]] = [bl[j], bl[i]]; renderCollEditor(); break; }
+    case 'ed-cols': sheetState.draft.blocks[+b.dataset.bk].cols = +b.dataset.v; renderCollEditor(); break;
+    case 'ed-rm': sheetState.draft.blocks[+b.dataset.bk].ids.splice(+b.dataset.k, 1); renderCollEditor(); break;
+    case 'ed-add': edAddRecipe(+b.dataset.bk); break;
+    case 'ed-export': {
+      const txt = JSON.stringify(sheetState.draft, null, 2);
+      try { navigator.clipboard.writeText(txt).then(() => toast('Code de la collection copié'), () => toast('Copie refusée par le navigateur')); } catch (err) { toast('Copie refusée par le navigateur'); }
+      break;
+    }
     case 'save-coll': {
-      const c = COLLECTIONS.find(x => x.id === id); if (!c) break;
-      const items = collItems(c).map(r => r.id), ex = S.lists.find(l => l.from === id);
+      const c = findColl(id); if (!c) break;
+      const items = collRecipes(c).map(r => r.id), ex = S.lists.find(l => l.from === id);
       if (ex) ex.items = items; else S.lists.push({ id: 'l-' + Date.now().toString(36), name: c.name, fixed: false, from: id, items });
-      save(); toast(ex ? 'Ta copie est à jour' : `« ${c.name} » ajoutée à tes listes`); openCollection(id); break;
+      save(); toast(ex ? 'Copie mise à jour' : `« ${c.name} » ajoutée aux listes`); openCollection(id); break;
     }
     case 'add-list': {
       const n = $('#nl-name').value.trim(); if (!n) { $('#nl-name').focus(); break; }
@@ -910,10 +1061,10 @@ document.addEventListener('click', async e => {
     case 'apply-update': if (swReg && swReg.waiting) swReg.waiting.postMessage({ type: 'SKIP_WAITING' }); else location.reload(); break;
     case 'import': {
       const txt = ($('#imp-text').value.trim() || UI.impText || '').trim(), er = $('#imp-err');
-      if (!txt) { er.textContent = 'Choisis un fichier ou colle une sauvegarde d\'abord.'; er.hidden = false; UI.confirm = null; break; }
+      if (!txt) { er.textContent = 'Aucune sauvegarde : choisir un fichier ou coller un texte.'; er.hidden = false; UI.confirm = null; break; }
       let d; try { d = JSON.parse(txt); } catch (x) { er.textContent = 'Ce texte n\'est pas une sauvegarde lisible (JSON invalide).'; er.hidden = false; UI.confirm = null; break; }
       if (!validData(d)) { er.textContent = 'Format non reconnu : il faut une sauvegarde de Zeste.'; er.hidden = false; UI.confirm = null; break; }
-      if (UI.confirm !== 'import') { UI.confirm = 'import'; b.textContent = 'Confirmer : remplacer mes données'; break; }
+      if (UI.confirm !== 'import') { UI.confirm = 'import'; b.textContent = 'Confirmer : remplacer les données'; break; }
       S = upgrade(Object.assign({ unit: 'ml', ratings: {}, notes: {}, owned: [], lists: [{ id: 'fav', name: 'Favoris', fixed: true, items: [] }, { id: 'try', name: 'À essayer', fixed: true, items: [] }] }, d, { example: false }));
       UI.confirm = null; UI.impText = ''; UI.impName = ''; flushSave(); render(); toast(`${S.recipes.length} recettes restaurées`); break;
     }
@@ -926,6 +1077,7 @@ document.addEventListener('click', async e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'my-note') { autosize(t); const id = t.dataset.id, cur = S.notes[id] || { pub: false }; S.notes[id] = { text: t.value, pub: !!cur.pub, at: Date.now() }; if (!t.value.trim() && !cur.pub) delete S.notes[id]; clearTimeout(noteT); noteT = setTimeout(() => { noteT = null; save(); const h = $('#note-st'); if (h) h.textContent = noteHint(S.notes[id]); }, 500); return; }
+  if (t.dataset.f && sheetState && sheetState.type === 'colled') { const d = sheetState.draft; if (t.dataset.bk != null) d.blocks[+t.dataset.bk][t.dataset.f] = t.value; else d[t.dataset.f] = t.value; return; }
   if (t.id === 'crop-zoom') { zoomCrop(+t.value); return; }
   if (t.classList.contains('cr')) { paintHSL(); setColor(hslToHex(+$('#cc-h').value, +$('#cc-s').value, +$('#cc-l').value), false); return; }
   if (t.classList.contains('dr')) {
@@ -940,22 +1092,24 @@ document.addEventListener('input', e => {
   if (t.id === 'cf-q') { UI.q = t.value; renderResults(); return; }
   if (t.id === 'bar-q') { UI.barQ = t.value; renderBarList(); return; }
   if (t.classList.contains('f-ing')) { checkNew(t.closest('.frow')); return; }
-  if (t.id && t.id.startsWith('rf-') && t.type === 'range') { $('#ro-' + t.id.slice(3)).textContent = t.value; }
+  if (t.id && t.id.startsWith('rf-') && t.type === 'range') { const k = t.id.slice(3); $('#ro-' + k).textContent = t.value; const u = $('#uk-' + k); if (u && u.checked) { u.checked = false; $('#sl-' + k).classList.remove('unk'); } }
 });
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.name === 'rf-by') { syncOrig(); return; }
+  if (t.classList.contains('uk')) { const k = t.dataset.k; $('#sl-' + k).classList.toggle('unk', t.checked); $('#ro-' + k).textContent = t.checked ? '—' : $('#rf-' + k).value; return; }
   if (t.dataset.own) { const id = t.dataset.own; S.owned = t.checked ? [...new Set([...S.owned, id])] : S.owned.filter(x => x !== id); save(); renderBarTop(); updateAccCounts(t); return; }
   switch (t.id) {
     case 'cf-method': UI.f.method = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-glass': UI.f.glass = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-tag': UI.f.tag = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-origin': UI.f.origin = t.value; refreshFilterBadge(); renderResults(); break;
+    case 'cf-level': UI.f.level = t.value; refreshFilterBadge(); renderResults(); break;
     case 'cf-sort': UI.sort = t.value; renderResults(); break;
     case 'rf-photo': { const f = t.files && t.files[0]; if (f) readImageFile(f); t.value = ''; break; }
     case 'imp-file': {
       const f = t.files && t.files[0]; if (!f) break;
-      const rd = new FileReader(); rd.onload = () => { UI.impText = rd.result; UI.impName = f.name; const n = $('#imp-name'); if (n) n.textContent = 'Fichier prêt : ' + f.name; toast('Fichier chargé : touche Restaurer'); }; rd.readAsText(f); t.value = ''; break;
+      const rd = new FileReader(); rd.onload = () => { UI.impText = rd.result; UI.impName = f.name; const n = $('#imp-name'); if (n) n.textContent = 'Fichier prêt : ' + f.name; toast('Fichier chargé, prêt à restaurer'); }; rd.readAsText(f); t.value = ''; break;
     }
   }
 });
@@ -968,6 +1122,7 @@ document.addEventListener('keydown', e => {
     if (m != null) { e.preventDefault(); commitRate(rs.dataset.id, Math.min(5, Math.max(0, v + m))); setTimeout(() => { const n = $('.rate-stars'); if (n) n.focus(); }, 0); return; }
     if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') { e.preventDefault(); commitRate(rs.dataset.id, 0); return; }
   }
+  if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('ed-add-i')) { e.preventDefault(); edAddRecipe(+e.target.dataset.bk); return; }
   if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) goBack(); }
 });
 

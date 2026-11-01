@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -520,7 +520,21 @@ const RECIPES = [
     ['Remplir le verre de glaçons et verser la vodka et la liqueur de café.', 'Déposer la crème sur le dessus et remuer lentement.'], 'La variante crémeuse du Black Russian.'),
   R('kir-royal', 'Kir royal', '', 'D', 'Flûte', '', '', '', '#B8406A', '31111', 'Apéritif,Pétillant,Festif',
     [['champagne', 120, 'ml', 's'], ['creme-cassis', 10, 'ml', 's']],
-    ['Verser la crème de cassis au fond de la flûte.', 'Compléter avec le champagne bien frais.'])
+    ['Verser la crème de cassis au fond de la flûte.', 'Compléter avec le champagne bien frais.']),
+
+  // ---------- Pour débuter : peu d'ingrédients, aucun geste technique ----------
+  R('screwdriver', 'Screwdriver', '', 'D', 'Highball', 'wheel-orange', '', '', '#F7B544', '31002', 'Brunch,Rafraîchissant',
+    [['vodka', 50], ['orange', 100]],
+    ['Remplir un verre highball de glaçons.', 'Verser la vodka puis le jus d’orange.', 'Remuer et ajouter une rondelle d’orange.']),
+  R('whisky-ginger', 'Whisky Ginger', '', 'D', 'Highball', 'wedge-lemon', '', '', '#D9A04A', '31002', 'Rafraîchissant',
+    [['bourbon', 50, 'ml', 's'], ['ginger-ale', 120, 'ml', { alts: ['ginger-beer'] }]],
+    ['Remplir un verre highball de glaçons.', 'Verser le whisky puis le ginger ale.', 'Remuer une fois et ajouter un quartier de citron.']),
+  R('campari-orange', 'Campari Orange', '', 'D', 'Highball', 'wheel-orange', '', '', '#E5502E', '32302', 'Apéritif,Amer',
+    [['campari', 50], ['orange', 100]],
+    ['Remplir un verre highball de glaçons.', 'Verser le Campari puis le jus d’orange.', 'Remuer doucement et ajouter une rondelle d’orange.']),
+  R('limoncello-spritz', 'Limoncello Spritz', '', 'D', 'Verre à vin', 'wheel-lemon', 'Feuilles de menthe', '', '#F3E27A', '43011', 'Apéritif,Estival,Pétillant',
+    [['limoncello', 50], ['prosecco', 75, 'ml', 's'], ['eau-gazeuse', 0, 'à compléter']],
+    ['Remplir le verre de glaçons.', 'Verser le limoncello puis le prosecco.', 'Ajouter un trait d’eau gazeuse et une rondelle de citron.'])
 ];
 
 /* Exemple de création personnelle */
@@ -528,18 +542,29 @@ RECIPES.push(Object.assign(
   R('potion-soin', 'Potion de soin', '', 'S', 'Highball', 'mint', '', '', '#C41E4A', '33012', 'Univers JV,Festif',
     [['vodka', 40], ['creme-cassis', 25, 'ml', 's'], ['citron', 20], ['sirop-miel', 10, 'ml', { alts: ['sirop-sucre'] }], ['eau-gazeuse', 40]],
     ['Secouer la vodka, la crème de cassis, le jus de citron et le sirop de miel avec des glaçons.', 'Filtrer dans un verre highball rempli de glaçons.', 'Compléter avec l’eau gazeuse et décorer d’une feuille de menthe.'],
-    'Exemple de création inspirée d’un univers de jeu vidéo. Remplace-la par les tiennes.'),
+    'Exemple de création inspirée d’un univers de jeu vidéo.'),
   { origin: 'Original', by: 'me' }
 ));
 
-/* Collections proposées. Plus tard, des bars et des créateurs pourront publier les leurs. */
+/* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
+   { type: 'recipes', title, ids, cols }, { type: 'text', title, text }, { type: 'tip', text }.
+   Les collections sans blocs listent simplement leurs recettes (ids ou filter). */
+const COLL_GROUPS = ['Pour commencer', 'Sélections Zeste', 'Liste officielle IBA'];
 const COLLECTIONS = [
-  { id: 'iba-inoubliables', name: 'Les inoubliables', curator: 'Liste officielle IBA', desc: 'Les grands classiques d’avant-guerre, toujours servis dans les bars du monde entier.', filter: r => r.iba === INO },
-  { id: 'iba-contemporains', name: 'Classiques contemporains', curator: 'Liste officielle IBA', desc: 'Les recettes qui ont marqué la seconde moitié du XXe siècle.', filter: r => r.iba === CON },
-  { id: 'iba-nouvelle-ere', name: 'Nouvelle ère', curator: 'Liste officielle IBA', desc: 'Les créations récentes entrées dans la liste officielle.', filter: r => r.iba === NEW },
-  { id: 'aperitivo', name: 'L’aperitivo italien', curator: 'Sélection Zeste', desc: 'Amers, vermouths et bulles pour ouvrir l’appétit.', ids: ['negroni', 'americano', 'spritz', 'boulevardier', 'hugo-spritz', 'bellini', 'hanky-panky'] },
-  { id: 'tiki', name: 'Soirée tiki', curator: 'Sélection Zeste', desc: 'Rhums, fruits exotiques et verres qui débordent.', ids: ['mai-tai', 'zombie', 'pina-colada', 'singapore-sling', 'planters-punch', 'dark-n-stormy', 'barracuda'] },
-  { id: 'sans-shaker', name: 'Sans shaker', curator: 'Sélection Zeste', desc: 'Tout se prépare directement dans le verre, sans matériel.', filter: r => r.method === 'Dans le verre' },
-  { id: 'sours', name: 'La famille des sours', curator: 'Sélection Zeste', desc: 'Un alcool, du citron, du sucre : la structure la plus copiée du bar.', ids: ['whiskey-sour', 'pisco-sour', 'daiquiri', 'margarita', 'sidecar', 'white-lady', 'new-york-sour', 'bees-knees', 'clover-club', 'penicillin'] },
-  { id: 'bulles', name: 'Avec des bulles', curator: 'Sélection Zeste', desc: 'Champagne, prosecco et crémant pour les grandes occasions.', ids: ['french-75', 'champagne-cocktail', 'kir-royal', 'mimosa', 'bellini', 'old-cuban', 'russian-spring-punch', 'spritz', 'hugo-spritz'] }
+  { id: 'debutants', group: 'Pour commencer', name: 'Premiers cocktails', curator: 'Sélection Zeste', desc: 'Peu d’ingrédients, aucun geste technique : de quoi se lancer avec un verre, des glaçons et une cuillère.',
+    blocks: [
+      { type: 'text', title: 'Avant de commencer', text: 'Ces recettes se préparent directement dans le verre. Pas besoin de shaker, de verre à mélange ni de passoire.\n\nLe matériel minimum : un grand verre, beaucoup de glaçons, une cuillère et un doseur (ou un petit verre gradué).' },
+      { type: 'recipes', title: 'Directement dans le verre', cols: 3, ids: ['gin-tonic', 'screwdriver', 'cuba-libre', 'whisky-ginger', 'campari-orange', 'moscow-mule', 'spritz', 'limoncello-spritz', 'kir', 'mimosa', 'americano', 'black-russian'] },
+      { type: 'tip', text: 'Le secret le plus simple : remplir le verre de glaçons jusqu’en haut. Plus il y a de glace, moins elle fond vite, et moins le cocktail est dilué.' },
+      { type: 'text', title: 'L’étape suivante : le shaker', text: 'Un shaker ouvre la porte aux « sours » : un alcool, du citron et du sucre. Sans shaker, un bocal bien fermé fait l’affaire.' },
+      { type: 'recipes', title: 'Premiers sours', cols: 3, ids: ['daiquiri', 'margarita', 'sidecar', 'white-lady', 'gin-fizz', 'cosmopolitan'] }
+    ] },
+  { id: 'aperitivo', group: 'Sélections Zeste', name: 'L’aperitivo italien', curator: 'Sélection Zeste', desc: 'Amers, vermouths et bulles pour ouvrir l’appétit.', ids: ['negroni', 'americano', 'spritz', 'boulevardier', 'hugo-spritz', 'bellini', 'hanky-panky', 'campari-orange', 'limoncello-spritz'] },
+  { id: 'tiki', group: 'Sélections Zeste', name: 'Soirée tiki', curator: 'Sélection Zeste', desc: 'Rhums, fruits exotiques et verres qui débordent.', ids: ['mai-tai', 'zombie', 'pina-colada', 'singapore-sling', 'planters-punch', 'dark-n-stormy', 'barracuda'] },
+  { id: 'sans-shaker', group: 'Sélections Zeste', name: 'Sans shaker', curator: 'Sélection Zeste', desc: 'Tout se prépare directement dans le verre, sans matériel.', filter: r => r.method === 'Dans le verre' },
+  { id: 'sours', group: 'Sélections Zeste', name: 'La famille des sours', curator: 'Sélection Zeste', desc: 'Un alcool, du citron, du sucre : la structure la plus copiée du bar.', ids: ['whiskey-sour', 'pisco-sour', 'daiquiri', 'margarita', 'sidecar', 'white-lady', 'new-york-sour', 'bees-knees', 'clover-club', 'penicillin'] },
+  { id: 'bulles', group: 'Sélections Zeste', name: 'Avec des bulles', curator: 'Sélection Zeste', desc: 'Champagne, prosecco et crémant pour les grandes occasions.', ids: ['french-75', 'champagne-cocktail', 'kir-royal', 'mimosa', 'bellini', 'old-cuban', 'russian-spring-punch', 'spritz', 'hugo-spritz'] },
+  { id: 'iba-inoubliables', group: 'Liste officielle IBA', name: 'Les inoubliables', curator: 'Liste officielle IBA', desc: 'Les grands classiques d’avant-guerre, toujours servis dans les bars du monde entier.', filter: r => r.iba === INO },
+  { id: 'iba-contemporains', group: 'Liste officielle IBA', name: 'Classiques contemporains', curator: 'Liste officielle IBA', desc: 'Les recettes qui ont marqué la seconde moitié du XXe siècle.', filter: r => r.iba === CON },
+  { id: 'iba-nouvelle-ere', group: 'Liste officielle IBA', name: 'Nouvelle ère', curator: 'Liste officielle IBA', desc: 'Les créations récentes entrées dans la liste officielle.', filter: r => r.iba === NEW }
 ];
