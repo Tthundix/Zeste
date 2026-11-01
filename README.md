@@ -8,7 +8,10 @@ Zeste est une application web installable (PWA). Elle fonctionne hors ligne et g
 
 | Fichier | Rôle |
 | --- | --- |
-| `index.html` | Toute l'application : interface, styles et logique |
+| `index.html` | Structure de la page |
+| `app.css` | Styles (téléphone et grand écran) |
+| `app.js` | Logique de l'application |
+| `data.js` | Données de départ : ingrédients, recettes (dont la liste officielle IBA), collections |
 | `manifest.webmanifest` | Nom, icônes et couleurs de l'appli installée |
 | `sw.js` | Fonctionnement hors ligne et mises à jour |
 | `icons/` | Icônes de l'appli |
@@ -17,7 +20,8 @@ Zeste est une application web installable (PWA). Elle fonctionne hors ligne et g
 ## Publier une nouvelle version
 
 1. Modifier les fichiers.
-2. Dans `sw.js`, changer `VERSION` (par exemple `zeste-1.0.1`), et `APP_VERSION` dans `index.html`.
+2. Dans `sw.js`, changer `VERSION` (par exemple `zeste-1.1.1`), et `APP_VERSION` dans `app.js`.
+   Si les recettes ou ingrédients de départ changent, augmenter `DATA_VERSION` dans `data.js` : les appareils récupèrent alors les nouveautés sans toucher aux recettes modifiées par l'utilisateur.
 3. Pousser sur la branche `main`. GitHub Pages met le site à jour en une minute environ.
 
 Les appareils qui ont déjà l'appli affichent alors « Une nouvelle version de Zeste est prête », avec un bouton pour mettre à jour.
