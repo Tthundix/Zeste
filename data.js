@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -37,6 +37,7 @@ const INGREDIENTS = [
   ['rhum-ambre', 'Rhum ambré', 'Rhum ambré', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-vieux', 'Rhum vieux', 'Rhum ambré', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-agricole', 'Rhum agricole ambré', 'Rhum ambré', 'Spiritueux', 'Rhum & cachaça', 50],
+  ['rhum-agricole-blanc', 'Rhum agricole blanc', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 50],
   ['rhum-brun', 'Rhum brun (Jamaïque)', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-demerara', 'Rhum Demerara', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['cachaca', 'Cachaça', 'Cachaça', 'Spiritueux', 'Rhum & cachaça', 40],
@@ -107,6 +108,7 @@ const INGREDIENTS = [
   // Sirops & sucres
   ['sirop-sucre', 'Sirop de sucre (1:1)', 'Sucre', 'Sirops & sucres', '', 0],
   ['sirop-sucre-riche', 'Sirop de sucre riche (2:1)', 'Sucre', 'Sirops & sucres', '', 0],
+  ['sirop-canne', 'Sirop de canne', 'Sucre', 'Sirops & sucres', '', 0],
   ['sucre-morceau', 'Sucre en morceau', 'Sucre', 'Sirops & sucres', '', 0],
   ['sucre-blanc', 'Sucre blanc', 'Sucre', 'Sirops & sucres', '', 0],
   ['sucre-roux', 'Sucre roux', 'Sucre', 'Sirops & sucres', '', 0],
@@ -534,7 +536,50 @@ const RECIPES = [
     ['Remplir un verre highball de glaçons.', 'Verser le Campari puis le jus d’orange.', 'Remuer doucement et ajouter une rondelle d’orange.']),
   R('limoncello-spritz', 'Limoncello Spritz', '', 'D', 'Verre à vin', 'wheel-lemon', 'Feuilles de menthe', '', '#F3E27A', '43011', 'Apéritif,Estival,Pétillant',
     [['limoncello', 50], ['prosecco', 75, 'ml', 's'], ['eau-gazeuse', 0, 'à compléter']],
-    ['Remplir le verre de glaçons.', 'Verser le limoncello puis le prosecco.', 'Ajouter un trait d’eau gazeuse et une rondelle de citron.'])
+    ['Remplir le verre de glaçons.', 'Verser le limoncello puis le prosecco.', 'Ajouter un trait d’eau gazeuse et une rondelle de citron.']),
+
+  // ---------- Classiques simples, hors liste IBA ----------
+  R('ti-punch', "Ti' Punch", '', 'D', 'Old fashioned', 'wedge-lime', '', '', '#F1EBC8', '22015', 'Digestif',
+    [['rhum-agricole-blanc', 50, 'ml', 's'], ['lime-quartiers', 1, 'quartier'], ['sirop-canne', 1, 'c. à café', 's']],
+    ['Presser le quartier de citron vert dans le verre et le laisser tomber au fond.', 'Ajouter le sirop de canne puis le rhum.', 'Remuer au bâton ou à la cuillère. Traditionnellement servi sans glace.'],
+    'Aux Antilles, chacun dose lui-même le sucre et le citron : « chacun prépare sa propre mort ».'),
+  R('rum-sour', 'Rum Sour', '', 'S', 'Old fashioned', 'wheel-lime', '', '', '#E8C47A', '34013', 'Rafraîchissant',
+    [['rhum-ambre', 50, 'ml', 's'], ['citron-vert', 25, 'ml', { alts: ['citron'] }], ['sirop-sucre', 20, 'ml', 's'], ['blanc-oeuf', 20, 'ml', 'o']],
+    ['Secouer tous les ingrédients sans glace si le blanc d’œuf est utilisé.', 'Ajouter des glaçons et secouer de nouveau.', 'Filtrer dans un verre old fashioned rempli de glace.']),
+  R('rum-mule', 'Rum Mule', '', 'D', 'Mug cuivre', 'wedge-lime', '', '', '#D8B270', '32002', 'Rafraîchissant',
+    [['rhum-ambre', 50, 'ml', 's'], ['citron-vert', 15], ['ginger-beer', 120]],
+    ['Remplir le mug de glaçons.', 'Verser le rhum et le jus de citron vert, puis la ginger beer.', 'Remuer doucement.']),
+  R('rum-old-fashioned', 'Rum Old Fashioned', '', 'D', 'Old fashioned', 'zest-orange', '', '', '#A8601E', '20115', 'Digestif,Réconfortant',
+    [['rhum-vieux', 50, 'ml', 's'], ['sirop-sucre', 7.5, 'ml', 's'], ['angostura', 2, 'trait']],
+    ['Verser le sirop et l’Angostura dans le verre.', 'Ajouter un gros glaçon et le rhum, puis remuer 20 secondes.', 'Exprimer un zeste d’orange au-dessus du verre.']),
+  R('gin-sour', 'Gin Sour', '', 'S', 'Old fashioned', 'wheel-lemon', '', '', '#F0EAC8', '34013', 'Rafraîchissant',
+    [['gin', 50], ['citron', 25], ['sirop-sucre', 20, 'ml', 's'], ['blanc-oeuf', 20, 'ml', 'o']],
+    ['Secouer tous les ingrédients sans glace si le blanc d’œuf est utilisé.', 'Ajouter des glaçons et secouer de nouveau.', 'Filtrer dans un verre old fashioned rempli de glace.']),
+  R('gimlet', 'Gimlet', '', 'S', 'Coupe', 'wheel-lime', '', '', '#E3EBC2', '24014', 'Rafraîchissant',
+    [['gin', 60], ['citron-vert', 20], ['sirop-sucre', 15, 'ml', 's']],
+    ['Secouer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
+  R('gin-basil-smash', 'Gin Basil Smash', '', 'S', 'Old fashioned', '', 'Feuille de basilic', '', '#9CC86A', '33013', 'Herbacé,Estival',
+    [['gin', 60], ['citron', 25], ['sirop-sucre', 15, 'ml', 's'], ['basilic', 8, 'feuille']],
+    ['Écraser doucement les feuilles de basilic avec le jus de citron dans le shaker.', 'Ajouter le gin, le sirop et des glaçons, puis secouer énergiquement.', 'Filtrer finement dans un verre old fashioned rempli de glace.']),
+  R('tequila-tonic', 'Tequila Tonic', '', 'D', 'Highball', 'wedge-lime', '', '', '#E3EDE6', '12202', 'Rafraîchissant',
+    [['tequila', 50, 'ml', 's'], ['tonic', 120], ['lime-quartiers', 1, 'quartier', 'o']],
+    ['Remplir un verre highball de glaçons.', 'Verser la tequila puis le tonic.', 'Presser un quartier de citron vert et remuer une fois.']),
+  R('el-diablo', 'El Diablo', '', 'D', 'Highball', 'wedge-lime', '', '', '#9E2B4E', '33012', 'Fruité,Festif',
+    [['tequila', 45, 'ml', 's'], ['creme-cassis', 15, 'ml', 's'], ['citron-vert', 15], ['ginger-beer', 0, 'à compléter']],
+    ['Remplir un verre highball de glaçons.', 'Verser la tequila et le jus de citron vert, puis compléter avec la ginger beer.', 'Verser la crème de cassis en filet sur le dessus.']),
+  R('gold-rush', 'Gold Rush', '', 'S', 'Old fashioned', 'zest-lemon', '', '', '#E3B252', '33014', 'Réconfortant',
+    [['bourbon', 60, 'ml', 's'], ['citron', 22.5], ['sirop-miel', 22.5, 'ml', 's']],
+    ['Secouer tous les ingrédients avec des glaçons.', 'Filtrer dans un verre old fashioned sur un gros glaçon.']),
+  R('whisky-highball', 'Whisky Highball', '', 'D', 'Highball', 'zest-lemon', '', '', '#E8C98A', '10012', 'Rafraîchissant,Apéritif',
+    [['scotch', 50, 'ml', { alts: ['bourbon', 'whiskey-irlandais'] }], ['eau-gazeuse', 150]],
+    ['Remplir un verre highball de glaçons et remuer pour refroidir le verre.', 'Verser le whisky, puis l’eau gazeuse le long d’une cuillère.', 'Remuer une fois et exprimer un zeste de citron.']),
+  R('negroni-sbagliato', 'Negroni Sbagliato', '', 'D', 'Old fashioned', 'wheel-orange', '', '', '#C2382E', '30312', 'Apéritif,Amer,Pétillant',
+    [['campari', 30], ['vermouth-rouge', 30, 'ml', 's'], ['prosecco', 30, 'ml', 's']],
+    ['Remplir le verre de glaçons.', 'Verser le Campari et le vermouth, puis compléter avec le prosecco.', 'Remuer doucement et ajouter une rondelle d’orange.'],
+    'Littéralement le « Negroni raté » : du prosecco à la place du gin.'),
+  R('campari-spritz', 'Campari Spritz', '', 'D', 'Verre à vin', 'wheel-orange', '', '', '#D9302F', '20412', 'Apéritif,Amer,Pétillant',
+    [['prosecco', 90, 'ml', 's'], ['campari', 40], ['eau-gazeuse', 0, 'à compléter']],
+    ['Remplir le verre de glaçons.', 'Verser le prosecco, puis le Campari.', 'Ajouter un trait d’eau gazeuse et une rondelle d’orange.'])
 ];
 
 /* Exemple de création personnelle */
@@ -558,6 +603,43 @@ const COLLECTIONS = [
       { type: 'tip', text: 'Le secret le plus simple : remplir le verre de glaçons jusqu’en haut. Plus il y a de glace, moins elle fond vite, et moins le cocktail est dilué.' },
       { type: 'text', title: 'L’étape suivante : le shaker', text: 'Un shaker ouvre la porte aux « sours » : un alcool, du citron et du sucre. Sans shaker, un bocal bien fermé fait l’affaire.' },
       { type: 'recipes', title: 'Premiers sours', cols: 3, ids: ['daiquiri', 'margarita', 'sidecar', 'white-lady', 'gin-fizz', 'cosmopolitan'] }
+    ] },
+  { id: 'soiree-rhum', group: 'Pour commencer', name: 'Soirée rhum', curator: 'Sélection Zeste', desc: 'Sept cocktails avec une seule base, le rhum, et une liste de courses courte.',
+    blocks: [
+      { type: 'text', title: 'La liste de courses', text: 'Deux rhums (un blanc, un ambré), des citrons verts, du sucre ou du sirop de sucre, de la menthe fraîche, de l’eau gazeuse, du cola, de la ginger beer et de l’Angostura.\n\nUn rhum agricole blanc est idéal pour le Ti’ Punch, mais un rhum blanc classique fonctionne aussi.' },
+      { type: 'recipes', title: 'Frais et faciles', cols: 3, ids: ['cuba-libre', 'mojito', 'rum-mule'] },
+      { type: 'recipes', title: 'Au shaker', cols: 3, ids: ['daiquiri', 'rum-sour'] },
+      { type: 'tip', text: 'Les citrons verts se pressent au dernier moment : un jus pressé à l’avance perd vite son goût.' },
+      { type: 'recipes', title: 'Pour finir la soirée', cols: 3, ids: ['ti-punch', 'rum-old-fashioned'] }
+    ] },
+  { id: 'soiree-gin', group: 'Pour commencer', name: 'Soirée gin', curator: 'Sélection Zeste', desc: 'Du gin tonic au Basil Smash, avec une bouteille de gin et quelques produits frais.',
+    blocks: [
+      { type: 'text', title: 'La liste de courses', text: 'Une bouteille de gin, des citrons jaunes et verts, du sirop de sucre, du tonic, de l’eau gazeuse, de la menthe et du basilic frais. Des œufs en option, pour une mousse plus soyeuse dans les sours.' },
+      { type: 'recipes', title: 'Longs et pétillants', cols: 3, ids: ['gin-tonic', 'gin-fizz', 'john-collins'] },
+      { type: 'recipes', title: 'Au shaker', cols: 3, ids: ['gimlet', 'gin-sour', 'southside', 'gin-basil-smash'] },
+      { type: 'tip', text: 'Pour le Basil Smash et le Southside, écraser les herbes doucement : déchirées, elles donnent de l’amertume.' }
+    ] },
+  { id: 'soiree-tequila', group: 'Pour commencer', name: 'Soirée tequila', curator: 'Sélection Zeste', desc: 'Margaritas, Paloma et longs drinks autour d’une seule bouteille de tequila.',
+    blocks: [
+      { type: 'text', title: 'La liste de courses', text: 'Une tequila blanco, des citrons verts, du triple sec, du sirop d’agave, du sel, du soda au pamplemousse rose, du tonic, de la ginger beer, du jus d’orange, de la grenadine et de la crème de cassis.' },
+      { type: 'recipes', title: 'Les margaritas', cols: 3, ids: ['margarita', 'tommys-margarita'] },
+      { type: 'recipes', title: 'Longs drinks', cols: 3, ids: ['paloma', 'tequila-tonic', 'el-diablo', 'tequila-sunrise'] },
+      { type: 'tip', text: 'Pour givrer un verre, passer un quartier de citron vert sur le bord, puis le poser à l’envers dans une assiette de sel.' }
+    ] },
+  { id: 'soiree-whisky', group: 'Pour commencer', name: 'Soirée whisky', curator: 'Sélection Zeste', desc: 'Du highball léger à l’Old Fashioned, avec un bourbon et peu d’ingrédients.',
+    blocks: [
+      { type: 'text', title: 'La liste de courses', text: 'Un bourbon (un scotch blended convient aussi pour les longs drinks), des citrons jaunes, du sirop de sucre, du sirop de miel, de l’Angostura, du ginger ale, de l’eau gazeuse et du vermouth rouge pour le Manhattan.' },
+      { type: 'recipes', title: 'Longs et légers', cols: 3, ids: ['whisky-highball', 'whisky-ginger'] },
+      { type: 'recipes', title: 'Sours', cols: 3, ids: ['whiskey-sour', 'gold-rush'] },
+      { type: 'recipes', title: 'Les classiques du soir', cols: 3, ids: ['old-fashioned', 'manhattan'] },
+      { type: 'tip', text: 'Le sirop de miel se prépare en mélangeant à parts égales du miel et de l’eau chaude.' }
+    ] },
+  { id: 'apero-italien-simple', group: 'Pour commencer', name: 'Apéro italien', curator: 'Sélection Zeste', desc: 'Spritz, Americano, Negroni : tout l’aperitivo avec cinq bouteilles.',
+    blocks: [
+      { type: 'text', title: 'La liste de courses', text: 'Du prosecco, de l’Aperol, du Campari, du vermouth rouge, de l’eau gazeuse, un gin, et des oranges. Le jus d’orange en plus pour le Campari Orange.' },
+      { type: 'recipes', title: 'Spritz et bulles', cols: 3, ids: ['spritz', 'campari-spritz', 'negroni-sbagliato'] },
+      { type: 'recipes', title: 'Amers', cols: 3, ids: ['americano', 'negroni', 'campari-orange'] },
+      { type: 'tip', text: 'Le prosecco doit être très froid et versé en premier dans un spritz : les bulles remontent et mélangent le verre sans remuer.' }
     ] },
   { id: 'aperitivo', group: 'Sélections Zeste', name: 'L’aperitivo italien', curator: 'Sélection Zeste', desc: 'Amers, vermouths et bulles pour ouvrir l’appétit.', ids: ['negroni', 'americano', 'spritz', 'boulevardier', 'hugo-spritz', 'bellini', 'hanky-panky', 'campari-orange', 'limoncello-spritz'] },
   { id: 'tiki', group: 'Sélections Zeste', name: 'Soirée tiki', curator: 'Sélection Zeste', desc: 'Rhums, fruits exotiques et verres qui débordent.', ids: ['mai-tai', 'zombie', 'pina-colada', 'singapore-sling', 'planters-punch', 'dark-n-stormy', 'barracuda'] },
