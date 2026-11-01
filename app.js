@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.4';
+const APP_VERSION = '1.3.5';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -129,7 +129,7 @@ const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (UI.view === 'catalogue' || UI.view === 'data') render(); });
 window.addEventListener('appinstalled', () => { deferredInstall = null; toast('Zeste est installée'); render(); });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').then(reg => {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
     swReg = reg;
     // Au lancement de l'appli, une nouvelle version s'applique d'elle-même ; ensuite, un bandeau la propose.
     const offer = w => { if (Date.now() - BOOT_AT < 20000 && !sheetState) w.postMessage({ type: 'SKIP_WAITING' }); else $('#update').hidden = false; };

@@ -1,6 +1,6 @@
 /* Zeste : fonctionnement hors ligne.
    Changer VERSION à chaque mise en ligne : les appareils proposent alors la mise à jour. */
-const VERSION = 'zeste-1.3.4';
+const VERSION = 'zeste-1.3.5';
 const ASSETS = [
   './', 'index.html', 'app.css', 'app.js', 'data.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
@@ -8,7 +8,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS)));
+  // cache: 'reload' contourne le cache HTTP du navigateur : sinon une nouvelle version pourrait enregistrer d'anciens fichiers.
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', e => {
