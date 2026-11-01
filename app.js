@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.6';
+const APP_VERSION = '1.3.7';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -375,6 +375,16 @@ function renderResults() {
 }
 
 /* ---------- accueil ---------- */
+const fmtHour = d => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
+/* L'heure affichée suit l'horloge ; au changement de moment de la journée, l'accueil se recompose. */
+function tickClock() {
+  if (UI.view !== 'home' || document.visibilityState !== 'visible') return;
+  const now = new Date(), key = moment(now.getHours()).key + (now.getHours() < 6 && !UI.lateOk ? '-late' : '');
+  if (key !== UI.homeKey && !sheetState) { render(); return; }
+  document.querySelectorAll('.now-h').forEach(el => el.textContent = fmtHour(now));
+}
+setInterval(tickClock, 10000);
+document.addEventListener('visibilitychange', tickClock);
 const SPIRITS = ['Gin', 'Rhum & cachaça', 'Whisky', 'Tequila & mezcal', 'Vodka', 'Brandy & cognac'];
 const SPIRIT_LABEL = { 'Gin': 'Gin', 'Rhum & cachaça': 'Rhum', 'Whisky': 'Whisky', 'Tequila & mezcal': 'Tequila', 'Vodka': 'Vodka', 'Brandy & cognac': 'Cognac' };
 function daySeed(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -405,15 +415,16 @@ function renderHome(m) {
   const seen = Object.entries(S.views || {}).sort((a, b) => b[1].t - a[1].t).map(([id]) => S.recipes.find(r => r.id === id)).filter(Boolean);
   const top = S.recipes.filter(r => S.ratings[r.id]).sort((a, b) => S.ratings[b.id] - S.ratings[a.id] || a.name.localeCompare(b.name, 'fr'));
   const tags = Object.entries(S.recipes.reduce((o, r) => { r.tags.forEach(t => o[t] = (o[t] || 0) + 1); return o; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 12).map(x => x[0]);
-  const hour = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
+  const hour = fmtHour(now);
+  UI.homeKey = M.key + (late ? '-late' : '');
   const abv = feat ? estAbv(feat) : null;
   m.innerHTML = `
-  ${late ? `<div class="late" role="note"><div><b>Il est ${esc(hour)}.</b> Un verre d’eau entre deux cocktails, et pas de volant ce soir. Besoin d’en parler ? Alcool Info Service répond au <b>0 980 980 930</b> de 8 h à 23 h, tous les jours (appel anonyme et non surtaxé). En dehors de ces horaires, leur site propose questions-réponses et forums : <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a>, rubrique « En parler ».</div><button class="btn small" data-act="late-ok">Compris</button></div>` : ''}
+  ${late ? `<div class="late" role="note"><div><b>Il est <span class="now-h">${esc(hour)}</span>.</b> Un verre d’eau entre deux cocktails, et pas de volant ce soir. Besoin d’en parler ? Alcool Info Service répond au <b>0 980 980 930</b> de 8 h à 23 h, tous les jours (appel anonyme et non surtaxé). En dehors de ces horaires, leur site propose questions-réponses et forums : <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a>, rubrique « En parler ».</div><button class="btn small" data-act="late-ok">Compris</button></div>` : ''}
   ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
   ${deferredInstall && !S.installDismissed && !isStandalone() && !isSamsung() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
   ${feat ? `<section class="moment" style="--c:${okColor(feat.color)}">
     <button class="moment-v" data-act="open" data-id="${esc(feat.id)}" aria-label="${esc(feat.name)}">${visual(feat)}</button>
-    <div class="moment-t" data-act="open" data-id="${esc(feat.id)}"><p class="eyebrow">${esc(M.title)} · ${esc(hour)}</p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
+    <div class="moment-t" data-act="open" data-id="${esc(feat.id)}"><p class="eyebrow">${esc(M.title)} · <span class="now-h">${esc(hour)}</span></p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
       <p class="hint">${esc(feat.method)} · ${esc(feat.glass)}${abv != null ? ` · ≈ ${abv} % vol.` : ''} · ${ok(feat) ? 'réalisable avec le bar' : 'manquant : ' + esc(an.get(feat.id).miss.map(ingName).join(', '))}</p></div>
   </section>` : ''}
   ${hrow(`Aussi pour ${M.key === 'apero' ? 'l’apéro' : M.key === 'matin' ? 'ce matin' : M.key === 'aprem' ? 'cet après-midi' : M.key === 'soiree' ? 'ce soir' : 'la fin de soirée'}`, picks.slice(1, 13).map(r => hcard(r, ok(r) ? 'Réalisable' : 'Manque ' + an.get(r.id).miss.length)))}
