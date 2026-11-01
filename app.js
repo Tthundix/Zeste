@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.3';
+const APP_VERSION = '1.3.4';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -122,6 +122,7 @@ window.addEventListener('pagehide', () => { if (saveT) flushSave(); });
 
 /* ---------- appli installable et mises à jour ---------- */
 let deferredInstall = null, swReg = null;
+const BOOT_AT = Date.now();
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent);
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -130,8 +131,10 @@ window.addEventListener('appinstalled', () => { deferredInstall = null; toast('Z
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').then(reg => {
     swReg = reg;
-    if (reg.waiting && navigator.serviceWorker.controller) $('#update').hidden = false;
-    reg.addEventListener('updatefound', () => { const w = reg.installing; if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) $('#update').hidden = false; }); });
+    // Au lancement de l'appli, une nouvelle version s'applique d'elle-même ; ensuite, un bandeau la propose.
+    const offer = w => { if (Date.now() - BOOT_AT < 20000 && !sheetState) w.postMessage({ type: 'SKIP_WAITING' }); else $('#update').hidden = false; };
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => { const w = reg.installing; if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); }); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => { }); });
   }).catch(() => { });
   let reloading = false;
