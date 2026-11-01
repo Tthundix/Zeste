@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -405,7 +405,7 @@ function renderHome(m) {
   const hour = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
   const abv = feat ? estAbv(feat) : null;
   m.innerHTML = `
-  ${late ? `<div class="late" role="note"><div><b>Il est ${esc(hour)}.</b> Un verre d’eau entre deux cocktails, et pas de volant ce soir. Besoin d’en parler ? Alcool Info Service : <b>0 980 980 930</b>, appel anonyme et non surtaxé, ou <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a>.</div><button class="btn small" data-act="late-ok">Compris</button></div>` : ''}
+  ${late ? `<div class="late" role="note"><div><b>Il est ${esc(hour)}.</b> Un verre d’eau entre deux cocktails, et pas de volant ce soir. Besoin d’en parler ? Alcool Info Service répond au <b>0 980 980 930</b> de 8 h à 23 h, tous les jours (appel anonyme et non surtaxé). En dehors de ces horaires, leur site propose questions-réponses et forums : <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a>, rubrique « En parler ».</div><button class="btn small" data-act="late-ok">Compris</button></div>` : ''}
   ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
   ${deferredInstall && !S.installDismissed && !isStandalone() && !isSamsung() ? `<div class="note-banner install"><p><b>Installer Zeste</b> pour l'ouvrir comme une appli, même hors ligne.</p><div class="row-btns"><button class="btn small ghost" data-act="install-later">Plus tard</button><button class="btn small primary" data-act="install">Installer</button></div></div>` : ''}
   ${feat ? `<section class="moment" style="--c:${okColor(feat.color)}">
