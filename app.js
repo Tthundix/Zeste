@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.16.0';
+const APP_VERSION = '0.17.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -168,7 +168,8 @@ const GLASS = {
   'Hurricane': { o: 'M17 6Q14 22 19 32Q23 40 20 50Q19 56 25 58H35Q41 56 40 50Q37 40 41 32Q46 22 43 6', l: 'M16.2 15Q15.6 24 19.6 32.4Q23.6 40.6 20.6 50Q19.9 55.6 25.4 56.5H34.6Q40.1 55.6 39.4 50Q36.4 40.6 40.4 32.4Q44.4 24 43.8 15Z', stem: [30, 58, 30, 71], base: [20, 72, 40, 72], rim: [17, 6, 43], lt: 15 },
   'Mug cuivre': { o: 'M13 22L15.5 72H44.5L47 22', l: 'M13.5 32L15.6 70.5H44.4L46.5 32Z', handle: 'M46.6 30Q58 31 57 45Q56 57 45 57', rim: [13, 22, 47], lt: 32 },
   'Timbale': { o: 'M14 20L16 72H44L46 20', l: 'M14.3 27L16.1 70.5H43.9L45.7 27Z', ice: [20, 30, 20, 9], thick: [16, 72, 44, 72], rim: [14, 20, 46], lt: 27 },
-  'Irish coffee': { o: 'M16 10L18 46Q19 50 23 50H37Q41 50 42 46L44 10', l: 'M16.4 16L18.3 45.5Q19.2 48.6 23 48.6H37Q40.8 48.6 41.7 45.5L43.6 16Z', stem: [30, 50, 30, 69], base: [21, 70, 39, 70], handle: 'M43.5 16Q53 17 52 28Q51 38 42.3 38', rim: [16, 10, 44], lt: 16 }
+  'Irish coffee': { o: 'M16 10L18 46Q19 50 23 50H37Q41 50 42 46L44 10', l: 'M16.4 16L18.3 45.5Q19.2 48.6 23 48.6H37Q40.8 48.6 41.7 45.5L43.6 16Z', stem: [30, 50, 30, 69], base: [21, 70, 39, 70], handle: 'M43.5 16Q53 17 52 28Q51 38 42.3 38', rim: [16, 10, 44], lt: 16 },
+  'Tasse': { o: 'M11 38L13 66Q14 72 20 72H40Q46 72 47 66L49 38', l: 'M11.4 44L13.2 65.5Q14.2 70.6 20 70.6H40Q45.8 70.6 46.8 65.5L48.6 44Z', handle: 'M48.6 44Q58 45 57 54Q56 63 46.8 62', rim: [11, 38, 49], lt: 44 }
 };
 const FRUIT = Object.fromEntries(GARNISH_FRUITS.map(([k, l, c]) => [k, c]));
 function garnLabelKey(k) {
