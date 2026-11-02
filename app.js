@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.18.0';
+const APP_VERSION = '0.18.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -393,11 +393,26 @@ function renderResults() {
     if (F.alc === 'alc' && isNA(r)) return false;
     if (F.base && !r.ings.some(i => S.ings[i.id] && S.ings[i.id].fam === 'Spiritueux' && S.ings[i.id].sub === F.base)) return false;
     for (const [k] of TASTE) { if (!tfActive(F.tf[k])) continue; const v = r.flavor[k], [lo, hi] = F.tf[k]; if (v == null || v < lo || v > hi) return false; }
-    if (words.length) { const hay = norm([r.name, r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, r.glass, ...r.tags, ...r.ings.map(i => ingName(i.id)), S.notes[r.id] ? S.notes[r.id].text : ''].join(' ')); if (!words.every(w => hay.includes(w))) return false; }
+    if (words.length) {
+      /* Recherche par début de mot (« co » ne trouve plus « cocktail » ni un « co » au milieu d'un mot), sans le nom du verre.
+         Chaque mot cherché a un rang : 0 = dans le nom, 1 = dans un ingrédient, 2 = ailleurs (tags, auteur, notes…). Le rang de la recette est le pire de ses mots. */
+      const toks = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+      const nameT = toks(r.name), ingT = toks(r.ings.map(i => ingName(i.id)).join(' '));
+      const otherT = toks([r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, ...r.tags, S.notes[r.id] ? S.notes[r.id].text : ''].join(' '));
+      let tier = 0;
+      for (const w of words) {
+        const has = t => t.some(x => x.startsWith(w));
+        const k = has(nameT) ? 0 : has(ingT) ? 1 : has(otherT) ? 2 : -1;
+        if (k < 0) return false;
+        tier = Math.max(tier, k);
+      }
+      a._tier = tier;
+    } else a._tier = 0;
     return true;
   });
   const byName = (x, y) => x.r.name.localeCompare(y.r.name, 'fr');
-  if (UI.sort === 'rating') list.sort((x, y) => (S.ratings[y.r.id] || 0) - (S.ratings[x.r.id] || 0) || byName(x, y));
+  if (words.length) { const by = list.slice().sort(UI.sort === 'rating' ? (x, y) => (S.ratings[y.r.id] || 0) - (S.ratings[x.r.id] || 0) || byName(x, y) : UI.sort === 'ready' ? (x, y) => x.a.miss.length - y.a.miss.length || byName(x, y) : UI.sort === 'recent' ? (x, y) => (y.r.created || 0) - (x.r.created || 0) || byName(x, y) : byName); list = by.sort((x, y) => x.a._tier - y.a._tier); }
+  else if (UI.sort === 'rating') list.sort((x, y) => (S.ratings[y.r.id] || 0) - (S.ratings[x.r.id] || 0) || byName(x, y));
   else if (UI.sort === 'ready') list.sort((x, y) => x.a.miss.length - y.a.miss.length || byName(x, y));
   else if (UI.sort === 'recent') list.sort((x, y) => (y.r.created || 0) - (x.r.created || 0) || byName(x, y));
   else list.sort(byName);
@@ -763,10 +778,11 @@ function replaceNav() { history.replaceState(navState(), ''); }
 function closeSheet() { if (history.state && history.state.z && history.state.sheet) history.back(); else closeSheetRaw(); }
 function goBack() { closeSheet(); }
 function navView(v) {
-  if (v === UI.view && !sheetState) return render();
+  /* Réappuyer sur l'onglet courant remonte en haut de la page, sans toucher aux filtres. */
+  if (v === UI.view && !sheetState) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   const fromHome = UI.view === 'home';
   UI.view = v; window.scrollTo(0, 0); render();
-  if (v === 'home') { if (!fromHome && history.state && history.state.z && history.state.view !== 'home') history.back(); else replaceNav(); }
+  if (v === 'home') { if (!fromHome && history.state && history.state.z && history.state.view !== 'home' && !history.state.ing) history.back(); else replaceNav(); }
   else if (fromHome) pushNav(); else replaceNav();
 }
 window.addEventListener('popstate', e => {
@@ -1123,7 +1139,9 @@ document.addEventListener('click', async e => {
     case 'f-ing-rm': UI.f.ings = UI.f.ings.filter(x => x !== id); renderCatalogue($('#view')); break;
     case 'f-ing-mode': UI.f.ingMode = b.dataset.v; renderCatalogue($('#view')); break;
     case 'go-ing': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; UI.filtersOpen = true; navView('catalogue'); setTimeout(() => { const i = $('#f-ing-i'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } }, 50); break;
-    case 'ing-search': UI.f = F_DEFAULT(); UI.f.ings = [id]; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); UI.view = 'catalogue'; render(); replaceNav(); window.scrollTo(0, 0); break;
+    case 'ing-search': { /* on empile une entrée d'historique : « retour » ramène à la fiche d'où l'on vient */
+      UI.f = F_DEFAULT(); UI.f.ings = [id]; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); UI.view = 'catalogue'; render(); window.scrollTo(0, 0);
+      history.pushState({ ...navState(), ing: true }, ''); break; }
     case 'go-na': UI.f = F_DEFAULT(); UI.f.alc = 'na'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-colls': UI.listTab = 'coll'; navView('lists'); break;
