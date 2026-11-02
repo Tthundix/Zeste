@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.18.2';
+const APP_VERSION = '0.18.3';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -774,7 +774,9 @@ function closeSheetRaw() { flushNote(); const sh = $('#sheet'); sh.hidden = true
 let restoring = false;
 function navState() { return { z: 1, view: UI.view, sheet: sheetState ? { type: sheetState.type, id: sheetState.id || null, back: sheetState.back || null } : null }; }
 function pushNav() { if (!restoring) history.pushState(navState(), ''); }
-function replaceNav() { const keep = history.state && history.state.filt; history.replaceState(keep ? { ...navState(), filt: keep } : navState(), ''); }
+/* replaceNav garde le marqueur « ing » (entrée créée par un clic sur un ingrédient : l'accueil ne doit pas faire « retour » vers la fiche)
+   et, sur les autres entrées (fiches), les filtres à restaurer. L'entrée « ing » perd les siens : elle n'en a plus besoin une fois remplacée. */
+function replaceNav() { const s = history.state || {}, x = navState(); if (s.ing) x.ing = true; else if (s.filt) x.filt = s.filt; history.replaceState(x, ''); }
 function closeSheet() { if (history.state && history.state.z && history.state.sheet) history.back(); else closeSheetRaw(); }
 function goBack() { closeSheet(); }
 function navView(v) {
