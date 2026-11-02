@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 9;
+const DATA_VERSION = 10;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -277,7 +277,7 @@ const RECIPES = [
   R('boulevardier', 'Boulevardier', INO, 'V', 'Coupe', 'zest-orange', '', '', '#8E2A1E', '20425', 'Digestif,Amer,Hivernal',
     [['bourbon', 45, 'ml', 's'], ['campari', 30], ['vermouth-rouge', 30]],
     ['Verser tous les ingrédients dans un verre à mélange rempli de glaçons.', 'Remuer 30 secondes.', 'Filtrer dans une coupe refroidie et exprimer un zeste d’orange.']),
-  R('brandy-crusta', 'Brandy Crusta', INO, 'V', 'Coupe', 'zest-lemon', 'Long zeste de citron sur le bord intérieur', 'sucre', '#D9A24E', '22114', 'Festif',
+  R('brandy-crusta', 'Brandy Crusta', INO, 'V', 'Coupe', 'zest-lemon', 'En long ruban sur le bord intérieur du verre', 'sucre', '#D9A24E', '22114', 'Festif',
     [['brandy', 52.5, 'ml', 's'], ['marasquin', 7.5], ['curacao', 1, 'c. de bar', 's'], ['citron', 15], ['sirop-sucre', 1, 'c. de bar'], ['angostura', 2, 'trait']],
     ['Givrer le bord d’un petit verre avec du sucre, puis y placer un long zeste de citron.', 'Remuer tous les ingrédients avec des glaçons dans un verre à mélange.', 'Filtrer dans le verre préparé.']),
   R('casino', 'Casino', INO, 'S', 'Old fashioned', 'cherry', 'Zeste de citron', '', '#E6DFB8', '13114', '',
@@ -763,29 +763,29 @@ RECIPES.push(
 
 /* ---------- Sans alcool : troisième lot (recettes de bars et classiques à compléter) ---------- */
 RECIPES.push(
-  NA(R('virgin-mary', 'Virgin Mary', '', 'V', 'Highball', 'celery', 'Branche de céleri', '', '#C8382B', '12110', 'Brunch',
+  NA(R('virgin-mary', 'Virgin Mary', '', 'V', 'Highball', 'celery', '', '', '#C8382B', '12110', 'Brunch',
     [['tomate', 150], ['citron', 15], ['tabasco', 8, 'goutte'], ['worcestershire', 4, 'trait'], ['raifort', 0.5, 'c. de bar'], ['sel-celeri', 2, 'pincée'], ['poivre', 2, 'pincée']],
     ['Verser tous les ingrédients dans un shaker avec de la glace et les faire rouler d’un verre à l’autre, sans secouer.', 'Filtrer dans un verre rempli de glaçons.', 'Décorer d’une branche de céleri.'],
     'Version sans alcool du Bloody Mary. La sauce Worcestershire contient de l’anchois.'), 'Classique', 'https://www.diffordsguide.com/cocktails/recipe/252/virgin-mary-or-bloody-shame'),
-  NA(R('prohibition-daisy', 'Prohibition Daisy', '', 'S', 'Old fashioned', 'pineapple', 'Quartier d’ananas et framboises', '', '#F2845C', '43000', 'Fruité,Rafraîchissant',
+  NA(R('prohibition-daisy', 'Prohibition Daisy', '', 'S', 'Old fashioned', 'pineapple', 'Rondelle d’orange et framboises', '', '#F2845C', '43000', 'Fruité,Rafraîchissant',
     [['orange', 30], ['citron-vert', 15], ['citron', 15], ['ananas', 30], ['sirop-framboise', 30]],
     ['Secouer tous les ingrédients avec des glaçons.', 'Filtrer dans un verre rempli de glace pilée et remuer à la cuillère.', 'Décorer d’un quartier d’ananas, d’une rondelle d’orange et de framboises, et servir avec une paille.']), 'Classique sans alcool · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3963/prohibition-daisy-alcohol-free'),
-  BY(R('pinch-hitter', 'Pinch Hitter', '', 'S', 'Coupe', 'wheel-lemon', 'Rondelle de citron', '', '#F3E6A8', '24010', 'Rafraîchissant',
+  BY(R('pinch-hitter', 'Pinch Hitter', '', 'S', 'Coupe', 'wheel-lemon', '', '', '#F3E6A8', '24010', 'Rafraîchissant',
     [['citron', 60], ['sirop-gingembre', 30, 'ml', { alts: ['gingembre'] }], ['vinaigre-cidre', 1, 'c. à café'], ['aquafaba', 15], ['sel', 1, 'pincée']],
     ['Secouer tous les ingrédients avec des glaçons, énergiquement et assez longtemps pour bien faire mousser l’aquafaba.', 'Filtrer dans une coupe et décorer d’une rondelle de citron.'],
     'La recette d’origine utilise 6 gouttes de solution saline ; une petite pincée de sel s’en approche. Sirop de gingembre : sucre et eau à parts égales, infusés avec du gingembre râpé.'), 'Derek Brown, Columbia Room (Washington) · Saveur', 'https://www.saveur.com/story/recipes/pinch-hitter'),
-  BY(R('dawn-patrol', 'Dawn Patrol', '', 'D', 'Old fashioned', 'mint', 'Bouquet de menthe', '', '#E0A526', '33120', 'Rafraîchissant,Brunch',
+  BY(R('dawn-patrol', 'Dawn Patrol', '', 'D', 'Old fashioned', 'mint', '', '', '#E0A526', '33120', 'Rafraîchissant,Brunch',
     [['the-noir', 45], ['sirop-curcuma', 22.5], ['citron', 22.5], ['bitters-sans-alcool', 3, 'trait']],
     ['Remplir un verre de glace pilée.', 'Ajouter le thé glacé, le sirop de curcuma, le jus de citron et les bitters.', 'Remuer brièvement et décorer d’un bouquet de menthe.'],
     'Variation autour de l’Arnold Palmer. La recette d’origine propose aussi d’ajouter 30 ml de mezcal. Sirop de curcuma : 2 parts de sucre pour 1 part d’eau, avec du curcuma en poudre.'), 'Iain Griffiths, Bar Snack (New York) · Punch', 'https://punchdrink.com/recipes/dawn-patrol/'),
-  BY(R('big-juicy', 'Big Juicy', '', 'S', 'Highball', 'wedge-lime', 'Quartier de citron vert', '', '#D6405A', '43000', 'Fruité,Festif',
+  BY(R('big-juicy', 'Big Juicy', '', 'S', 'Highball', 'wedge-lime', '', '', '#D6405A', '43000', 'Fruité,Festif',
     [['cranberry', 75], ['ananas', 45], ['citron-vert', 30], ['sirop-sucre-riche', 7.5, 'ml', 's'], ['grenadine', 7.5], ['eau-gazeuse', 0, 'à compléter']],
     ['Secouer le cranberry, l’ananas, le citron vert, le sirop et la grenadine avec des glaçons.', 'Filtrer dans un verre rempli de glace.', 'Compléter avec l’eau gazeuse, remuer et servir avec des pailles.']), 'Jose « Juice » Miranda, WD-50 (New York, 2006) · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/2294/big-juicy'),
-  BY(R('berry-blast', 'Berry Blast', '', 'S', 'Highball', 'mint', 'Brin de menthe et rondelle de citron', '', '#C2364F', '43010', 'Fruité,Rafraîchissant',
+  BY(R('berry-blast', 'Berry Blast', '', 'S', 'Highball', 'mint', 'Rondelle de citron', '', '#C2364F', '43010', 'Fruité,Rafraîchissant',
     [['framboise', 8, 'pièce'], ['citron', 22.5], ['sirop-passion', 22.5], ['the-noir', 60], ['cranberry', 60]],
     ['Écraser les framboises au fond du shaker.', 'Ajouter le reste des ingrédients et secouer avec des glaçons.', 'Filtrer dans un verre rempli de glace et décorer.'],
     'Adapté par Difford’s Guide d’un cocktail des bars Jamie’s Italian. Utiliser un thé noir infusé puis refroidi.'), 'Adapté d’un cocktail de Jamie’s Italian · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3358/berry-blast'),
-  BY(R('ginger-no-jito', 'Ginger No-jito', '', 'D', 'Highball', 'mint', 'Bouquet de menthe', '', '#CFE3A0', '33000', 'Rafraîchissant,Herbacé',
+  BY(R('ginger-no-jito', 'Ginger No-jito', '', 'D', 'Highball', 'mint', '', '', '#CFE3A0', '33000', 'Rafraîchissant,Herbacé',
     [['citron-vert', 22.5], ['sirop-sucre-riche', 15, 'ml', 's'], ['menthe', 12, 'feuille'], ['ginger-beer', 105]],
     ['Verser le jus de citron vert et le sirop dans le verre, puis le remplir à moitié de glace pilée.', 'Ajouter la menthe et bien remuer en soulevant la glace.', 'Compléter de glace pilée, verser le ginger beer et remuer brièvement.'],
     'Adapté par Difford’s Guide d’une boisson de Jamie’s Italian ; le nom « No-jito » est emprunté à Wagamama.'), 'Adapté d’un cocktail de Jamie’s Italian · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3361/ginger-no-jito-temperance-ginger-mojito')
