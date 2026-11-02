@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.18.1';
+const APP_VERSION = '0.18.2';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -774,7 +774,7 @@ function closeSheetRaw() { flushNote(); const sh = $('#sheet'); sh.hidden = true
 let restoring = false;
 function navState() { return { z: 1, view: UI.view, sheet: sheetState ? { type: sheetState.type, id: sheetState.id || null, back: sheetState.back || null } : null }; }
 function pushNav() { if (!restoring) history.pushState(navState(), ''); }
-function replaceNav() { history.replaceState(navState(), ''); }
+function replaceNav() { const keep = history.state && history.state.filt; history.replaceState(keep ? { ...navState(), filt: keep } : navState(), ''); }
 function closeSheet() { if (history.state && history.state.z && history.state.sheet) history.back(); else closeSheetRaw(); }
 function goBack() { closeSheet(); }
 function navView(v) {
@@ -787,6 +787,7 @@ function navView(v) {
 }
 window.addEventListener('popstate', e => {
   const st = e.state; if (!st || !st.z) return;
+  if (st.filt) { UI.f = structuredClone(st.filt.f); UI.q = st.filt.q; UI.avail = st.filt.avail; }
   if (!$('#pick').hidden) closePick();
   if (!$('#crop').hidden) closeCrop();
   restoring = true;
@@ -1140,8 +1141,11 @@ document.addEventListener('click', async e => {
     case 'f-ing-mode': UI.f.ingMode = b.dataset.v; renderCatalogue($('#view')); break;
     case 'go-ing': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; UI.filtersOpen = true; navView('catalogue'); setTimeout(() => { const i = $('#f-ing-i'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } }, 50); break;
     case 'ing-search': { /* on empile une entrée d'historique : « retour » ramène à la fiche d'où l'on vient */
+      /* La fiche garde en mémoire les filtres d'avant ; l'entrée ajoutée porte ceux de l'ingrédient. Le retour les remet tels quels (cf. popstate). */
+      const snap = () => ({ f: structuredClone(UI.f), q: UI.q, avail: UI.avail });
+      if (history.state && history.state.z) history.replaceState({ ...history.state, filt: snap() }, '');
       UI.f = F_DEFAULT(); UI.f.ings = [id]; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); UI.view = 'catalogue'; render(); window.scrollTo(0, 0);
-      history.pushState({ ...navState(), ing: true }, ''); break; }
+      history.pushState({ ...navState(), ing: true, filt: snap() }, ''); break; }
     case 'go-na': UI.f = F_DEFAULT(); UI.f.alc = 'na'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-colls': UI.listTab = 'coll'; navView('lists'); break;
