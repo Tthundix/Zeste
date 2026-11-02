@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '0.15.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -296,7 +296,9 @@ function unlockScroll() { if (!sheetState && $('#crop').hidden && $('#pick').hid
 function render() {
   document.querySelectorAll('[data-act="view"][data-v]').forEach(b => { const on = b.dataset.v === UI.view; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   const m = $('#view');
-  if (UI.view === 'home') renderHome(m);
+  // Les rangées horizontales de l'accueil gardent leur position de défilement d'un affichage à l'autre.
+  const rows = {}; m.querySelectorAll('.hrow[data-row]').forEach(el => rows[el.dataset.row] = el.scrollLeft);
+  if (UI.view === 'home') { renderHome(m); m.querySelectorAll('.hrow[data-row]').forEach(el => { if (rows[el.dataset.row]) el.scrollLeft = rows[el.dataset.row]; }); }
   else if (UI.view === 'catalogue') renderCatalogue(m);
   else if (UI.view === 'bar') renderBar(m);
   else if (UI.view === 'lists') renderLists(m);
@@ -404,9 +406,9 @@ function moment(h) {
   return { key: 'nuit', title: 'Fin de soirée', lead: 'À cette heure, plutôt sans alcool.', pick: r => isNA(r) };
 }
 function hcard(r, sub) {
-  return `<button class="hcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}</span><span class="hname">${esc(r.name)}</span>${sub ? `<span class="hsub">${esc(sub)}</span>` : ''}</button>`;
+  return `<button class="hcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}${isNA(r) ? '<span class="na-pill">Sans alcool</span>' : ''}</span><span class="hname">${esc(r.name)}</span>${sub ? `<span class="hsub">${esc(sub)}</span>` : ''}</button>`;
 }
-const hrow = (title, items, more) => items.length ? `<section class="hsec"><div class="shead"><h2>${title}</h2>${more || ''}</div><div class="hrow">${items.join('')}</div></section>` : '';
+const hrow = (title, items, more) => items.length ? `<section class="hsec"><div class="shead"><h2>${title}</h2>${more || ''}</div><div class="hrow" data-row="${esc(title)}">${items.join('')}</div></section>` : '';
 function renderHome(m) {
   const now = new Date(), h = now.getHours(), M = moment(h), own = ownedSet(), seed = daySeed(now.toDateString() + M.key);
   const an = new Map(S.recipes.map(r => [r.id, analyze(r, own)]));

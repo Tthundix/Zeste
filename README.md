@@ -20,7 +20,8 @@ Zeste est une application web installable (PWA). Elle fonctionne hors ligne et g
 ## Publier une nouvelle version
 
 1. Modifier les fichiers.
-2. Dans `sw.js`, changer `VERSION` (par exemple `zeste-1.1.1`), et `APP_VERSION` dans `app.js`.
+2. Dans `sw.js`, changer `VERSION` (par exemple `zeste-0.15.1`), et `APP_VERSION` dans `app.js`.
+   Numérotation : versions 0.x pendant le développement ; la 1.0 sera la première mise en ligne publique.
    Si les recettes ou ingrédients de départ changent, augmenter `DATA_VERSION` dans `data.js` : les appareils récupèrent alors les nouveautés sans toucher aux recettes modifiées par l'utilisateur.
 3. Pousser sur la branche `main`. GitHub Pages met le site à jour en une minute environ.
 

@@ -562,3 +562,4 @@ input[type=radio]{accent-color:var(--accent)}
 .moment,.card,.hcard,.rcard,.coll,.lrow,.chip,.btn,.nav,.seg,.acc>summary{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .moment-t{cursor:pointer}
 .facts a{color:var(--accent);font-weight:600}
+.na-pill{position:absolute;top:8px;left:8px;font:700 11px var(--font-body);letter-spacing:.02em;padding:3px 8px;border-radius:99px;background:var(--ok);color:var(--surface)}
