@@ -566,3 +566,14 @@ input[type=radio]{accent-color:var(--accent)}
 .f-active{align-items:center}
 .ing-link{appearance:none;border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .ing-link:hover{text-decoration-color:var(--accent)}
+
+/* quantités par nombre de verres et liste de courses */
+.serv-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:2px 0 10px}
+.stepper{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:99px;padding:2px;background:var(--surface)}
+.stepper button{appearance:none;border:0;background:var(--surface-2);color:var(--fg);width:32px;height:32px;border-radius:50%;font:600 18px/1 var(--font-body);cursor:pointer;display:grid;place-items:center}
+.stepper button:disabled{opacity:.35;cursor:default}
+.stepper-v{min-width:74px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
+.srecs{display:flex;flex-direction:column}
+.srec{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.srec .lname{font-weight:600;min-width:0}
+.shop .qty{font-family:var(--font-mono);font-weight:500;color:var(--muted);margin-left:6px;font-size:13px}
