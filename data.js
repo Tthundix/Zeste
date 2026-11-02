@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 7;
+const DATA_VERSION = 8;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1027,8 +1027,43 @@ RECIPES.push(Object.assign(
 /* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
    Une recette sans entrée garde l'illustration du verre. */
 const PHOTOS = {
+  'amaretto-sour': 'photos/amaretto-sour.jpg',
+  'aviation': 'photos/aviation.jpg',
+  'bees-knees': 'photos/bees-knees.jpg',
+  'bellini': 'photos/bellini.jpg',
+  'black-russian': 'photos/black-russian.jpg',
+  'bloody-mary': 'photos/bloody-mary.jpg',
+  'bramble': 'photos/bramble.jpg',
+  'caipirinha': 'photos/caipirinha.jpg',
+  'clover-club': 'photos/clover-club.jpg',
+  'cosmopolitan': 'photos/cosmopolitan.jpg',
+  'daiquiri': 'photos/daiquiri.jpg',
+  'dark-n-stormy': 'photos/dark-n-stormy.jpg',
+  'dry-martini': 'photos/dry-martini.jpg',
+  'eggnog': 'photos/eggnog.jpg',
+  'espresso-martini': 'photos/espresso-martini.jpg',
+  'french-75': 'photos/french-75.jpg',
+  'gin-basil-smash': 'photos/gin-basil-smash.jpg',
+  'gin-tonic': 'photos/gin-tonic.jpg',
+  'hot-toddy': 'photos/hot-toddy.jpg',
+  'irish-coffee': 'photos/irish-coffee.jpg',
+  'limoncello-spritz': 'photos/limoncello-spritz.jpg',
+  'long-island': 'photos/long-island.jpg',
+  'manhattan': 'photos/manhattan.jpg',
+  'margarita': 'photos/margarita.jpg',
+  'mimosa': 'photos/mimosa.jpg',
+  'mojito': 'photos/mojito.jpg',
+  'moscow-mule': 'photos/moscow-mule.jpg',
   'negroni': 'photos/negroni.jpg',
-  'limoncello-spritz': 'photos/limoncello-spritz.jpg'
+  'old-fashioned': 'photos/old-fashioned.jpg',
+  'penicillin': 'photos/penicillin.jpg',
+  'pina-colada': 'photos/pina-colada.jpg',
+  'pisco-sour': 'photos/pisco-sour.jpg',
+  'sangria': 'photos/sangria.jpg',
+  'sex-on-the-beach': 'photos/sex-on-the-beach.jpg',
+  'spritz': 'photos/aperol-spritz.jpg',
+  'tequila-sunrise': 'photos/tequila-sunrise.jpg',
+  'vin-chaud': 'photos/vin-chaud.jpg'
 };
 RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
