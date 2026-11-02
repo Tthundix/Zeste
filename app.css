@@ -563,3 +563,6 @@ input[type=radio]{accent-color:var(--accent)}
 .moment-t{cursor:pointer}
 .facts a{color:var(--accent);font-weight:600}
 .na-pill{position:absolute;top:8px;left:8px;font:700 11px var(--font-body);letter-spacing:.02em;padding:3px 8px;border-radius:99px;background:var(--ok);color:var(--surface)}
+.f-active{align-items:center}
+.ing-link{appearance:none;border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.ing-link:hover{text-decoration-color:var(--accent)}

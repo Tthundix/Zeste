@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.15.1';
+const APP_VERSION = '0.16.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -18,7 +18,7 @@ const SWATCHES = [['#E8F1F2', 'Cristal'], ['#F6EBC8', 'Crème'], ['#FFE14D', 'Ci
   ['#FF6A1A', 'Orange amer'], ['#D98A2B', 'Ambre'], ['#9A4A1E', 'Acajou'], ['#3B2416', 'Café'], ['#E2232E', 'Rouge vif'], ['#B0162E', 'Rubis'], ['#F04E7A', 'Grenadine'], ['#FF8FB8', 'Rose'],
   ['#7A1745', 'Mûre'], ['#8A4FD8', 'Violette'], ['#1E9BEA', 'Curaçao'], ['#18C2B0', 'Lagon']];
 const TF_DEFAULT = () => ({ su: [0, 5], ac: [0, 5], am: [0, 5], as: [0, 5], fo: [0, 5] });
-const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', base: '', alc: '', tf: TF_DEFAULT() });
+const F_DEFAULT = () => ({ method: '', glass: '', tag: '', origin: '', level: '', base: '', alc: '', ings: [], ingMode: 'all', tf: TF_DEFAULT() });
 
 const clone = o => JSON.parse(JSON.stringify(o));
 const $ = s => document.querySelector(s);
@@ -244,6 +244,25 @@ function analyze(r, owned) {
   const rows = r.ings.map(row => { const s = rowStatus(row, owned); if (s.st === 'miss') miss.push(row.id); if (s.st === 'sub') subs++; return s; });
   return { rows, miss, subs };
 }
+/* Recherche par ingrédient : l'ingrédient lui-même, un équivalent du même groupe, ou un remplaçant prévu. */
+function ingMatch(r, id) {
+  const cat = norm(S.ings[id] && S.ings[id].cat);
+  const near = c => { c = norm(c); return !!cat && !!c && (c.startsWith(cat) || cat.startsWith(c)); };
+  return r.ings.some(x => x.id === id || (S.ings[x.id] && near(S.ings[x.id].cat)) || (x.alts || []).includes(id));
+}
+function resolveIng(txt) {
+  const k = norm(txt); if (!k) return null;
+  const exact = findIng(txt); if (exact) return exact;
+  const ids = Object.keys(S.ings).filter(id => norm(S.ings[id].name).includes(k));
+  return ids.length === 1 ? ids[0] : (ids.find(id => norm(S.ings[id].name).startsWith(k)) || ids[0] || null);
+}
+function addFilterIng() {
+  const inp = $('#f-ing-i'); if (!inp) return;
+  const id = resolveIng(inp.value);
+  if (!id) { toast('Ingrédient introuvable : choisir un nom dans la liste.'); return; }
+  if (!UI.f.ings.includes(id)) UI.f.ings.push(id);
+  renderCatalogue($('#view')); const n = $('#f-ing-i'); if (n) n.focus({ preventScroll: true });
+}
 /* Sans alcool : aucun ingrédient alcoolisé. */
 const isNA = r => r.ings.every(i => !(S.ings[i.id] && +S.ings[i.id].abv));
 /* Facile : peu d'ingrédients, pas de blanc d'œuf ni de blender. */
@@ -282,7 +301,7 @@ function fmtQty(row) {
 const starsHTML = n => `<span class="stars" aria-label="${fmtRating(n)} sur 5"><span class="s-bg">★★★★★</span><span class="s-fg" style="width:${n / 5 * 100}%">★★★★★</span></span>`;
 const tfActive = ([a, b]) => a > 0 || b < 5;
 const tfText = ([a, b]) => a === 0 && b === 5 ? 'Tous' : a === b ? `= ${a}` : a === 0 ? `≤ ${b}` : b === 5 ? `≥ ${a}` : `${a} à ${b}`;
-const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level', 'base', 'alc'].filter(k => UI.f[k]).length + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
+const filterCount = () => ['method', 'glass', 'tag', 'origin', 'level', 'base', 'alc'].filter(k => UI.f[k]).length + (UI.f.ings.length ? 1 : 0) + TASTE.filter(([k]) => tfActive(UI.f.tf[k])).length;
 
 let toastT, noteT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
@@ -318,6 +337,13 @@ function renderCatalogue(m) {
   <div class="cat-layout">
     <aside class="filters${UI.filtersOpen ? '' : ' closed'}" aria-label="Filtres">
       <div class="fhead"><h2>Filtres</h2><div class="row-btns"><button class="btn small ghost" data-act="clear-filters" id="f-clear" style="visibility:${nf ? 'visible' : 'hidden'}">Effacer</button><button class="btn small ghost fclose" data-act="toggle-filters">Fermer</button></div></div>
+      <div class="field"><span>Ingrédients</span>
+        <div class="ed-chips">${UI.f.ings.map(id => `<span class="ed-chip">${esc(ingName(id))}<button type="button" data-act="f-ing-rm" data-id="${esc(id)}" aria-label="Retirer ${esc(ingName(id))}">×</button></span>`).join('')}</div>
+        <div class="ed-add"><input type="text" id="f-ing-i" list="dl-fing" placeholder="ex. Gin, citron vert…" autocomplete="off"><button type="button" class="btn small" data-act="f-ing-add">Ajouter</button></div>
+        <datalist id="dl-fing">${[...new Set(S.recipes.flatMap(r => r.ings.map(i => i.id)))].filter(id => S.ings[id]).map(ingName).sort((a, b) => a.localeCompare(b, 'fr')).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+        ${UI.f.ings.length > 1 ? `<div class="seg mini" role="group" aria-label="Combinaison" style="align-self:flex-start">${[['all', 'Tous ces ingrédients'], ['any', 'Au moins un']].map(([v, l]) => `<button type="button" data-act="f-ing-mode" data-v="${v}" class="${UI.f.ingMode === v ? 'on' : ''}" aria-pressed="${UI.f.ingMode === v}">${l}</button>`).join('')}</div>` : ''}
+        <p class="hint">Les équivalents comptent aussi : chercher le Cointreau trouve les recettes au triple sec.</p>
+      </div>
       <div class="tf"><h3 class="lbl">Profil de goût</h3>
         <p class="hint">Chaque cocktail est noté de 0 à 5 sur chaque goût. Il suffit de régler l'intervalle voulu, par exemple Force de 0 à 2 et Astringent de 4 à 5.</p>
         ${TASTE.map(([k, l]) => { const [a, b] = UI.f.tf[k]; return `<div class="tf-row${tfActive([a, b]) ? ' active' : ''}" data-k="${k}"><span>${l}</span><div class="dual" style="--a:${a};--b:${b}"><span class="fill"></span><input type="range" class="dr" data-k="${k}" data-e="0" min="0" max="5" step="1" value="${a}" aria-label="${l} minimum"><input type="range" class="dr" data-k="${k}" data-e="1" min="0" max="5" step="1" value="${b}" aria-label="${l} maximum"></div><span class="tv">${tfText([a, b])}</span></div>`; }).join('')}
@@ -337,6 +363,7 @@ function renderCatalogue(m) {
         <button class="btn small btn-filters" data-act="toggle-filters" aria-expanded="${UI.filtersOpen}">Filtres<span id="nf-badge">${nf ? ` · ${nf}` : ''}</span></button>
         <label class="sort" for="cf-sort">Trier par <select id="cf-sort">${opts([['name', 'Nom'], ['rating', 'Ma note'], ['ready', 'Le plus faisable'], ['recent', 'Ajout récent']], UI.sort)}</select></label>
       </div>
+      ${UI.f.ings.length ? `<div class="chips f-active"><span class="hint">${UI.f.ings.length > 1 ? (UI.f.ingMode === 'all' ? 'Avec tous ces ingrédients :' : 'Avec au moins un de :') : 'Avec :'}</span>${UI.f.ings.map(id => `<button class="chip on" data-act="f-ing-rm" data-id="${esc(id)}" aria-label="Retirer ${esc(ingName(id))}">${esc(ingName(id))} ×</button>`).join('')}</div>` : ''}
       <div id="results" class="grid"></div>
     </div>
   </div>`;
@@ -361,6 +388,7 @@ function renderResults() {
     if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
     if (F.level === 'easy' && !isEasy(r)) return false;
     if (F.alc === 'na' && !isNA(r)) return false;
+    if (F.ings.length) { const hits = F.ings.map(id => ingMatch(r, id)); if (F.ingMode === 'any' ? !hits.some(Boolean) : !hits.every(Boolean)) return false; }
     if (F.alc === 'alc' && isNA(r)) return false;
     if (F.base && !r.ings.some(i => S.ings[i.id] && S.ings[i.id].fam === 'Spiritueux' && S.ings[i.id].sub === F.base)) return false;
     for (const [k] of TASTE) { if (!tfActive(F.tf[k])) continue; const v = r.flavor[k], [lo, hi] = F.tf[k]; if (v == null || v < lo || v > hi) return false; }
@@ -441,7 +469,7 @@ function renderHome(m) {
   ${hrow('Sans alcool', naList.slice(0, 14).map(r => hcard(r, r.source || r.author || r.method)), `<button class="btn small ghost" data-act="go-na">Tout voir</button>`)}
   ${hrow('Consultés récemment', seen.slice(0, 14).map(r => hcard(r, r.method)))}
   <section class="hsec"><div class="shead"><h2>Explorer</h2></div>
-    <div class="explore"><h3 class="lbl">Par alcool</h3><div class="chips">${SPIRITS.map(s => `<button class="chip big" data-act="go-base" data-v="${esc(s)}">${esc(SPIRIT_LABEL[s])}</button>`).join('')}</div>
+    <div class="explore"><div class="chips"><button class="chip big" data-act="go-ing">Chercher par ingrédients</button></div><h3 class="lbl">Par alcool</h3><div class="chips">${SPIRITS.map(s => `<button class="chip big" data-act="go-base" data-v="${esc(s)}">${esc(SPIRIT_LABEL[s])}</button>`).join('')}</div>
     <h3 class="lbl">Par mood</h3><div class="chips">${tags.map(t => `<button class="chip" data-act="go-tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <h3 class="lbl">Par niveau</h3><div class="chips"><button class="chip" data-act="go-easy">Facile : peu d’ingrédients, sans technique</button><button class="chip" data-act="go-na">Sans alcool</button></div></div>
   </section>
@@ -781,7 +809,7 @@ function openDetail(id, keep, back) {
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(ingName).join(', '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row))}</span><span class="nm">${esc(ingName(row.id))}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row))}</span><span class="nm"><button class="ing-link" data-act="ing-search" data-id="${esc(row.id)}" title="Recettes avec cet ingrédient">${esc(ingName(row.id))}</button>${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
@@ -1090,6 +1118,11 @@ document.addEventListener('click', async e => {
     case 'go-cat': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = b.dataset.v; navView('catalogue'); break;
     case 'go-base': UI.f = F_DEFAULT(); UI.f.base = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-tag': UI.f = F_DEFAULT(); UI.f.tag = b.dataset.v; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
+    case 'f-ing-add': addFilterIng(); break;
+    case 'f-ing-rm': UI.f.ings = UI.f.ings.filter(x => x !== id); renderCatalogue($('#view')); break;
+    case 'f-ing-mode': UI.f.ingMode = b.dataset.v; renderCatalogue($('#view')); break;
+    case 'go-ing': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; UI.filtersOpen = true; navView('catalogue'); setTimeout(() => { const i = $('#f-ing-i'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } }, 50); break;
+    case 'ing-search': UI.f = F_DEFAULT(); UI.f.ings = [id]; UI.q = ''; UI.avail = 'all'; closeSheetRaw(); UI.view = 'catalogue'; render(); replaceNav(); window.scrollTo(0, 0); break;
     case 'go-na': UI.f = F_DEFAULT(); UI.f.alc = 'na'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-easy': UI.f = F_DEFAULT(); UI.f.level = 'easy'; UI.q = ''; UI.avail = 'all'; navView('catalogue'); break;
     case 'go-colls': UI.listTab = 'coll'; navView('lists'); break;
@@ -1254,6 +1287,7 @@ document.addEventListener('keydown', e => {
     if (m != null) { e.preventDefault(); commitRate(rs.dataset.id, Math.min(5, Math.max(0, v + m))); setTimeout(() => { const n = $('.rate-stars'); if (n) n.focus(); }, 0); return; }
     if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') { e.preventDefault(); commitRate(rs.dataset.id, 0); return; }
   }
+  if (e.key === 'Enter' && e.target.id === 'f-ing-i') { e.preventDefault(); addFilterIng(); return; }
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('ed-add-i')) { e.preventDefault(); edAddRecipe(+e.target.dataset.bk); return; }
   if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
 });
