@@ -1101,6 +1101,11 @@ const PHOTOS = {
 };
 RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
+/* Crédits des photos sous licence libre (CC BY, CC BY-SA…), à renseigner pour toute photo qui n'est pas de Zeste :
+   { 'id-recette': { by: 'Auteur', lic: 'CC BY-SA 4.0', url: 'https://…page du fichier…' } }. Le crédit s'affiche sous la photo. */
+const PHOTO_CREDITS = {};
+RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
+
 /* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
    { type: 'recipes', title, ids, cols }, { type: 'text', title, text }, { type: 'tip', text }.
    Les collections sans blocs listent simplement leurs recettes (ids ou filter). */

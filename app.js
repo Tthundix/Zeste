@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.21.0';
+const APP_VERSION = '0.21.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -231,7 +231,7 @@ function garnIcon(key) {
   const G = { rim: [26, 28, 38], lt: 27 };
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
-const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" alt="">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
 
 /* ---------- disponibilité, substitutions, dosage ---------- */
 function rowStatus(row, owned) {
@@ -340,7 +340,7 @@ function renderCatalogue(m) {
       <div class="fhead"><h2>Filtres</h2><div class="row-btns"><button class="btn small ghost" data-act="clear-filters" id="f-clear" style="visibility:${nf ? 'visible' : 'hidden'}">Effacer</button><button class="btn small ghost fclose" data-act="toggle-filters">Fermer</button></div></div>
       <div class="field"><span>Ingrédients</span>
         <div class="ed-chips">${UI.f.ings.map(id => `<span class="ed-chip">${esc(ingName(id))}<button type="button" data-act="f-ing-rm" data-id="${esc(id)}" aria-label="Retirer ${esc(ingName(id))}">×</button></span>`).join('')}</div>
-        <div class="ed-add"><input type="text" id="f-ing-i" list="dl-fing" placeholder="ex. Gin, citron vert…" autocomplete="off"><button type="button" class="btn small" data-act="f-ing-add">Ajouter</button></div>
+        <div class="ed-add"><input type="text" id="f-ing-i" aria-label="Ajouter un ingrédient au filtre" list="dl-fing" placeholder="ex. Gin, citron vert…" autocomplete="off"><button type="button" class="btn small" data-act="f-ing-add">Ajouter</button></div>
         <datalist id="dl-fing">${[...new Set(S.recipes.flatMap(r => r.ings.map(i => i.id)))].filter(id => S.ings[id]).map(ingName).sort((a, b) => a.localeCompare(b, 'fr')).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
         ${UI.f.ings.length > 1 ? `<div class="seg mini" role="group" aria-label="Combinaison" style="align-self:flex-start">${[['all', 'Tous ces ingrédients'], ['any', 'Au moins un']].map(([v, l]) => `<button type="button" data-act="f-ing-mode" data-v="${v}" class="${UI.f.ingMode === v ? 'on' : ''}" aria-pressed="${UI.f.ingMode === v}">${l}</button>`).join('')}</div>` : ''}
         <p class="hint">Les équivalents comptent aussi : chercher le Cointreau trouve les recettes au triple sec.</p>
@@ -593,7 +593,7 @@ function renderLists(m) {
   }).join('')}
   <section class="sec"><div class="shead"><h2>Mieux notés</h2><span class="count">${rated.length}</span></div>
   ${rated.length ? `<div class="lrows">${rated.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Les recettes notées apparaissent ici.</p>`}</section>
-  <section class="sec"><h2>Nouvelle liste</h2><div class="inline-form"><input id="nl-name" type="text" placeholder="ex. Soirée ciné, Hiver, Pour les potes"><button class="btn primary small" data-act="add-list">Créer</button></div></section>
+  <section class="sec"><h2>Nouvelle liste</h2><div class="inline-form"><input id="nl-name" type="text" aria-label="Nom de la nouvelle liste" placeholder="ex. Soirée ciné, Hiver, Pour les potes"><button class="btn primary small" data-act="add-list">Créer</button></div></section>
   </div>`;
 }
 /* collections : intégrées (data.js) et créées sur l'appareil */
@@ -820,6 +820,12 @@ function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
   return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Pas encore noté'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
 }
+/* Crédit d'une photo sous licence libre ; le lien n'est affiché que s'il commence par http(s). */
+function creditHTML(r) {
+  const c = r.photoCredit; if (!c || !c.by || !okPhoto(r.photo)) return '';
+  const who = /^https?:\/\//.test(c.url || '') ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.by)}</a>` : esc(c.by);
+  return `<p class="photo-credit">Photo : ${who}${c.lic ? ' · ' + esc(c.lic) : ''}</p>`;
+}
 const SERV_PRESETS = [1, 2, 4, 8, 12];
 const stepperHTML = (act, id, k, label) => `<span class="stepper" role="group" aria-label="${esc(label)}"><button data-act="${act}" data-id="${esc(id)}" data-v="-1" aria-label="Un verre de moins"${k <= 1 ? ' disabled' : ''}>−</button><span class="stepper-v"><b>${k}</b> ${plural(k, 'verre')}</span><button data-act="${act}" data-id="${esc(id)}" data-v="1" aria-label="Un verre de plus"${k >= 60 ? ' disabled' : ''}>+</button></span>`;
 const presetsHTML = (act, k) => `<span class="seg mini" role="group" aria-label="Choisir un nombre de verres">${SERV_PRESETS.map(n => `<button data-act="${act}" data-v="${n}" class="${k === n ? 'on' : ''}" aria-pressed="${k === n}">${n}</button>`).join('')}</span>`;
@@ -904,7 +910,7 @@ function openDetail(id, keep, back) {
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
   <div class="sheet-body"><article class="inner wide detail" style="--c:${okColor(r.color)}">
     <div class="d-left cols dz">
-      <div class="d-hero dhero o1">${visual(r)}</div>
+      <div class="d-hero dhero o1">${visual(r)}</div>${creditHTML(r)}
       <section class="sec o6"><h2>Profil de goût</h2>${TASTE.every(([k]) => r.flavor[k] == null) ? '<p class="hint">Profil de goût non renseigné.</p>' : `<div class="taste">${TASTE.map(([k, l]) => { const v = r.flavor[k]; return `<div class="taste-row"><span>${l}</span><span class="pips${v == null ? ' unk' : ''}">${[1, 2, 3, 4, 5].map(n => `<i class="${v != null && n <= v ? 'on' : ''}"></i>`).join('')}</span><span class="tv">${v == null ? '—' : v}</span></div>`; }).join('')}</div>`}</section>
       ${top ? '' : avis('o8')}
       ${r.tags.length ? `<section class="sec o9"><h2>Mood</h2><div class="chips">${r.tags.map(t => `<button class="chip" data-act="by-tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div></section>` : ''}

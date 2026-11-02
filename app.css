@@ -577,3 +577,4 @@ input[type=radio]{accent-color:var(--accent)}
 .srec{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .srec .lname{font-weight:600;min-width:0}
 .shop .qty{font-family:var(--font-mono);font-weight:500;color:var(--muted);margin-left:6px;font-size:13px}
+.photo-credit{margin:6px 2px 0;font-size:12px;color:var(--muted)}.photo-credit a{color:inherit;text-underline-offset:2px}
