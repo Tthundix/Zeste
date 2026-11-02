@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.17.0';
+const APP_VERSION = '0.18.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -25,7 +25,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const okColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#C9A227';
-const okPhoto = p => typeof p === 'string' && p.startsWith('data:image/') ? p : '';
+const okPhoto = p => typeof p === 'string' && (p.startsWith('data:image/') || /^photos\/[a-z0-9-]+\.(jpe?g|png|webp)$/.test(p)) ? p : '';
 const fr = n => { const r = Math.round(n * 100) / 100; return String(r).replace('.', ','); };
 const plural = (n, w) => n > 1 ? w + 's' : w;
 const opts = (arr, sel) => arr.map(v => Array.isArray(v) ? `<option value="${esc(v[0])}"${v[0] === sel ? ' selected' : ''}>${esc(v[1])}</option>` : `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join('');

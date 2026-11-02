@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 6;
+const DATA_VERSION = 7;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1023,6 +1023,14 @@ RECIPES.push(Object.assign(
     'Exemple de création inspirée d’un univers de jeu vidéo.'),
   { origin: 'Original', by: 'me' }
 ));
+
+/* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
+   Une recette sans entrée garde l'illustration du verre. */
+const PHOTOS = {
+  'negroni': 'photos/negroni.jpg',
+  'limoncello-spritz': 'photos/limoncello-spritz.jpg'
+};
+RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
 /* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
    { type: 'recipes', title, ids, cols }, { type: 'text', title, text }, { type: 'tip', text }.
