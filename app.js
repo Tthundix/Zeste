@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.26.0';
+const APP_VERSION = '0.26.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1002,7 +1002,7 @@ function rowHTML(row) {
       <label for="ri-o${n}"><input type="checkbox" class="f-opt" id="ri-o${n}"${row && row.opt ? ' checked' : ''}> Facultatif</label>
     </div>
     <div class="frow-alts"><div class="alt-list">${(row && row.alts || []).map(altRowHTML).join('')}</div><button type="button" class="btn small ghost" data-act="alt-add">+ Remplaçant</button></div>
-    </div></div>`;
+  </div>`;
 }
 function checkNew(fr) { const v = fr.querySelector('.f-ing').value.trim(); fr.querySelector('.frow-new').hidden = !v || !!findIng(v); }
 const CUT_KEYS = GARNISH_CUTS.map(c => c[0]);
