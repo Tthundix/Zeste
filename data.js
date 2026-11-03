@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 10;
+const DATA_VERSION = 11;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1103,7 +1103,36 @@ RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
 /* Crédits des photos sous licence libre (CC BY, CC BY-SA…), à renseigner pour toute photo qui n'est pas de Zeste :
    { 'id-recette': { by: 'Auteur', lic: 'CC BY-SA 4.0', url: 'https://…page du fichier…' } }. Le crédit s'affiche sous la photo. */
-const PHOTO_CREDITS = {};
+const PHOTO_CREDITS = {
+  'aviation': { by: 'Ahtziri Lagarde' },
+  'bees-knees': { by: 'Daniel Neuhaus' },
+  'black-russian': { by: 'Mae Mu' },
+  'bloody-mary': { by: 'Margaret Jaszowska' },
+  'bramble': { by: 'David Foodphototasty' },
+  'caipirinha': { by: 'Leighann Blackwood' },
+  'clover-club': { by: 'Ferals Studio' },
+  'daiquiri': { by: 'Marta Smith' },
+  'dark-n-stormy': { by: 'Elissa Landry' },
+  'espresso-martini': { by: 'Nima Naseri' },
+  'french-75': { by: 'Stephen Harlan' },
+  'gin-basil-smash': { by: 'Patrycja Jadach' },
+  'gin-tonic': { by: 'Adrian Infernus' },
+  'hot-toddy': { by: 'Monika Grabkowska' },
+  'long-island': { by: 'Elissa Landry' },
+  'manhattan': { by: 'Brooke Cagle' },
+  'margarita': { by: 'Cphotos' },
+  'mimosa': { by: 'Briona Baker' },
+  'mojito': { by: 'Tatyana Vega' },
+  'moscow-mule': { by: 'Kelly Visel' },
+  'old-fashioned': { by: 'Ferals Studio' },
+  'penicillin': { by: 'Daniel Neuhaus' },
+  'pina-colada': { by: 'Diego Arenas de Rodrigo' },
+  'pisco-sour': { by: 'Ferals Studio' },
+  'sangria': { by: 'Srijal Maharjan' },
+  'sex-on-the-beach': { by: 'Hope Kauffman' },
+  'tequila-sunrise': { by: 'Diego Arenas de Rodrigo' },
+  'vin-chaud': { by: 'Gaby Dyson' }
+};
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
 
 /* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
