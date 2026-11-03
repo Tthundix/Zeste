@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.27.0';
+const APP_VERSION = '0.28.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -88,6 +88,11 @@ function upgrade(d) {
       const k = d.recipes.findIndex(r => r.id === b.id);
       if (k < 0) { if (!d.removed.includes(b.id)) d.recipes.push(clone(b)); }
       else if (d.recipes[k].src === 'builtin' && !d.recipes[k].edited) d.recipes[k] = clone(b);
+      else if (d.recipes[k].src === 'builtin' && !okPhoto(d.recipes[k].photo) && okPhoto(b.photo)) {
+        // Recette de départ modifiée par l'utilisateur mais sans photo : elle reçoit la photo ajoutée par une mise à jour (le reste de la recette ne change pas).
+        d.recipes[k].photo = b.photo;
+        if (b.photoCredit) d.recipes[k].photoCredit = clone(b.photoCredit); else delete d.recipes[k].photoCredit;
+      }
     });
     d.dataVersion = DATA_VERSION;
   }
