@@ -1,9 +1,9 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.24.1';
+const APP_VERSION = '0.25.0';
 const KEY = 'zeste-v1';
-const UNITS = ['ml', 'cl', 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
+const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
 const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café': 5, 'c. à soupe': 15, 'à compléter': 60 };
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
@@ -292,6 +292,9 @@ function estAbv(r) {
   const d = DIL[r.method] != null ? DIL[r.method] : .15;
   return Math.round(alc / (vol * (1 + d)) * 100);
 }
+// Unités américaines saisies dans le formulaire : converties en ml à l'enregistrement (1 oz = 30 ml, 1 cup = 240 ml, arrondi à 5 ml).
+function usToMl(q, unit) { const ml = q * (unit === 'cup' ? 240 : 30); return ml >= 20 ? Math.round(ml / 5) * 5 : Math.round(ml); }
+function fmtCup(x) { const r = Math.round(x * 4) / 4, w = Math.floor(r), f = r - w, F = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[f] || ''; return w ? (F ? `${w} ${F}` : `${w}`) : (F || '0'); }
 function fmtOz(x) { const r = Math.round(x * 4) / 4, w = Math.floor(r), f = r - w, F = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[f] || ''; return w ? (F ? `${w} ${F}` : `${w}`) : (F || '0'); }
 function fmtQty(row, k) {
   const q = (+row.qty || 0) * (k || 1);
@@ -299,7 +302,7 @@ function fmtQty(row, k) {
   if (row.unit === 'ml' || row.unit === 'cl') {
     const ml = row.unit === 'cl' ? q * 10 : q;
     if (S.unit === 'cl') return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml / 10) + ' cl';
-    if (S.unit === 'oz') return fmtOz(ml / 29.574) + ' oz';
+    if (S.unit === 'oz') { const oz = ml / 29.574; if (oz >= 8) { const c = Math.round(oz / 8 * 4) / 4; return fmtCup(c) + (c > 1 ? ' cups' : ' cup'); } return fmtOz(oz) + ' oz'; }
     return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml) + ' ml';
   }
   if (!row.unit) return fr(q); // sans unité : « 2 » concombre, « 1 » citron
@@ -1207,7 +1210,8 @@ function saveForm() {
   const ings = rows.map(({ frw, id }) => {
     const alts = frw.querySelector('.f-alts').value.split(',').map(s => s.trim()).filter(Boolean).map(a => { const aid = resolve(a); if (!aid) unknown.push(a); return aid; }).filter(x => x && x !== id);
     const q = parseFloat(String(frw.querySelector('.f-qty').value).replace(',', '.')), unit = frw.querySelector('.f-unit').value;
-    return { id, qty: unit === 'à compléter' ? 0 : (isFinite(q) && q > 0 ? q : 0), unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: [...new Set(alts)] };
+    const us = unit === 'oz' || unit === 'cup', okq = isFinite(q) && q > 0;
+    return { id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: [...new Set(alts)] };
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
