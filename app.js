@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.26.1';
+const APP_VERSION = '0.27.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -968,7 +968,7 @@ function openDetail(id, keep, back) {
         <ul class="ings">${rowsHTML}</ul>
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
-      ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><p>${esc(r.note)}</p></section>` : ''}
+      ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><ul class="notes">${String(r.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
@@ -1088,7 +1088,7 @@ function openForm(id) {
     </section>
     <section class="sec"><h2>Préparation</h2>
       <label class="field" for="rf-steps"><span>Une étape par ligne</span><textarea id="rf-steps" rows="5">${esc(r.steps.join('\n'))}</textarea></label>
-      <label class="field" for="rf-note"><span>Notes</span><textarea id="rf-note" rows="3" placeholder="Variantes, astuces, origine de l'idée…">${esc(r.note)}</textarea></label>
+      <label class="field" for="rf-note"><span>Notes (une par ligne)</span><textarea id="rf-note" rows="3" placeholder="Variantes, astuces, origine de l'idée…">${esc(r.note)}</textarea></label>
     </section>
     <p class="err" id="rf-err" hidden></p>
     <div><button type="button" class="btn primary" data-act="form-save">Enregistrer la recette</button></div>

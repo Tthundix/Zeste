@@ -324,6 +324,9 @@ input[type=radio]{accent-color:var(--accent)}
 .tv{font-family:var(--font-mono);color:var(--muted);text-align:right}
 .steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
 .steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px}
+.notes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.notes li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px}
+.notes li::before{content:"•";text-align:center;font-weight:700;color:var(--accent);color:color-mix(in oklab,var(--c) 58%,var(--fg))}
 .steps li::before{content:counter(s);font-family:var(--font-mono);font-weight:600;color:var(--accent);color:color-mix(in oklab,var(--c) 58%,var(--fg))}
 .mynote textarea{min-height:96px}
 .mynote.top{gap:6px;margin-top:6px}
