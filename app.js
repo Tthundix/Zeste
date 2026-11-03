@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.25.2';
+const APP_VERSION = '0.26.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -234,9 +234,12 @@ function garnIcon(key) {
 const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
 
 /* ---------- disponibilité, substitutions, dosage ---------- */
+// Un remplaçant est soit un identifiant (même dosage), soit { id, qty, unit } (autre dosage).
+const altId = a => typeof a === 'string' ? a : a.id;
+const altTxt = (a, k) => typeof a === 'string' || !a.qty ? ingName(altId(a)) : `${fmtQty(a, k)} ${ingName(a.id)}`;
 function rowStatus(row, owned) {
   if (owned.has(row.id)) return { st: 'ok' };
-  for (const a of (row.alts || [])) if (owned.has(a)) return { st: 'sub', by: a };
+  for (const a of (row.alts || [])) if (owned.has(altId(a))) return { st: 'sub', by: altId(a) };
   if (row.sub) { const cat = S.ings[row.id] && S.ings[row.id].cat; for (const o of owned) if (o !== row.id && S.ings[o] && S.ings[o].cat === cat) return { st: 'sub', by: o }; }
   return { st: row.opt ? 'opt' : 'miss' };
 }
@@ -249,7 +252,7 @@ function analyze(r, owned) {
 function ingMatch(r, id) {
   const cat = norm(S.ings[id] && S.ings[id].cat);
   const near = c => { c = norm(c); return !!cat && !!c && (c.startsWith(cat) || cat.startsWith(c)); };
-  return r.ings.some(x => x.id === id || (S.ings[x.id] && near(S.ings[x.id].cat)) || (x.alts || []).includes(id));
+  return r.ings.some(x => x.id === id || (S.ings[x.id] && near(S.ings[x.id].cat)) || (x.alts || []).some(a => altId(a) === id));
 }
 function resolveIng(txt) {
   const k = norm(txt); if (!k) return null;
@@ -941,7 +944,7 @@ function openDetail(id, keep, back) {
     if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
-    if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(ingName).join(', '))}`);
+    if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(a => altTxt(a, kServ)).join(' ; '))}`);
     return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-search" data-id="${esc(row.id)}" title="Recettes avec cet ingrédient">${esc(ingName(row.id))}</button>${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
@@ -973,6 +976,13 @@ function openDetail(id, keep, back) {
 }
 
 /* ---------- formulaire ---------- */
+function altRowHTML(a) {
+  const o = typeof a === 'string' || !a ? { id: a && a } : a, ing = o.id && S.ings[o.id];
+  return `<div class="alt-row"><input type="text" class="f-aid" list="dl-ings" placeholder="Remplaçant (choisir dans la liste)" aria-label="Ingrédient de remplacement" value="${esc(ing ? ing.name : '')}" autocomplete="off">
+    <input type="number" class="f-aq" inputmode="decimal" step="any" min="0" placeholder="Idem" aria-label="Dose du remplaçant (vide : même dose)" value="${o.qty ? esc(o.qty) : ''}">
+    <select class="f-au" aria-label="Unité du remplaçant">${opts(UNITS.filter(u => u !== 'à compléter'), o.unit == null ? 'ml' : o.unit)}</select>
+    <button type="button" class="icon-btn" data-act="alt-del" aria-label="Retirer ce remplaçant">×</button></div>`;
+}
 function rowHTML(row) {
   const n = ++rowN, ing = row && S.ings[row.id];
   return `<div class="frow">
@@ -990,7 +1000,8 @@ function rowHTML(row) {
     <div class="frow-opts">
       <label for="ri-s${n}"><input type="checkbox" class="f-sub" id="ri-s${n}"${row && row.sub ? ' checked' : ''}> Tout son groupe convient</label>
       <label for="ri-o${n}"><input type="checkbox" class="f-opt" id="ri-o${n}"${row && row.opt ? ' checked' : ''}> Facultatif</label>
-      <input type="text" class="f-alts" id="ri-x${n}" placeholder="Autres remplaçants, séparés par des virgules" aria-label="Autres remplaçants" value="${esc(row ? row.alts.map(ingName).join(', ') : '')}">
+    </div>
+    <div class="frow-alts"><div class="alt-list">${(row && row.alts || []).map(altRowHTML).join('')}</div><button type="button" class="btn small ghost" data-act="alt-add">+ Remplaçant</button></div>
     </div></div>`;
 }
 function checkNew(fr) { const v = fr.querySelector('.f-ing').value.trim(); fr.querySelector('.frow-new').hidden = !v || !!findIng(v); }
@@ -1215,10 +1226,17 @@ function saveForm() {
     rows.push({ frw, id });
   });
   const ings = rows.map(({ frw, id }) => {
-    const alts = frw.querySelector('.f-alts').value.split(',').map(s => s.trim()).filter(Boolean).map(a => { const aid = resolve(a); if (!aid) unknown.push(a); return aid; }).filter(x => x && x !== id);
+    const alts = [...frw.querySelectorAll('.alt-row')].map(ar => {
+      const nm = ar.querySelector('.f-aid').value.trim(); if (!nm) return null;
+      const aid = findIng(nm); if (!aid) { unknown.push(nm); return null; } if (aid === id) return null;
+      const aq = parseFloat(String(ar.querySelector('.f-aq').value).replace(',', '.')), au = ar.querySelector('.f-au').value;
+      if (!(aq > 0)) return aid;
+      const aus = au === 'oz' || au === 'cup';
+      return { id: aid, qty: aus ? usToMl(aq, au) : aq, unit: aus ? 'ml' : au };
+    }).filter(Boolean);
     const q = parseFloat(String(frw.querySelector('.f-qty').value).replace(',', '.')), unit = frw.querySelector('.f-unit').value;
     const us = unit === 'oz' || unit === 'cup', okq = isFinite(q) && q > 0;
-    return { id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: [...new Set(alts)] };
+    return { id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: alts.filter((a, i) => alts.findIndex(b => altId(b) === altId(a)) === i) };
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
@@ -1229,7 +1247,7 @@ function saveForm() {
     const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ L: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
     if (!(ml >= 10)) errs.push('Indiquer le volume obtenu, par exemple 2 L.'); else batch = { ml: Math.round(ml) };
   }
-  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent d'abord exister comme ingrédients (ligne du dessus ou onglet Mon bar).`);
+  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent être choisis dans la liste des ingrédients (ou créés d'abord comme ingrédient de la recette ou dans Mon bar).`);
   const e = g('rf-err');
   if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   Object.values(newIngs).forEach(({ id, data }) => S.ings[id] = data);
@@ -1316,6 +1334,8 @@ document.addEventListener('click', async e => {
       } else { UI.confirm = 'del:' + id; openDetail(id, true); }
       break;
     case 'row-add': { $('#frows').insertAdjacentHTML('beforeend', rowHTML(null)); $('#frows').lastElementChild.querySelector('.f-ing').focus(); break; }
+    case 'alt-add': { const l = b.closest('.frow-alts').querySelector('.alt-list'); l.insertAdjacentHTML('beforeend', altRowHTML(null)); l.lastElementChild.querySelector('.f-aid').focus(); break; }
+    case 'alt-del': b.closest('.alt-row').remove(); break;
     case 'row-del': b.closest('.frow').remove(); break;
     case 'tag-sugg': {
       const inp = $('#rf-tags'), t = b.dataset.v; let tags = inp.value.split(',').map(s => s.trim()).filter(Boolean);
