@@ -581,8 +581,8 @@ input[type=radio]{accent-color:var(--accent)}
 .batch-vol{display:flex;align-items:center;gap:8px;margin-top:8px}
 .batch-vol input{max-width:110px}
 
-/* réglage des quantités : une seule ligne par valeur, valeur de base de la recette cerclée de la couleur de l'appli */
+/* réglage des quantités : une seule ligne par valeur, valeur de base de la recette cerclée de la couleur de la recette (--c) */
 .seg.mini button,.stepper-v{white-space:nowrap}
-.seg.mini button.base{box-shadow:0 0 0 1.5px var(--accent),0 0 9px color-mix(in srgb,var(--accent) 50%,transparent);position:relative}
-.seg.mini button.base.on{box-shadow:0 0 0 1.5px var(--accent),0 0 9px color-mix(in srgb,var(--accent) 50%,transparent),0 1px 2px rgb(0 0 0 / .12)}
+.seg.mini button.base{box-shadow:0 0 0 1.5px var(--c,var(--accent)),0 0 9px color-mix(in srgb,var(--c,var(--accent)) 50%,transparent);position:relative}
+.seg.mini button.base.on{box-shadow:0 0 0 1.5px var(--c,var(--accent)),0 0 9px color-mix(in srgb,var(--c,var(--accent)) 50%,transparent),0 1px 2px rgb(0 0 0 / .12)}
 .batch-vol select{width:auto;min-width:84px;flex:0 0 auto}
