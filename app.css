@@ -147,7 +147,7 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 }
 
 /* ---------- contrôles ---------- */
-input[type=text],input[type=search],input[type=number],select,textarea{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+input[type=text],input[type=search],input[type=number],input[type=url],select,textarea{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
 textarea{resize:vertical;line-height:1.45}
 input[type=range]{accent-color:var(--accent);width:100%;min-width:0}
 input[type=checkbox]{accent-color:var(--ok)}
@@ -580,3 +580,9 @@ input[type=radio]{accent-color:var(--accent)}
 .photo-credit{margin:6px 2px 0;font-size:12px;color:var(--muted)}.photo-credit a{color:inherit;text-underline-offset:2px}
 .batch-vol{display:flex;align-items:center;gap:8px;margin-top:8px}
 .batch-vol input{max-width:110px}
+
+/* réglage des quantités : une seule ligne par valeur, valeur de base de la recette cerclée de la couleur de l'appli */
+.seg.mini button,.stepper-v{white-space:nowrap}
+.seg.mini button.base{box-shadow:0 0 0 1.5px var(--accent),0 0 9px color-mix(in srgb,var(--accent) 50%,transparent);position:relative}
+.seg.mini button.base.on{box-shadow:0 0 0 1.5px var(--accent),0 0 9px color-mix(in srgb,var(--accent) 50%,transparent),0 1px 2px rgb(0 0 0 / .12)}
+.batch-vol select{width:auto;min-width:84px;flex:0 0 auto}

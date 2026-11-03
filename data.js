@@ -1201,7 +1201,7 @@ const COLLECTIONS = [
   { id: 'aperitivo', group: 'Sélections Zeste', name: 'L’aperitivo italien', curator: 'Sélection Zeste', desc: 'Amers, vermouths et bulles pour ouvrir l’appétit.', ids: ['negroni', 'americano', 'spritz', 'boulevardier', 'hugo-spritz', 'bellini', 'hanky-panky', 'campari-orange', 'limoncello-spritz'] },
   { id: 'grandes-quantites', group: 'Sélections Zeste', name: 'Pour la tablée', curator: 'Sélection Zeste', desc: 'Sangria, vin chaud, boissons à partager : des recettes qui se préparent pour plusieurs personnes.',
     blocks: [
-      { type: 'tip', text: 'Sur chaque fiche, choisis le nombre de verres : les quantités se recalculent. La glace fond et le chauffage prend du temps, donc goûte avant de servir et ajuste.' },
+      { type: 'tip', text: 'Sur chaque fiche, le nombre de verres se règle et les quantités se recalculent automatiquement.' },
       { type: 'recipes', title: 'À partager, au frais', cols: 3, ids: ['sangria', 'planters-punch', 'citronnade-maison', 'agua-jamaica', 'agua-sandia', 'limonana', 'mimosa', 'spritz'] },
       { type: 'recipes', title: 'Chaud, pour l’hiver', cols: 3, ids: ['vin-chaud', 'cidre-chaud', 'eggnog', 'sbiten', 'chocolate-taza', 'hot-toddy'] }
     ] },

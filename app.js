@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.22.0';
+const APP_VERSION = '0.22.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -293,9 +293,9 @@ function fmtQty(row, k) {
   if (row.unit === 'à compléter') return 'Compléter';
   if (row.unit === 'ml' || row.unit === 'cl') {
     const ml = row.unit === 'cl' ? q * 10 : q;
-    if (S.unit === 'cl') return ml >= 1000 ? fr(ml / 1000) + ' l' : fr(ml / 10) + ' cl';
+    if (S.unit === 'cl') return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml / 10) + ' cl';
     if (S.unit === 'oz') return fmtOz(ml / 29.574) + ' oz';
-    return ml >= 1000 ? fr(ml / 1000) + ' l' : fr(ml) + ' ml';
+    return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml) + ' ml';
   }
   return fr(q) + ' ' + (PLURAL_UNITS.includes(row.unit) ? plural(q, row.unit) : row.unit);
 }
@@ -837,7 +837,7 @@ const SERV_PRESETS = [1, 2, 4, 8, 12];
 /* Une recette est donnée pour un verre, ou pour un volume (pichet, carafe) quand r.batch = { ml }.
    Le réglage de la fiche et de la liste de courses porte sur des verres, ou sur un volume en ml. */
 const batchBase = r => (r && r.batch && +r.batch.ml > 0) ? +r.batch.ml : 0;
-const fmtVol = ml => ml >= 1000 ? fr(ml / 1000) + ' l' : fr(ml) + ' ml';
+const fmtVol = ml => fr(ml / 1000) + ' L';
 function servCfg(r) {
   const b = batchBase(r);
   if (!b) return { vol: false, base: 1, step: 1, min: 1, max: 60, presets: SERV_PRESETS, fmt: n => `${n} ${plural(n, 'verre')}` };
@@ -848,11 +848,10 @@ const servAmt = r => { const a = UI.serv[r.id]; return a > 0 ? a : servCfg(r).ba
 const servK = r => servAmt(r) / servCfg(r).base;
 const clampServ = (c, v) => Math.max(c.min, Math.min(c.max, v));
 const stepperHTML = (act, r, amt, label) => { const c = servCfg(r); return `<span class="stepper" role="group" aria-label="${esc(label)}"><button data-act="${act}" data-id="${esc(r.id)}" data-v="-1" aria-label="${c.vol ? 'Moins' : 'Un verre de moins'}"${amt <= c.min ? ' disabled' : ''}>−</button><span class="stepper-v">${c.vol ? `<b>${esc(c.fmt(amt))}</b>` : `<b>${amt}</b> ${plural(amt, 'verre')}`}</span><button data-act="${act}" data-id="${esc(r.id)}" data-v="1" aria-label="${c.vol ? 'Plus' : 'Un verre de plus'}"${amt >= c.max ? ' disabled' : ''}>+</button></span>`; };
-const presetsHTML = (act, c, amt) => `<span class="seg mini" role="group" aria-label="${c.vol ? 'Choisir un volume' : 'Choisir un nombre de verres'}">${c.presets.map(n => `<button data-act="${act}" data-v="${n}" class="${amt === n ? 'on' : ''}" aria-pressed="${amt === n}">${c.vol ? esc(fmtVol(n)) : n}</button>`).join('')}</span>`;
+const presetsHTML = (act, c, amt) => `<span class="seg mini" role="group" aria-label="${c.vol ? 'Choisir un volume' : 'Choisir un nombre de verres'}">${c.presets.map(n => `<button data-act="${act}" data-v="${n}" class="${n === c.base ? 'base ' : ''}${amt === n ? 'on' : ''}" aria-pressed="${amt === n}"${n === c.base ? ' title="Quantité de la recette"' : ''}>${c.vol ? esc(fmtVol(n)) : n}</button>`).join('')}</span>`;
 function servRow(r) {
   const c = servCfg(r), amt = servAmt(r);
-  const hint = c.vol ? (amt === c.base ? `Recette donnée pour ${fmtVol(c.base)}.` : `Quantités pour ${fmtVol(amt)} (recette donnée pour ${fmtVol(c.base)}). Goûte avant de servir.`) : (amt > 1 ? `Quantités pour ${amt} verres. Les temps de préparation ne changent pas : goûte avant de servir.` : '');
-  return `<div class="serv-row">${stepperHTML('serv', r, amt, c.vol ? 'Volume' : 'Nombre de verres')}${presetsHTML('serv-set', c, amt)}</div>${hint ? `<p class="hint">${hint}</p>` : ''}`;
+  return `<div class="serv-row">${stepperHTML('serv', r, amt, c.vol ? 'Volume' : 'Nombre de verres')}${presetsHTML('serv-set', c, amt)}</div>`;
 }
 
 /* ---------- liste de courses ---------- */
@@ -894,10 +893,10 @@ function openShop(sid, keep) {
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="close">‹ Retour</button><span class="grow"></span><button class="btn small" data-act="shop-copy">Copier la liste</button></div></div>
   <div class="sheet-body"><div class="coll-page">
-    <header class="coll-hero"><span class="curator">Liste de courses</span><h1>${esc(src.name)}</h1><p class="lead">Choisis le nombre de verres pour chaque recette : les quantités se cumulent, et ce qui est déjà dans le bar est mis de côté.</p></header>
+    <header class="coll-hero"><span class="curator">Liste de courses</span><h1>${esc(src.name)}</h1><p class="lead">Le nombre de verres se règle pour chaque recette : les quantités se cumulent, et ce qui est déjà dans le bar est mis de côté.</p></header>
     <div class="coll-body">
       <div class="blocks"><section class="sec"><div class="shead"><h2>Combien de verres ?</h2>${presetsHTML('shop-all', servCfg({}), P.all)}</div>
-        ${src.recs.length ? `<p class="hint">Le choix du haut s'applique à toutes les recettes ; ajuste ensuite recette par recette.</p><div class="srecs">${rows}</div>` : '<p class="muted">Aucune recette pour l’instant.</p>'}</section></div>
+        ${src.recs.length ? `<p class="hint">Le choix du haut s'applique à toutes les recettes servies au verre ; chaque recette se règle ensuite séparément.</p><div class="srecs">${rows}</div>` : '<p class="muted">Aucune recette pour l’instant.</p>'}</section></div>
       <aside class="coll-side panel shop"><h2>Ingrédients</h2>
         ${miss.length ? `<h3 class="lbl">À acheter (${miss.length})</h3>${li(miss, 'miss')}` : (src.recs.length ? '<p class="avail ok">Rien à acheter : tout est dans le bar.</p>' : '')}
         ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${li(sub, 'sub')}` : ''}
@@ -1044,8 +1043,8 @@ function openForm(id) {
       <div class="field"><span>Quantités données pour</span>
         <input type="hidden" id="rf-batch" value="${bm ? 'volume' : 'verre'}">
         <div class="seg" role="group" aria-label="Quantités données pour" style="max-width:320px">${[['verre', 'Un verre'], ['volume', 'Un volume']].map(([v, l]) => { const on = (bm ? 'volume' : 'verre') === v; return `<button type="button" data-act="batch-mode" data-v="${v}" class="${on ? 'on' : ''}" aria-pressed="${on}">${l}</button>`; }).join('')}</div>
-        <div class="batch-vol" id="batch-vol"${bm ? '' : ' hidden'}><input type="text" inputmode="decimal" id="rf-batch-qty" aria-label="Volume obtenu" value="${bm ? esc(fr(bm >= 1000 ? bm / 1000 : bm)) : ''}" placeholder="ex. 2"><select id="rf-batch-unit" aria-label="Unité du volume">${opts(['l', 'cl', 'ml'], bm >= 1000 ? 'l' : 'ml')}</select></div>
-        <p class="hint">« Un volume » sert aux boissons préparées en pichet ou en carafe : indique le volume obtenu (par exemple 2 l d'agua de Jamaica) et saisis les quantités pour ce volume, sans calculer pour un verre. Sur la fiche, le volume se règle ensuite.</p>
+        <div class="batch-vol" id="batch-vol"${bm ? '' : ' hidden'}><input type="text" inputmode="decimal" id="rf-batch-qty" aria-label="Volume obtenu" value="${bm ? esc(fr(bm / 1000)) : ''}" placeholder="ex. 2"><select id="rf-batch-unit" aria-label="Unité du volume">${opts(['L', 'cl', 'ml'], 'L')}</select></div>
+        <p class="hint">« Un volume » sert aux boissons préparées en pichet ou en carafe : on indique le volume obtenu (par exemple 2 L d'agua de Jamaica) et les quantités ci-dessous sont celles de ce volume, sans calcul pour un verre. Sur la fiche, le volume se règle ensuite.</p>
       </div>
       <p class="hint">Un nom inconnu crée un nouvel ingrédient. La case « tout son groupe convient » accepte n'importe quelle référence équivalente, par exemple une autre liqueur d'orange. Pour un soda qui allonge le verre, utiliser l'unité « à compléter ».</p>
       <div id="frows" class="frows">${rows.map(rowHTML).join('')}</div>
@@ -1206,8 +1205,8 @@ function saveForm() {
   if (url && !/^https?:\/\//i.test(url)) errs.push('Le lien doit commencer par http:// ou https://.');
   let batch = null;
   if (g('rf-batch').value === 'volume') {
-    const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ l: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
-    if (!(ml >= 10)) errs.push('Indique le volume obtenu, par exemple 2 l.'); else batch = { ml: Math.round(ml) };
+    const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ L: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
+    if (!(ml >= 10)) errs.push('Indiquer le volume obtenu, par exemple 2 L.'); else batch = { ml: Math.round(ml) };
   }
   if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent d'abord exister comme ingrédients (ligne du dessus ou onglet Mon bar).`);
   const e = g('rf-err');
