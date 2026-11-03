@@ -676,7 +676,7 @@ RECIPES.push(
   Object.assign(NA(R('agua-jamaica', 'Agua de Jamaica', '', 'C', 'Highball', 'wedge-lime', '', '', '#9E1B3A', '32020', 'Rafraîchissant,Floral',
     [['fleur-d-hibiscus-sechees', 80, 'g'], ['eau', 2000, 'ml', 's'], ['sucre-blanc', 100, 'g'], ['gingembre', 2, 'tranche', 'o']],
     ["Rincer les feuilles d'hibiscus.", 'Infuser les fleurs d’hibiscus séchées dans la moitié du volume d’eau, préalablement portée à ébullition.', "Rajouter le sucre et le gingembre et mélanger jusqu'à dissolution du sucre.", "Réduire à feu doux et remuer pendant 10-15 minutes (au plus c'est remué, au plus le goût sera fort)", 'Retirer du feu et continuer à remuer quelques minutes.', "Filtrer et refroidir en rajoutant le reste d'eau ambiante ou fraîche.", 'Réfrigérer puis servir sur beaucoup de glace avec un quartier de citron vert.'],
-    'Une des « aguas frescas » servies partout au Mexique.'), ''), { batch: { ml: 2000 }, easy: false }),
+    'Une des « aguas frescas » servies partout au Mexique.'), 'Recette traditionnelle mexicaine', 'https://fr.wikipedia.org/wiki/Agua_de_Jamaica'), { batch: { ml: 2000 }, easy: false }),
   Object.assign(NA(R('agua-sandia', 'Agua de sandía', '', 'B', 'Highball', 'wedge-lime', '', '', '#F5677A', '31000', 'Rafraîchissant,Estival,Fruité',
     [['pasteque', 480], ['citron-vert', 15], ['sucre-blanc', 120], ['eau', 240]],
     ['Mixer la pastèque (épépinée ou non) avec l’eau.', 'Filtrer, puis ajouter le jus de citron vert et le sucre selon la douceur du fruit.', 'Servir sur glace.'],
