@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.23.0';
+const APP_VERSION = '0.24.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -402,7 +402,7 @@ function renderResults() {
       /* Recherche par début de mot (« co » ne trouve plus « cocktail » ni un « co » au milieu d'un mot), sans le nom du verre.
          Chaque mot cherché a un rang : 0 = dans le nom, 1 = dans un ingrédient, 2 = ailleurs (tags, auteur, notes…). Le rang de la recette est le pire de ses mots. */
       const toks = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
-      const nameT = toks(r.name), ingT = toks(r.ings.map(i => ingName(i.id)).join(' '));
+      const nameT = toks(r.name + ' ' + (r.subtitle || '')), ingT = toks(r.ings.map(i => ingName(i.id)).join(' '));
       const otherT = toks([r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, ...r.tags, S.notes[r.id] ? S.notes[r.id].text : ''].join(' '));
       let tier = 0;
       for (const w of words) {
@@ -425,7 +425,7 @@ function renderResults() {
     const [cls, txt] = statusPill(a), rt = S.ratings[r.id] || 0;
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
       <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
-      <span class="cb"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
+      <span class="cb"><span class="cname">${esc(r.name)}</span>${r.subtitle ? `<span class="csub">${esc(r.subtitle)}</span>` : ''}<span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
       <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${isNA(r) ? '<span class="otag">Sans alcool</span>' : r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
 }
@@ -944,7 +944,7 @@ function openDetail(id, keep, back) {
     </div>
     <div class="d-right cols dz">
       <div class="d-head dz">
-      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
+      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
       <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${sourceFact(r)}</dl>
       <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
     </div>
@@ -1002,6 +1002,7 @@ function openForm(id) {
     <div class="cols col-a">
     <section class="sec"><h2>L'essentiel</h2>
       <label class="field" for="rf-name"><span>Nom</span><input type="text" id="rf-name" value="${esc(r.name)}" placeholder="ex. Hugo Spritz" autocomplete="off"></label>
+      <label class="field" for="rf-sub"><span>Sous-titre ou autre nom (facultatif)</span><input type="text" id="rf-sub" value="${esc(r.subtitle || '')}" placeholder="ex. Cucumber agua fresca" autocomplete="off"><small class="hint">Affiché sous le nom, et retrouvé par la recherche.</small></label>
       <div class="photo-box" id="photo-box">
         <div class="photo-prev" id="photo-prev" style="--c:${okColor(r.color)}"></div>
         <div class="photo-ctrl">
@@ -1232,6 +1233,7 @@ function saveForm() {
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()
   });
   if (batch) rec.batch = batch; else delete rec.batch;
+  { const sub = g('rf-sub').value.trim(); if (sub) rec.subtitle = sub; else delete rec.subtitle; }
   { const lv = g('rf-level').value; if (lv === 'easy') rec.easy = true; else if (lv === 'hard') rec.easy = false; else delete rec.easy; }
   if (old && old.photo !== rec.photo) delete rec.photoCredit; // le crédit appartient à l'ancienne photo
   if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }

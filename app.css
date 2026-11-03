@@ -260,6 +260,7 @@ input[type=radio]{accent-color:var(--accent)}
 .cb{display:flex;flex-direction:column;gap:2px;padding:10px 12px 12px;min-width:0}
 .cname{font-family:var(--font-display);font-weight:800;font-size:21px;line-height:1.02;text-transform:uppercase;overflow-wrap:anywhere}
 .cmeta{font-size:12px;color:var(--muted)}
+.csub{display:block;font-size:13px;font-style:italic;color:var(--muted);line-height:1.2;margin-top:2px;overflow-wrap:anywhere}
 .crow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:4px;min-height:18px}
 .otag{font:600 10px var(--font-body);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:var(--accent);color:color-mix(in oklab,var(--c) 58%,var(--fg))}
 
@@ -586,3 +587,5 @@ input[type=radio]{accent-color:var(--accent)}
 .seg.mini button.base{box-shadow:0 0 0 1.5px var(--c,var(--accent)),0 0 9px color-mix(in srgb,var(--c,var(--accent)) 50%,transparent);position:relative}
 .seg.mini button.base.on{box-shadow:0 0 0 1.5px var(--c,var(--accent)),0 0 9px color-mix(in srgb,var(--c,var(--accent)) 50%,transparent),0 1px 2px rgb(0 0 0 / .12)}
 .batch-vol select{width:auto;min-width:84px;flex:0 0 auto}
+
+.detail .subtitle{margin:6px 0 0;font-size:clamp(16px,4.2vw,20px);font-style:italic;color:var(--muted);overflow-wrap:anywhere}
