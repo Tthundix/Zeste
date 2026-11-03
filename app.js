@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.21.2';
+const APP_VERSION = '0.22.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -820,6 +820,13 @@ function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
   return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Pas encore noté'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
 }
+/* Source de la recette, dans les infos de la fiche : texte (source ou auteur) et lien « voir la source » (http ou https).
+   Pour une création d'un autre barman, l'auteur est déjà dans le bandeau : la ligne n'apparaît que s'il y a un lien. */
+function sourceFact(r) {
+  const label = (r.origin === 'Original' ? (r.by === 'other' ? r.author : '') : r.source) || '', url = /^https?:\/\//i.test(r.url || '') ? r.url : '';
+  if (!(url || (r.origin !== 'Original' && label))) return '';
+  return `<div class="wide"><dt>Source</dt><dd>${esc(label)}${url ? `${label ? ' · ' : ''}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">voir la source</a>` : ''}</dd></div>`;
+}
 /* Crédit d'une photo sous licence libre ; le lien n'est affiché que s'il commence par http(s). */
 function creditHTML(r) {
   const c = r.photoCredit; if (!c || !c.by || !okPhoto(r.photo)) return '';
@@ -827,10 +834,25 @@ function creditHTML(r) {
   return `<p class="photo-credit">Photo : ${who}${c.lic ? ' · ' + esc(c.lic) : ''}</p>`;
 }
 const SERV_PRESETS = [1, 2, 4, 8, 12];
-const stepperHTML = (act, id, k, label) => `<span class="stepper" role="group" aria-label="${esc(label)}"><button data-act="${act}" data-id="${esc(id)}" data-v="-1" aria-label="Un verre de moins"${k <= 1 ? ' disabled' : ''}>−</button><span class="stepper-v"><b>${k}</b> ${plural(k, 'verre')}</span><button data-act="${act}" data-id="${esc(id)}" data-v="1" aria-label="Un verre de plus"${k >= 60 ? ' disabled' : ''}>+</button></span>`;
-const presetsHTML = (act, k) => `<span class="seg mini" role="group" aria-label="Choisir un nombre de verres">${SERV_PRESETS.map(n => `<button data-act="${act}" data-v="${n}" class="${k === n ? 'on' : ''}" aria-pressed="${k === n}">${n}</button>`).join('')}</span>`;
-function servRow(k) {
-  return `<div class="serv-row">${stepperHTML('serv', '', k, 'Nombre de verres')}${presetsHTML('serv-set', k)}</div>${k > 1 ? `<p class="hint">Quantités pour ${k} verres. Les temps de préparation ne changent pas : goûte avant de servir.</p>` : ''}`;
+/* Une recette est donnée pour un verre, ou pour un volume (pichet, carafe) quand r.batch = { ml }.
+   Le réglage de la fiche et de la liste de courses porte sur des verres, ou sur un volume en ml. */
+const batchBase = r => (r && r.batch && +r.batch.ml > 0) ? +r.batch.ml : 0;
+const fmtVol = ml => ml >= 1000 ? fr(ml / 1000) + ' l' : fr(ml) + ' ml';
+function servCfg(r) {
+  const b = batchBase(r);
+  if (!b) return { vol: false, base: 1, step: 1, min: 1, max: 60, presets: SERV_PRESETS, fmt: n => `${n} ${plural(n, 'verre')}` };
+  const step = b <= 1000 ? 250 : b <= 5000 ? 500 : 1000;
+  return { vol: true, base: b, step, min: step, max: 50000, fmt: fmtVol, presets: [...new Set([b / 2, b, b * 2, b * 5].map(v => Math.round(v / 10) * 10))].filter(v => v >= step) };
+}
+const servAmt = r => { const a = UI.serv[r.id]; return a > 0 ? a : servCfg(r).base; };
+const servK = r => servAmt(r) / servCfg(r).base;
+const clampServ = (c, v) => Math.max(c.min, Math.min(c.max, v));
+const stepperHTML = (act, r, amt, label) => { const c = servCfg(r); return `<span class="stepper" role="group" aria-label="${esc(label)}"><button data-act="${act}" data-id="${esc(r.id)}" data-v="-1" aria-label="${c.vol ? 'Moins' : 'Un verre de moins'}"${amt <= c.min ? ' disabled' : ''}>−</button><span class="stepper-v">${c.vol ? `<b>${esc(c.fmt(amt))}</b>` : `<b>${amt}</b> ${plural(amt, 'verre')}`}</span><button data-act="${act}" data-id="${esc(r.id)}" data-v="1" aria-label="${c.vol ? 'Plus' : 'Un verre de plus'}"${amt >= c.max ? ' disabled' : ''}>+</button></span>`; };
+const presetsHTML = (act, c, amt) => `<span class="seg mini" role="group" aria-label="${c.vol ? 'Choisir un volume' : 'Choisir un nombre de verres'}">${c.presets.map(n => `<button data-act="${act}" data-v="${n}" class="${amt === n ? 'on' : ''}" aria-pressed="${amt === n}">${c.vol ? esc(fmtVol(n)) : n}</button>`).join('')}</span>`;
+function servRow(r) {
+  const c = servCfg(r), amt = servAmt(r);
+  const hint = c.vol ? (amt === c.base ? `Recette donnée pour ${fmtVol(c.base)}.` : `Quantités pour ${fmtVol(amt)} (recette donnée pour ${fmtVol(c.base)}). Goûte avant de servir.`) : (amt > 1 ? `Quantités pour ${amt} verres. Les temps de préparation ne changent pas : goûte avant de servir.` : '');
+  return `<div class="serv-row">${stepperHTML('serv', r, amt, c.vol ? 'Volume' : 'Nombre de verres')}${presetsHTML('serv-set', c, amt)}</div>${hint ? `<p class="hint">${hint}</p>` : ''}`;
 }
 
 /* ---------- liste de courses ---------- */
@@ -857,23 +879,24 @@ function shopTotals(recs, kOf) {
   return tot;
 }
 const shopQty = e => [...Object.entries(e.qty).map(([u, q]) => fmtQty({ qty: q, unit: u })), ...(e.fill ? ['à compléter'] : [])].join(' + ');
+const shopAmt = (P, r) => P.serv[r.id] > 0 ? P.serv[r.id] : (batchBase(r) || P.all);
 function openShop(sid, keep) {
   const src = shopSource(sid), sh = $('#sheet'); if (!src) return closeSheet();
   if (!keep) keepSheetScroll();
   if (!UI.shop || UI.shop.sid !== sid) UI.shop = { sid, all: 1, serv: {} };
-  const P = UI.shop, kOf = r => P.serv[r.id] || P.all, st = keep ? sh.scrollTop : 0;
+  const P = UI.shop, kOf = r => shopAmt(P, r) / servCfg(r).base, st = keep ? sh.scrollTop : 0;
   sheetState = { type: 'shop', id: sid };
   const tot = shopTotals(src.recs, kOf);
   const group = g => [...tot].filter(([, e]) => e.st === g).sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
   const li = (arr, cls) => `<ul>${arr.map(([id, e]) => `<li><i class="dot ${cls}"></i><span>${esc(ingName(id))} <b class="qty">${esc(shopQty(e))}</b><small>${esc(e.recs.slice(0, 3).join(', '))}${e.recs.length > 3 ? '…' : ''}</small></span></li>`).join('')}</ul>`;
   const miss = group('miss'), sub = group('sub'), ok = group('ok');
-  const rows = src.recs.map(r => `<div class="srec"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><span class="lname">${esc(r.name)}</span>${stepperHTML('shop-serv', r.id, kOf(r), 'Verres pour ' + r.name)}</div>`).join('');
+  const rows = src.recs.map(r => `<div class="srec"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><span class="lname">${esc(r.name)}</span>${stepperHTML('shop-serv', r, shopAmt(P, r), (servCfg(r).vol ? 'Volume pour ' : 'Verres pour ') + r.name)}</div>`).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="close">‹ Retour</button><span class="grow"></span><button class="btn small" data-act="shop-copy">Copier la liste</button></div></div>
   <div class="sheet-body"><div class="coll-page">
     <header class="coll-hero"><span class="curator">Liste de courses</span><h1>${esc(src.name)}</h1><p class="lead">Choisis le nombre de verres pour chaque recette : les quantités se cumulent, et ce qui est déjà dans le bar est mis de côté.</p></header>
     <div class="coll-body">
-      <div class="blocks"><section class="sec"><div class="shead"><h2>Combien de verres ?</h2>${presetsHTML('shop-all', P.all)}</div>
+      <div class="blocks"><section class="sec"><div class="shead"><h2>Combien de verres ?</h2>${presetsHTML('shop-all', servCfg({}), P.all)}</div>
         ${src.recs.length ? `<p class="hint">Le choix du haut s'applique à toutes les recettes ; ajuste ensuite recette par recette.</p><div class="srecs">${rows}</div>` : '<p class="muted">Aucune recette pour l’instant.</p>'}</section></div>
       <aside class="coll-side panel shop"><h2>Ingrédients</h2>
         ${miss.length ? `<h3 class="lbl">À acheter (${miss.length})</h3>${li(miss, 'miss')}` : (src.recs.length ? '<p class="avail ok">Rien à acheter : tout est dans le bar.</p>' : '')}
@@ -897,7 +920,7 @@ function openDetail(id, keep, back) {
       <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ressenti, ajustements, accords…">${esc(nt.text)}</textarea>
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
   const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec le bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec le bar.') : `Manquant : ${a.miss.map(ingName).join(', ')}.`;
-  const kServ = UI.serv[id] || 1;
+  const kServ = servK(r);
   const rowsHTML = r.ings.map((row, i) => {
     const s = a.rows[i], info = [], ing = S.ings[row.id];
     if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
@@ -918,11 +941,11 @@ function openDetail(id, keep, back) {
     <div class="d-right cols dz">
       <div class="d-head dz">
       <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
-      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${r.source || (r.url && r.by === 'other') ? `<div class="wide"><dt>Source</dt><dd>${esc(r.source || r.author || '')}${/^https:\/\//.test(r.url || '') ? ` · <a href="${esc(r.url)}" target="_blank" rel="noopener">voir la source</a>` : ''}</dd></div>` : ''}</dl>
+      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${sourceFact(r)}</dl>
       <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
     </div>
       <section class="sec ings-sec o5"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
-        ${servRow(kServ)}
+        ${servRow(r)}
         <p class="avail ${a.miss.length ? 'miss' : 'ok'}">${esc(availTxt)}</p>
         <ul class="ings">${rowsHTML}</ul>
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
@@ -961,7 +984,7 @@ function openForm(id) {
   const src = id ? S.recipes.find(r => r.id === id) : null;
   const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
   sheetState = { type: 'form', id: id || null, photo: okPhoto(r.photo) }; rowN = 0; UI.confirm = null;
-  const rows = r.ings.length ? r.ings : [null, null, null];
+  const rows = r.ings.length ? r.ings : [null, null, null], bm = batchBase(r);
   const cats = [...new Set(Object.values(S.ings).map(i => i.cat))].sort((a, b) => a.localeCompare(b, 'fr'));
   const tagsAll = [...new Set([...TAG_SUGG, ...S.recipes.flatMap(x => x.tags)])];
   const [gcut, gfruit] = (r.garn || '').split('-'), cut = r.garn ? gcut : 'none', fruit = CUT_KEYS.includes(gcut) ? gfruit : 'lime';
@@ -998,7 +1021,8 @@ function openForm(id) {
           <label for="rf-by-me"><input type="radio" name="rf-by" id="rf-by-me" value="me"${r.by !== 'other' ? ' checked' : ''}> Par moi</label>
           <label for="rf-by-other"><input type="radio" name="rf-by" id="rf-by-other" value="other"${r.by === 'other' ? ' checked' : ''}> Par quelqu'un d'autre</label>
         </div>
-        <label class="field" for="rf-author" id="orig-src" ${r.origin !== 'Classique' && r.by === 'other' ? '' : 'hidden'}><span>Source</span><input type="text" id="rf-author" value="${esc(r.author)}" placeholder="Barman, bar, livre, lien…"></label>
+        <label class="field" for="rf-author" id="orig-src" ${r.origin === 'Original' && r.by !== 'other' ? 'hidden' : ''}><span>Source</span><input type="text" id="rf-author" value="${esc(r.origin === 'Original' ? r.author : r.source || '')}" placeholder="Barman, bar, livre, site…"></label>
+        <label class="field" for="rf-url"><span>Lien (facultatif)</span><input type="url" id="rf-url" inputmode="url" autocomplete="off" value="${esc(r.url || '')}" placeholder="https://…"></label>
       </div>
     </section>
     <section class="sec"><h2>Le service</h2>
@@ -1017,6 +1041,12 @@ function openForm(id) {
     </div>
     <div class="cols col-b">
     <section class="sec"><h2>Ingrédients</h2>
+      <div class="field"><span>Quantités données pour</span>
+        <input type="hidden" id="rf-batch" value="${bm ? 'volume' : 'verre'}">
+        <div class="seg" role="group" aria-label="Quantités données pour" style="max-width:320px">${[['verre', 'Un verre'], ['volume', 'Un volume']].map(([v, l]) => { const on = (bm ? 'volume' : 'verre') === v; return `<button type="button" data-act="batch-mode" data-v="${v}" class="${on ? 'on' : ''}" aria-pressed="${on}">${l}</button>`; }).join('')}</div>
+        <div class="batch-vol" id="batch-vol"${bm ? '' : ' hidden'}><input type="text" inputmode="decimal" id="rf-batch-qty" aria-label="Volume obtenu" value="${bm ? esc(fr(bm >= 1000 ? bm / 1000 : bm)) : ''}" placeholder="ex. 2"><select id="rf-batch-unit" aria-label="Unité du volume">${opts(['l', 'cl', 'ml'], bm >= 1000 ? 'l' : 'ml')}</select></div>
+        <p class="hint">« Un volume » sert aux boissons préparées en pichet ou en carafe : indique le volume obtenu (par exemple 2 l d'agua de Jamaica) et saisis les quantités pour ce volume, sans calculer pour un verre. Sur la fiche, le volume se règle ensuite.</p>
+      </div>
       <p class="hint">Un nom inconnu crée un nouvel ingrédient. La case « tout son groupe convient » accepte n'importe quelle référence équivalente, par exemple une autre liqueur d'orange. Pour un soda qui allonge le verre, utiliser l'unité « à compléter ».</p>
       <div id="frows" class="frows">${rows.map(rowHTML).join('')}</div>
       <div><button type="button" class="btn small" data-act="row-add">+ Ajouter un ingrédient</button></div>
@@ -1042,7 +1072,7 @@ function currentGarn() {
   if (c === 'none' || !c) return '';
   return CUT_KEYS.includes(c) ? c + '-' + ($('#rf-gfruit').value || 'lime') : c;
 }
-function syncOrig() { const o = $('#rf-origin').value === 'Original', other = $('#rf-by-other').checked; $('#orig-by').hidden = !o; $('#orig-src').hidden = !(o && other); }
+function syncOrig() { const o = $('#rf-origin').value === 'Original', other = $('#rf-by-other').checked; $('#orig-by').hidden = !o; $('#orig-src').hidden = o && !other; }
 function updatePrev() {
   const p = $('#photo-prev'); if (!p) return;
   const c = okColor($('#rf-color').value), g = $('#rf-glass').value, garn = currentGarn(), rim = $('#rf-rim').value;
@@ -1172,6 +1202,13 @@ function saveForm() {
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
+  const url = g('rf-url').value.trim();
+  if (url && !/^https?:\/\//i.test(url)) errs.push('Le lien doit commencer par http:// ou https://.');
+  let batch = null;
+  if (g('rf-batch').value === 'volume') {
+    const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ l: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
+    if (!(ml >= 10)) errs.push('Indique le volume obtenu, par exemple 2 l.'); else batch = { ml: Math.round(ml) };
+  }
   if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent d'abord exister comme ingrédients (ligne du dessus ou onglet Mon bar).`);
   const e = g('rf-err');
   if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
@@ -1180,12 +1217,15 @@ function saveForm() {
   const flavor = {}; TASTE.forEach(([k]) => flavor[k] = g('uk-' + k).checked ? null : +g('rf-' + k).value);
   const old = sheetState.id && S.recipes.find(r => r.id === sheetState.id);
   const orig = g('rf-origin').value === 'Classique' ? 'Classique' : 'Original', by = orig === 'Original' ? ((sh.querySelector('input[name=rf-by]:checked') || {}).value || 'me') : '';
-  const rec = {
-    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? g('rf-author').value.trim() : '', iba: old ? old.iba || '' : '',
+  const srcTxt = g('rf-author').value.trim();
+  const rec = Object.assign({}, old || {}, {
+    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url, iba: old ? old.iba || '' : '',
     method: g('rf-method').value, glass: g('rf-glass').value, garn: currentGarn(), garnish: g('rf-garnish').value.trim(), rim: g('rf-rim').value,
     color: okColor(g('rf-color').value), photo: sheetState.photo || '', flavor, tags, ings,
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()
-  };
+  });
+  if (batch) rec.batch = batch; else delete rec.batch;
+  if (old && old.photo !== rec.photo) delete rec.photoCredit; // le crédit appartient à l'ancienne photo
   if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }
   if (old) S.recipes[S.recipes.indexOf(old)] = rec; else S.recipes.push(rec);
   save(); toast(old ? 'Recette mise à jour' : 'Recette ajoutée au catalogue');
@@ -1233,14 +1273,14 @@ document.addEventListener('click', async e => {
     case 'tog-list': { const l = S.lists.find(x => x.id === b.dataset.list); if (!l) break; l.items = l.items.includes(id) ? l.items.filter(x => x !== id) : [...l.items, id]; save(); openDetail(id, true); break; }
     case 'note-vis': { flushNote(); const cur = S.notes[id] || { text: '', at: Date.now() }; S.notes[id] = Object.assign({}, cur, { pub: b.dataset.v === '1' }); save(); openDetail(id, true); break; }
     case 'unit': S.unit = b.dataset.v; save(); openDetail(sheetState.id, true); break;
-    case 'serv': { const rid = sheetState.id; UI.serv[rid] = Math.max(1, Math.min(60, (UI.serv[rid] || 1) + (+b.dataset.v))); openDetail(rid, true); break; }
+    case 'serv': { const r = S.recipes.find(x => x.id === sheetState.id), c = servCfg(r); UI.serv[r.id] = clampServ(c, servAmt(r) + (+b.dataset.v) * c.step); openDetail(r.id, true); break; }
     case 'serv-set': { const rid = sheetState.id; UI.serv[rid] = +b.dataset.v; openDetail(rid, true); break; }
     case 'shop': openShop(b.dataset.v); break;
     case 'shop-all': UI.shop.all = +b.dataset.v; UI.shop.serv = {}; openShop(sheetState.id, true); break;
-    case 'shop-serv': { const P = UI.shop, cur = P.serv[id] || P.all; P.serv[id] = Math.max(1, Math.min(60, cur + (+b.dataset.v))); openShop(sheetState.id, true); break; }
+    case 'shop-serv': { const P = UI.shop, r = S.recipes.find(x => x.id === id), c = servCfg(r); if (!r) break; P.serv[id] = clampServ(c, shopAmt(P, r) + (+b.dataset.v) * c.step); openShop(sheetState.id, true); break; }
     case 'shop-copy': {
       const src = shopSource(sheetState.id), P = UI.shop; if (!src) break;
-      const tot = shopTotals(src.recs, r => P.serv[r.id] || P.all), need = [...tot].filter(([, e]) => e.st === 'miss').sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
+      const tot = shopTotals(src.recs, r => shopAmt(P, r) / servCfg(r).base), need = [...tot].filter(([, e]) => e.st === 'miss').sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
       if (!need.length) { toast('Rien à acheter : tout est dans le bar'); break; }
       const txt = `Liste de courses · ${src.name}\n` + need.map(([iid, e]) => `- ${ingName(iid)} : ${shopQty(e)}`).join('\n');
       try { navigator.clipboard.writeText(txt).then(() => toast('Liste copiée'), () => toast('Copie refusée par le navigateur')); } catch (err) { toast('Copie refusée par le navigateur'); }
@@ -1273,6 +1313,7 @@ document.addEventListener('click', async e => {
     case 'pick-gfruit': $('#rf-gfruit').value = b.dataset.v; pickIn(b.parentElement, b, '.chip'); updatePrev(); break;
     case 'form-save': saveForm(); break;
     case 'orig': $('#rf-origin').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); syncOrig(); break;
+    case 'batch-mode': $('#rf-batch').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); $('#batch-vol').hidden = b.dataset.v !== 'volume'; if (b.dataset.v === 'volume') $('#rf-batch-qty').focus(); break;
     case 'own-add': if (!S.owned.includes(id)) S.owned.push(id); save(); renderBarTop(); renderBarList(); toast(`${ingName(id)} ajouté au bar`); break;
     case 'add-ing': {
       const n = $('#ni-name').value.trim(), err = $('#ni-err');
