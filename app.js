@@ -1,9 +1,9 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.24.0';
+const APP_VERSION = '0.24.1';
 const KEY = 'zeste-v1';
-const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
+const UNITS = ['ml', 'cl', 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
 const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café': 5, 'c. à soupe': 15, 'à compléter': 60 };
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
@@ -302,6 +302,7 @@ function fmtQty(row, k) {
     if (S.unit === 'oz') return fmtOz(ml / 29.574) + ' oz';
     return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml) + ' ml';
   }
+  if (!row.unit) return fr(q); // sans unité : « 2 » concombre, « 1 » citron
   return fr(q) + ' ' + (PLURAL_UNITS.includes(row.unit) ? plural(q, row.unit) : row.unit);
 }
 const starsHTML = n => `<span class="stars" aria-label="${fmtRating(n)} sur 5"><span class="s-bg">★★★★★</span><span class="s-fg" style="width:${n / 5 * 100}%">★★★★★</span></span>`;
