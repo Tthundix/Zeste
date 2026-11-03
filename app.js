@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.25.0';
+const APP_VERSION = '0.25.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -294,15 +294,22 @@ function estAbv(r) {
 }
 // Unités américaines saisies dans le formulaire : converties en ml à l'enregistrement (1 oz = 30 ml, 1 cup = 240 ml, arrondi à 5 ml).
 function usToMl(q, unit) { const ml = q * (unit === 'cup' ? 240 : 30); return ml >= 20 ? Math.round(ml / 5) * 5 : Math.round(ml); }
-function fmtCup(x) { const r = Math.round(x * 4) / 4, w = Math.floor(r), f = r - w, F = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[f] || ''; return w ? (F ? `${w} ${F}` : `${w}`) : (F || '0'); }
-function fmtOz(x) { const r = Math.round(x * 4) / 4, w = Math.floor(r), f = r - w, F = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[f] || ''; return w ? (F ? `${w} ${F}` : `${w}`) : (F || '0'); }
+// Fractions usuelles des recettes américaines : ⅛ ¼ ⅓ ½ ⅔ ¾ (à la plus proche).
+const FRACS = [[0, ''], [1 / 8, '⅛'], [1 / 4, '¼'], [1 / 3, '⅓'], [1 / 2, '½'], [2 / 3, '⅔'], [3 / 4, '¾'], [1, '']];
+function fmtFrac(x) {
+  let w = Math.floor(x); const f = x - w;
+  const best = FRACS.reduce((m, c) => Math.abs(c[0] - f) < Math.abs(m[0] - f) ? c : m);
+  if (best[0] === 1) w += 1;
+  return w ? (best[1] && best[0] < 1 ? `${w} ${best[1]}` : `${w}`) : (best[1] && best[0] < 1 ? best[1] : '0');
+}
+const fmtCup = fmtFrac, fmtOz = fmtFrac;
 function fmtQty(row, k) {
   const q = (+row.qty || 0) * (k || 1);
   if (row.unit === 'à compléter') return 'Compléter';
   if (row.unit === 'ml' || row.unit === 'cl') {
     const ml = row.unit === 'cl' ? q * 10 : q;
     if (S.unit === 'cl') return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml / 10) + ' cl';
-    if (S.unit === 'oz') { const oz = ml / 29.574; if (oz >= 8) { const c = Math.round(oz / 8 * 4) / 4; return fmtCup(c) + (c > 1 ? ' cups' : ' cup'); } return fmtOz(oz) + ' oz'; }
+    if (S.unit === 'oz') { const oz = ml / 29.574; if (oz >= 8) { const c = oz / 8; return fmtCup(c) + (c >= 1.0625 ? ' cups' : ' cup'); } return fmtOz(oz) + ' oz'; }
     return ml >= 1000 ? fr(ml / 1000) + ' L' : fr(ml) + ' ml';
   }
   if (!row.unit) return fr(q); // sans unité : « 2 » concombre, « 1 » citron
