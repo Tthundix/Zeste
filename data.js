@@ -235,8 +235,8 @@ const GARNISH_OTHERS = [['cherry', 'Cerise'], ['mint', 'Brin de menthe'], ['coff
 const RIMS = [['', 'Aucun'], ['sel', 'Sel'], ['sucre', 'Sucre'], ['sel-moitie', 'Sel, à moitié'], ['sucre-moitie', 'Sucre, à moitié']];
 
 const GLASSES = ['Coupe', 'Martini', 'Old fashioned', 'Highball', 'Verre à vin', 'Flûte', 'Hurricane', 'Mug cuivre', 'Timbale', 'Irish coffee', 'Tasse'];
-const METHODS = ['Shaker', 'Verre à mélange', 'Dans le verre', 'Blender'];
-const M = { S: 'Shaker', V: 'Verre à mélange', D: 'Dans le verre', B: 'Blender' };
+const METHODS = ['Shaker', 'Verre à mélange', 'Dans le verre', 'Dans un pichet', 'À la casserole', 'Blender'];
+const M = { S: 'Shaker', V: 'Verre à mélange', D: 'Dans le verre', P: 'Dans un pichet', C: 'À la casserole', B: 'Blender' };
 
 /* R(id, nom, catégorie IBA, méthode, verre, garniture, garniture en plus, rim, couleur,
      goût "sucré acide amer astringent force", tags, ingrédients, étapes, note)

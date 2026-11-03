@@ -1,12 +1,12 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.22.2';
+const APP_VERSION = '0.23.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', 'g', 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
 const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café': 5, 'c. à soupe': 15, 'à compléter': 60 };
-const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Blender': .4 };
+const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
 const TASTE = [['su', 'Sucré'], ['ac', 'Acide'], ['am', 'Amer'], ['as', 'Astringent'], ['fo', 'Force']];
 const TAG_SUGG = ['Apéritif', 'Digestif', 'Rafraîchissant', 'Réconfortant', 'Festif', 'Estival', 'Hivernal', 'Fin de soirée', 'Fruité', 'Herbacé', 'Floral', 'Crémeux', 'Pétillant', 'Amer', 'Brunch', 'Tiki', 'Univers JV', 'Univers ciné'];
 const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['iba', 'Liste officielle IBA'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
@@ -267,10 +267,15 @@ function addFilterIng() {
 /* Sans alcool : aucun ingrédient alcoolisé. */
 const isNA = r => r.ings.every(i => !(S.ings[i.id] && +S.ings[i.id].abv));
 /* Facile : peu d'ingrédients, pas de blanc d'œuf ni de blender. */
+/* Niveau « Facile » : réglé dans la recette (r.easy, vrai ou faux) ; sans réglage, il se déduit des ingrédients.
+   Automatique : jamais facile avec un blender ou un œuf ; sinon 4 ingrédients au plus quand tout se fait dans le verre, le pichet
+   ou la casserole (sans shaker ni verre à mélange), 3 au plus pour les autres méthodes. L'eau et les ingrédients facultatifs ne comptent pas. */
+const DIRECT = ['Dans le verre', 'Dans un pichet', 'À la casserole'];
 function isEasy(r) {
+  if (typeof r.easy === 'boolean') return r.easy;
   const main = r.ings.filter(i => !i.opt && !STAPLES.includes(i.id));
   if (r.method === 'Blender' || main.some(i => ['blanc-oeuf', 'jaune-oeuf'].includes(i.id))) return false;
-  return r.method === 'Dans le verre' ? main.length <= 4 : main.length <= 3;
+  return DIRECT.includes(r.method) ? main.length <= 4 : main.length <= 3;
 }
 function origLabel(r) {
   if (r.origin === 'Original') return 'Original · ' + (r.by === 'other' ? (r.author || 'Autre barman') : 'Ma création');
@@ -1027,6 +1032,9 @@ function openForm(id) {
     <section class="sec"><h2>Le service</h2>
       <div class="field"><span>Méthode</span><input type="hidden" id="rf-method" value="${esc(r.method)}">
         <div class="chips">${METHODS.map(m => `<button type="button" class="chip${m === r.method ? ' on' : ''}" data-act="pick-chip" data-for="rf-method" data-v="${esc(m)}" aria-pressed="${m === r.method}">${esc(m)}</button>`).join('')}</div></div>
+      <div class="field"><span>Niveau</span><input type="hidden" id="rf-level" value="${typeof r.easy === 'boolean' ? (r.easy ? 'easy' : 'hard') : 'auto'}">
+        <div class="seg" role="group" aria-label="Niveau" style="max-width:420px">${[['auto', 'Automatique'], ['easy', 'Facile'], ['hard', 'Pas facile']].map(([v, l]) => { const on = (typeof r.easy === 'boolean' ? (r.easy ? 'easy' : 'hard') : 'auto') === v; return `<button type="button" data-act="level-set" data-v="${v}" class="${on ? 'on' : ''}" aria-pressed="${on}">${l}</button>`; }).join('')}</div>
+        <p class="hint">Automatique : facile si la recette compte peu d'ingrédients (4 au plus dans le verre, le pichet ou la casserole, 3 au plus pour les autres méthodes), sans blender ni œuf.</p></div>
       <div class="field"><span>Verre</span><input type="hidden" id="rf-glass" value="${esc(r.glass)}">
         <div class="gtiles">${GLASSES.map(gl => `<button type="button" class="gt${gl === r.glass ? ' on' : ''}" data-act="pick-glass" data-v="${esc(gl)}" aria-pressed="${gl === r.glass}"><span class="gt-v"></span><span class="gt-l">${esc(gl)}</span></button>`).join('')}</div></div>
       <div class="field"><span>Garniture</span><input type="hidden" id="rf-gcut" value="${esc(cut)}"><input type="hidden" id="rf-gfruit" value="${esc(fruit)}">
@@ -1224,6 +1232,7 @@ function saveForm() {
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()
   });
   if (batch) rec.batch = batch; else delete rec.batch;
+  { const lv = g('rf-level').value; if (lv === 'easy') rec.easy = true; else if (lv === 'hard') rec.easy = false; else delete rec.easy; }
   if (old && old.photo !== rec.photo) delete rec.photoCredit; // le crédit appartient à l'ancienne photo
   if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }
   if (old) S.recipes[S.recipes.indexOf(old)] = rec; else S.recipes.push(rec);
@@ -1312,6 +1321,7 @@ document.addEventListener('click', async e => {
     case 'pick-gfruit': $('#rf-gfruit').value = b.dataset.v; pickIn(b.parentElement, b, '.chip'); updatePrev(); break;
     case 'form-save': saveForm(); break;
     case 'orig': $('#rf-origin').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); syncOrig(); break;
+    case 'level-set': $('#rf-level').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); break;
     case 'batch-mode': $('#rf-batch').value = b.dataset.v; pickIn(b.parentElement, b, 'button'); $('#batch-vol').hidden = b.dataset.v !== 'volume'; if (b.dataset.v === 'volume') $('#rf-batch-qty').focus(); break;
     case 'own-add': if (!S.owned.includes(id)) S.owned.push(id); save(); renderBarTop(); renderBarList(); toast(`${ingName(id)} ajouté au bar`); break;
     case 'add-ing': {
