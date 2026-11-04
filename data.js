@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 13;
+const DATA_VERSION = 14;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -31,6 +31,7 @@ const INGREDIENTS = [
   ['grappa', 'Grappa', 'Grappa', 'Spiritueux', 'Brandy & cognac', 40],
   ['gin', 'Gin London dry', 'Gin', 'Spiritueux', 'Gin', 40],
   ['gin-old-tom', 'Gin Old Tom', 'Gin', 'Spiritueux', 'Gin', 40],
+  ['gin-contemporain', 'Gin contemporain', 'Gin', 'Spiritueux', 'Gin', 40],
   ['rhum-blanc', 'Rhum blanc', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-overproof', 'Rhum blanc overproof', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 63],
   ['aguardiente', 'Aguardiente de canne', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 40],
