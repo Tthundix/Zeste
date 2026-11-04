@@ -243,7 +243,7 @@ const M = { S: 'Shaker', V: 'Verre à mélange', D: 'Dans le verre', P: 'Dans un
 
 /* R(id, nom, catégorie IBA, méthode, verre, garniture, garniture en plus, rim, couleur,
      goût "sucré acide amer astringent force", tags, ingrédients, étapes, note)
-   Ingrédient : [id, quantité, unité, options] ; options : 's' = toute la catégorie convient, 'o' = facultatif, ou { alts:[…] } */
+   Ingrédient : [id, quantité, unité, options] ; options : 's' = toute la catégorie convient, 'o' = facultatif, ou { alts:[…], tip:'marque ou profil conseillé' } */
 function R(id, name, iba, m, glass, garn, garnish, rim, color, taste, tags, ings, steps, note) {
   const f = String(taste).split('').map(Number);
   return {
@@ -253,7 +253,8 @@ function R(id, name, iba, m, glass, garn, garnish, rim, color, taste, tags, ings
     ings: ings.map(([iid, qty, unit, o]) => ({
       id: iid, qty, unit: unit == null ? 'ml' : unit,
       sub: typeof o === 'string' && o.includes('s'), opt: typeof o === 'string' && o.includes('o'),
-      alts: (o && o.alts) || []
+      alts: (o && o.alts) || [],
+      ...((o && o.tip) ? { tip: o.tip } : {})
     })),
     steps, note: note || '', src: 'builtin'
   };

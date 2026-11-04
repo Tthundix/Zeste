@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.28.1';
+const APP_VERSION = '0.29.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -953,7 +953,7 @@ function openDetail(id, keep, back) {
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(a => altTxt(a, kServ)).join(' ; '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-search" data-id="${esc(row.id)}" title="Recettes avec cet ingrédient">${esc(ingName(row.id))}</button>${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-search" data-id="${esc(row.id)}" title="Recettes avec cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
@@ -1005,6 +1005,7 @@ function rowHTML(row) {
       <select class="f-fam" id="ri-f${n}" aria-label="Rangement dans le bar">${opts(PLACES, 'Mes ingrédients|')}</select>
       <input type="number" class="f-abv" id="ri-a${n}" min="0" max="100" step="any" placeholder="% vol." aria-label="Degré d'alcool">
     </div>
+    <div class="frow-tip"><input type="text" class="f-tip" id="ri-t${n}" maxlength="120" placeholder="Marque ou profil conseillé (facultatif), ex. gin herbacé, Henri Bardouin" aria-label="Marque ou profil conseillé pour cet ingrédient" value="${esc(row && row.tip || '')}" autocomplete="off"></div>
     <div class="frow-opts">
       <label for="ri-s${n}"><input type="checkbox" class="f-sub" id="ri-s${n}"${row && row.sub ? ' checked' : ''}> Tout son groupe convient</label>
       <label for="ri-o${n}"><input type="checkbox" class="f-opt" id="ri-o${n}"${row && row.opt ? ' checked' : ''}> Facultatif</label>
@@ -1244,7 +1245,8 @@ function saveForm() {
     }).filter(Boolean);
     const q = parseFloat(String(frw.querySelector('.f-qty').value).replace(',', '.')), unit = frw.querySelector('.f-unit').value;
     const us = unit === 'oz' || unit === 'cup', okq = isFinite(q) && q > 0;
-    return { id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: alts.filter((a, i) => alts.findIndex(b => altId(b) === altId(a)) === i) };
+    const tip = frw.querySelector('.f-tip').value.trim().replace(/\s+/g, ' ');
+    return Object.assign({ id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: alts.filter((a, i) => alts.findIndex(b => altId(b) === altId(a)) === i) }, tip ? { tip } : {});
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');

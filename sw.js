@@ -1,6 +1,6 @@
 /* Zeste : fonctionnement hors ligne.
    Changer VERSION à chaque mise en ligne : les appareils proposent alors la mise à jour. */
-const VERSION = 'zeste-0.28.1';
+const VERSION = 'zeste-0.29.0';
 const ASSETS = [
   './', 'index.html', 'app.css', 'app.js', 'data.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
