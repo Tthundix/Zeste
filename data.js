@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 16;
+const DATA_VERSION = 17;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1066,14 +1066,8 @@ RECIPES.push(
     ['Mélanger le jus d’orange, le citron et le sirop sur des glaçons.', 'Compléter avec l’eau gazeuse.']), 'Recette courante')
 );
 
-/* Exemple de création Zeste */
-RECIPES.push(Object.assign(
-  R('potion-soin', 'Potion de soin', '', 'S', 'Highball', 'mint', '', '', '#C41E4A', '33012', 'Univers JV,Festif',
-    [['vodka', 40], ['creme-cassis', 25, 'ml', 's'], ['citron', 20], ['sirop-miel', 10, 'ml', { alts: ['sirop-sucre'] }], ['eau-gazeuse', 40]],
-    ['Shaker la vodka, la crème de cassis, le jus de citron et le sirop de miel avec des glaçons.', 'Filtrer dans un verre highball rempli de glaçons.', 'Compléter avec l’eau gazeuse et décorer d’une feuille de menthe.'],
-    'Exemple de création inspirée d’un univers de jeu vidéo.'),
-  { origin: 'Original', by: 'other', author: 'Zeste' }
-));
+/* Recettes retirées du catalogue : supprimées des appareils si elles n'ont pas été modifiées. */
+const RETIRED_IDS = ['potion-soin'];
 
 /* Collection anisée : créations personnelles à base de pastis */
 RECIPES.push(

@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.30.1';
+const APP_VERSION = '0.30.2';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -94,6 +94,7 @@ function upgrade(d) {
         if (b.photoCredit) d.recipes[k].photoCredit = clone(b.photoCredit); else delete d.recipes[k].photoCredit;
       }
     });
+    d.recipes = d.recipes.filter(r => !(RETIRED_IDS.includes(r.id) && r.src === 'builtin' && !r.edited));
     // Vocabulaire : « shaker » plutôt que « secouer », y compris dans les recettes de départ déjà modifiées par l'utilisateur.
     const shk = t => typeof t === 'string' ? t.replace(/\bSecouer\b/g, 'Shaker').replace(/\bsecouer\b/g, 'shaker').replace(/\bon secoue\b/g, 'on shake') : t;
     d.recipes.forEach(r => { if (r.src === 'builtin') { if (Array.isArray(r.steps)) r.steps = r.steps.map(shk); r.note = shk(r.note); } });
