@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 14;
+const DATA_VERSION = 15;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1075,9 +1075,37 @@ RECIPES.push(Object.assign(
   { origin: 'Original', by: 'me' }
 ));
 
+/* Collection anisée : créations personnelles à base de pastis */
+RECIPES.push(
+  Object.assign(
+    R('la-ruche', 'La ruche', '', 'S', 'Martini', 'zest-lemon', '', '', '#E8B04A', '22013', 'Rafraîchissant,Herbacé,Digestif',
+      [['gin-contemporain', 50, 'ml', { tip: 'Gin herbacé' }], ['pastis', 10, 'ml', { tip: 'Ricard' }], ['sirop-miel', 15], ['citron', 20]],
+      ['Shaker tous les ingrédients avec de la glace.', 'Filtrer dans un verre à martini refroidi.', 'Décorer d’un zeste de citron.'],
+      'Tester les accords de pastis et de gin peut créer un bon mélange. Il est recommandé d’utiliser un gin herbacé avec un pastis plus fort en réglisse (type Ricard) ou l’inverse.\nIl s’agit d’une variante anisée du Bee’s Knees.'),
+    { origin: 'Original', by: 'me', subtitle: 'Bee’s knees provençal' }
+  ),
+  Object.assign(
+    R('le-verger', 'Le Verger', '', 'S', 'Highball', '', 'Quartier de pomme', '', '#E6C94F', '22112', 'Fruité,Apéritif,Estival',
+      [['pomme', 40], ['pastis', 40], ['citron-vert', 15], ['angostura', 2, 'trait', 'so'], ['ginger-beer', 0, 'à compléter']],
+      ['Shaker le pastis, le jus de pomme, le jus de citron vert et l’Angostura sur glace.', 'Filtrer sur glace dans un verre highball.', 'Compléter avec la ginger beer.'],
+      'Il est possible de remplacer la ginger beer par de l’eau gazeuse. Dans ce cas-là, remplacer le jus de citron vert par du jus de citron jaune.\nAjuster la quantité de jus de citron selon la sucrosité du jus de pomme.'),
+    { origin: 'Original', by: 'me', subtitle: 'Pastis, pomme & ginger beer' }
+  ),
+  Object.assign(
+    R('mauresque-pomme', 'Mauresque pomme', '', 'D', 'Highball', '', '', '', '#EBC76B', '31011', 'Apéritif,Herbacé,Fruité',
+      [['pastis', 30], ['orgeat', 10], ['pomme', 40], ['citron', 10], ['eau', 0, 'à compléter']],
+      ['Dans un verre rempli de glaçons, verser tous les ingrédients, sauf l’eau.', 'Mélanger et compléter avec de l’eau.'],
+      'Ajuster la quantité de jus de citron pour contrebalancer la sucrosité du jus de pomme.'),
+    { origin: 'Original', by: 'me' }
+  )
+);
+
 /* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
    Une recette sans entrée garde l'illustration du verre. */
 const PHOTOS = {
+  'la-ruche': 'photos/la-ruche.jpg',
+  'le-verger': 'photos/le-verger.jpg',
+  'mauresque-pomme': 'photos/mauresque-pomme.jpg',
   'adonis': 'photos/adonis.jpg',
   'agua-jamaica': 'photos/agua-jamaica.jpg',
   'agua-limon-chia': 'photos/agua-limon-chia.jpg',
