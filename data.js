@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 15;
+const DATA_VERSION = 16;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1066,13 +1066,13 @@ RECIPES.push(
     ['Mélanger le jus d’orange, le citron et le sirop sur des glaçons.', 'Compléter avec l’eau gazeuse.']), 'Recette courante')
 );
 
-/* Exemple de création personnelle */
+/* Exemple de création Zeste */
 RECIPES.push(Object.assign(
   R('potion-soin', 'Potion de soin', '', 'S', 'Highball', 'mint', '', '', '#C41E4A', '33012', 'Univers JV,Festif',
     [['vodka', 40], ['creme-cassis', 25, 'ml', 's'], ['citron', 20], ['sirop-miel', 10, 'ml', { alts: ['sirop-sucre'] }], ['eau-gazeuse', 40]],
     ['Shaker la vodka, la crème de cassis, le jus de citron et le sirop de miel avec des glaçons.', 'Filtrer dans un verre highball rempli de glaçons.', 'Compléter avec l’eau gazeuse et décorer d’une feuille de menthe.'],
     'Exemple de création inspirée d’un univers de jeu vidéo.'),
-  { origin: 'Original', by: 'me' }
+  { origin: 'Original', by: 'other', author: 'Zeste' }
 ));
 
 /* Collection anisée : créations personnelles à base de pastis */
@@ -1082,21 +1082,21 @@ RECIPES.push(
       [['gin-contemporain', 50, 'ml', { tip: 'Gin herbacé' }], ['pastis', 10, 'ml', { tip: 'Ricard' }], ['sirop-miel', 15], ['citron', 20]],
       ['Shaker tous les ingrédients avec de la glace.', 'Filtrer dans un verre à martini refroidi.', 'Décorer d’un zeste de citron.'],
       'Tester les accords de pastis et de gin peut créer un bon mélange. Il est recommandé d’utiliser un gin herbacé avec un pastis plus fort en réglisse (type Ricard) ou l’inverse.\nIl s’agit d’une variante anisée du Bee’s Knees.'),
-    { origin: 'Original', by: 'me', subtitle: 'Bee’s knees provençal' }
+    { origin: 'Original', by: 'other', author: 'Zeste', subtitle: 'Bee’s knees provençal' }
   ),
   Object.assign(
     R('le-verger', 'Le Verger', '', 'S', 'Highball', '', 'Quartier de pomme', '', '#E6C94F', '22112', 'Fruité,Apéritif,Estival',
       [['pomme', 40], ['pastis', 40], ['citron-vert', 15], ['angostura', 2, 'trait', 'so'], ['ginger-beer', 0, 'à compléter']],
       ['Shaker le pastis, le jus de pomme, le jus de citron vert et l’Angostura sur glace.', 'Filtrer sur glace dans un verre highball.', 'Compléter avec la ginger beer.'],
       'Il est possible de remplacer la ginger beer par de l’eau gazeuse. Dans ce cas-là, remplacer le jus de citron vert par du jus de citron jaune.\nAjuster la quantité de jus de citron selon la sucrosité du jus de pomme.'),
-    { origin: 'Original', by: 'me', subtitle: 'Pastis, pomme & ginger beer' }
+    { origin: 'Original', by: 'other', author: 'Zeste', subtitle: 'Pastis, pomme & ginger beer' }
   ),
   Object.assign(
     R('mauresque-pomme', 'Mauresque pomme', '', 'D', 'Highball', '', '', '', '#EBC76B', '31011', 'Apéritif,Herbacé,Fruité',
       [['pastis', 30], ['orgeat', 10], ['pomme', 40], ['citron', 10], ['eau', 0, 'à compléter']],
       ['Dans un verre rempli de glaçons, verser tous les ingrédients, sauf l’eau.', 'Mélanger et compléter avec de l’eau.'],
       'Ajuster la quantité de jus de citron pour contrebalancer la sucrosité du jus de pomme.'),
-    { origin: 'Original', by: 'me' }
+    { origin: 'Original', by: 'other', author: 'Zeste' }
   )
 );
 
@@ -1290,6 +1290,12 @@ const COLLECTIONS = [
   { id: 'sans-shaker', group: 'Sélections Zeste', name: 'Sans shaker', curator: 'Sélection Zeste', desc: 'Tout se prépare directement dans le verre, sans matériel.', filter: r => r.method === 'Dans le verre' },
   { id: 'sours', group: 'Sélections Zeste', name: 'La famille des sours', curator: 'Sélection Zeste', desc: 'Un alcool, du citron, du sucre : la structure la plus copiée du bar.', ids: ['whiskey-sour', 'pisco-sour', 'daiquiri', 'margarita', 'sidecar', 'white-lady', 'new-york-sour', 'bees-knees', 'clover-club', 'penicillin'] },
   { id: 'bulles', group: 'Sélections Zeste', name: 'Avec des bulles', curator: 'Sélection Zeste', desc: 'Champagne, prosecco et crémant pour les grandes occasions.', ids: ['french-75', 'champagne-cocktail', 'kir-royal', 'mimosa', 'bellini', 'old-cuban', 'russian-spring-punch', 'spritz', 'hugo-spritz'] },
+  { id: 'anisee', group: 'Sélections Zeste', name: 'La collection anisée', curator: 'Sélection Zeste', desc: 'Des créations originales à base de pastis : herbes, miel, pomme et glace pilée.',
+    blocks: [
+      { type: 'text', title: 'Le pastis autrement', text: 'Le pastis ne se limite pas au verre d’eau fraîche. Son anis et sa réglisse s’accordent avec le miel, les fruits blancs et l’amertume d’un bitter. Ces trois recettes sont des créations Zeste.\n\nLes pastis diffèrent par leur dosage de réglisse et d’herbes : n’hésitez pas à comparer plusieurs marques.' },
+      { type: 'recipes', title: 'Les créations', cols: 3, ids: ['la-ruche', 'le-verger', 'mauresque-pomme'] },
+      { type: 'tip', text: 'Le pastis se marie très bien avec le froid : servir bien glacé, avec beaucoup de glaçons, et ne pas hésiter à ajouter quelques traits de bitter.' }
+    ] },
   { id: 'iba-inoubliables', group: 'Liste officielle IBA', name: 'Les inoubliables', curator: 'Liste officielle IBA', desc: 'Les grands classiques d’avant-guerre, toujours servis dans les bars du monde entier.', filter: r => r.iba === INO },
   { id: 'iba-contemporains', group: 'Liste officielle IBA', name: 'Classiques contemporains', curator: 'Liste officielle IBA', desc: 'Les recettes qui ont marqué la seconde moitié du XXe siècle.', filter: r => r.iba === CON },
   { id: 'iba-nouvelle-ere', group: 'Liste officielle IBA', name: 'Nouvelle ère', curator: 'Liste officielle IBA', desc: 'Les créations récentes entrées dans la liste officielle.', filter: r => r.iba === NEW }
