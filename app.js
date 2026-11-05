@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.31.2';
+const APP_VERSION = '0.31.3';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1238,6 +1238,7 @@ function openForm(id) {
           <label for="rf-by-other"><input type="radio" name="rf-by" id="rf-by-other" value="other"${r.by === 'other' ? ' checked' : ''}> Par quelqu'un d'autre</label>
         </div>
         <label class="field" for="rf-author" id="orig-src" ${r.origin === 'Original' && r.by !== 'other' ? 'hidden' : ''}><span>Source</span><input type="text" id="rf-author" value="${esc(r.origin === 'Original' ? r.author : r.source || '')}" placeholder="Barman, bar, livre, site…"></label>
+        <div class="field" id="iba-field"${r.origin === 'Classique' ? '' : ' hidden'}><span>Liste officielle IBA</span><input type="hidden" id="rf-iba" value="${esc(r.iba || '')}"><div class="chips">${[['', 'Aucune'], ['Les inoubliables', 'Inoubliables'], ['Classiques contemporains', 'Classiques contemporains'], ['Nouvelle ère', 'Nouvelle ère']].map(([v, l]) => `<button type="button" class="chip${(r.iba || '') === v ? ' on' : ''}" data-act="pick-chip" data-for="rf-iba" data-v="${esc(v)}" aria-pressed="${(r.iba || '') === v}">${l}</button>`).join('')}</div></div>
         <label class="field" for="rf-url"><span>Lien (facultatif)</span><input type="url" id="rf-url" inputmode="url" autocomplete="off" value="${esc(r.url || '')}" placeholder="https://…"></label>
       </div>
     </section>
@@ -1453,7 +1454,7 @@ function saveForm() {
   const orig = g('rf-origin').value === 'Classique' ? 'Classique' : 'Original', by = orig === 'Original' ? ((sh.querySelector('input[name=rf-by]:checked') || {}).value || 'me') : '';
   const srcTxt = g('rf-author').value.trim();
   const rec = Object.assign({}, old || {}, {
-    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url, iba: old ? old.iba || '' : '',
+    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url, iba: orig === 'Classique' ? g('rf-iba').value : '',
     method: g('rf-method').value, glass: g('rf-glass').value, garn: currentGarn(), garnish: g('rf-garnish').value.trim(), rim: g('rf-rim').value,
     color: okColor(g('rf-color').value), photo: sheetState.photo || '', flavor, tags, ings,
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()

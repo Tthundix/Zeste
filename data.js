@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 18;
+const DATA_VERSION = 19;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -477,7 +477,7 @@ const RECIPES = [
     'Le « Donn’s Mix » de la recette d’origine est remplacé ici par son contenu : deux parts de pamplemousse pour une part de sirop de cannelle.'),
 
   // ---------- Nouvelle ère (IBA) ----------
-  R('barracuda', 'Barracuda', NEW, 'S', 'Highball', 'wheel-lime', '', '', '#E8C060', '32013', 'Pétillant,Festif',
+  R('barracuda', 'Barracuda', '', 'S', 'Highball', 'wheel-lime', '', '', '#E8C060', '32013', 'Pétillant,Festif',
     [['rhum-ambre', 45], ['galliano', 15], ['ananas', 60], ['citron-vert', 1, 'trait'], ['prosecco', 0, 'à compléter', 's']],
     ['Shaker tous les ingrédients sauf le prosecco avec des glaçons.', 'Filtrer dans un verre highball rempli de glace.', 'Compléter avec le prosecco.']),
   R('bees-knees', "Bee's Knees", NEW, 'S', 'Coupe', 'zest-lemon', '', '', '#EFD27A', '33013', 'Rafraîchissant',
