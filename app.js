@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.32.1';
+const APP_VERSION = '0.33.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -256,17 +256,39 @@ const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" alt="" loading="la
 // Un remplaçant est soit un identifiant (même dosage), soit { id, qty, unit } (autre dosage).
 const altId = a => typeof a === 'string' ? a : a.id;
 const altTxt = (a, k) => typeof a === 'string' || !a.qty ? ingName(altId(a)) : `${fmtQty(a, k)} ${ingName(a.id)}`;
-function rowStatus(row, owned) {
+function rowStatusBase(row, owned) {
   if (owned.has(row.id)) return { st: 'ok' };
   for (const a of (row.alts || [])) if (owned.has(altId(a))) return { st: 'sub', by: altId(a) };
   if (row.sub) { const cat = S.ings[row.id] && S.ings[row.id].cat; for (const o of owned) if (o !== row.id && S.ings[o] && S.ings[o].cat === cat) return { st: 'sub', by: o }; }
   return { st: row.opt ? 'opt' : 'miss' };
 }
-function analyze(r, owned) {
-  const miss = []; let subs = 0;
-  const rows = r.ings.map(row => { const s = rowStatus(row, owned); if (s.st === 'miss') miss.push(row.id); if (s.st === 'sub') subs++; return s; });
-  return { rows, miss, subs };
+/* Préparations maison réalisables avec le bar : un ingrédient manquant qu'une préparation sait produire
+   (« Ingrédient obtenu ») n'est plus manquant, il est à faire maison. */
+const _homeCache = new WeakMap();
+function homeMap(owned) {
+  let m = _homeCache.get(owned); if (m) return m;
+  m = new Map();
+  (S.preps || []).forEach(p => { if (p.makes && !m.has(p.makes) && p.ings.length && p.ings.every(row => rowStatusBase(row, owned).st !== 'miss')) m.set(p.makes, p); });
+  _homeCache.set(owned, m); return m;
 }
+function homeFor(row, owned) {
+  const m = homeMap(owned); if (!m.size) return null;
+  const ids = [row.id, ...(row.alts || []).map(altId)];
+  for (const id of ids) if (m.has(id)) return m.get(id);
+  if (row.sub) { const cat = S.ings[row.id] && S.ings[row.id].cat; for (const [id, p] of m) if (S.ings[id] && S.ings[id].cat === cat) return p; }
+  return null;
+}
+function rowStatus(row, owned) {
+  const b = rowStatusBase(row, owned);
+  if (b.st === 'miss') { const h = homeFor(row, owned); if (h) return { st: 'home', prep: h.id }; }
+  return b;
+}
+function analyze(r, owned) {
+  const miss = [], home = []; let subs = 0;
+  const rows = r.ings.map(row => { const s = rowStatus(row, owned); if (s.st === 'miss') miss.push(row.id); if (s.st === 'sub') subs++; if (s.st === 'home' && !home.includes(s.prep)) home.push(s.prep); return s; });
+  return { rows, miss, subs, home };
+}
+const prepName = id => { const p = S.preps.find(x => x.id === id); return p ? p.name : id; }
 /* Recherche par ingrédient : l'ingrédient lui-même, un équivalent du même groupe, ou un remplaçant prévu. */
 function ingMatch(r, id) {
   const cat = norm(S.ings[id] && S.ings[id].cat);
@@ -304,7 +326,7 @@ function origLabel(r) {
   return r.source ? 'Classique · ' + r.source : 'Classique';
 }
 function statusPill(a) {
-  if (!a.miss.length) return a.subs ? ['sub', 'Avec substitut'] : ['ok', 'Réalisable'];
+  if (!a.miss.length) return a.home.length ? ['sub', 'Avec préparation maison'] : a.subs ? ['sub', 'Avec substitut'] : ['ok', 'Réalisable'];
   return a.miss.length === 1 ? ['one', 'Manque 1'] : ['many', `Manque ${a.miss.length}`];
 }
 function estAbv(r) {
@@ -665,10 +687,11 @@ function openPrep(id, keep) {
   const rowsHTML = p.ings.map((row, i) => {
     const s2 = a.rows[i], info = [], ing = S.ings[row.id];
     if (s2.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s2.by))}`);
+    if (s2.st === 'home') info.push(`À faire maison : ${esc(prepName(s2.prep))}`);
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(x => altTxt(x, k)).join(' ; '))}`);
-    return `<li><span class="dot ${s2.st === 'ok' ? '' : s2.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s2.st]}"></span><span class="q">${esc(fmtQty(row, k))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s2.st === 'ok' ? '' : s2.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s2.st]}"></span><span class="q">${esc(fmtQty(row, k))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   const mk = p.makes && S.ings[p.makes];
   sh.innerHTML = `
@@ -683,7 +706,7 @@ function openPrep(id, keep) {
       <section class="sec ings-sec o3"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
         ${servRow(p, 'pserv', 'pserv-set')}
         <ul class="ings">${rowsHTML}</ul>
-        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
+        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot home"></i>À faire maison</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${p.steps.length ? `<section class="sec o4"><h2>Préparation</h2><ol class="steps">${p.steps.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ol></section>` : ''}
     </div>
   </article></div>`;
@@ -804,7 +827,7 @@ function renderCollTab() {
 }
 function rcardHTML(r, own) {
   const a = analyze(r, own), [cls, txt] = statusPill(a);
-  const mi = r.ings.map((row, i) => { const st = a.rows[i].st; return `<span class="mi ${st}"><i class="dot ${st === 'ok' ? '' : st}"></i><span>${esc(ingName(row.id))}${st === 'sub' ? ' → ' + esc(ingName(a.rows[i].by)) : ''}</span></span>`; }).join('');
+  const mi = r.ings.map((row, i) => { const st = a.rows[i].st; return `<span class="mi ${st}"><i class="dot ${st === 'ok' ? '' : st}"></i><span>${esc(ingName(row.id))}${st === 'sub' ? ' → ' + esc(ingName(a.rows[i].by)) : st === 'home' ? ' (maison)' : ''}</span></span>`; }).join('');
   return `<button class="rcard" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}"><span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span><span class="rcard-b"><span class="cname">${esc(r.name)}</span><span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span><span class="mini-ings">${mi}</span></span></button>`;
 }
 function openCollection(cid, keep) {
@@ -815,7 +838,7 @@ function openCollection(cid, keep) {
   recs.forEach((r, k) => r.ings.forEach((row, i) => {
     if (row.opt || STAPLES.includes(row.id)) return;
     const st = an[k].rows[i].st, e = need.get(row.id) || { st: 'ok', recs: [] };
-    if (st === 'miss') e.st = 'miss'; else if (st === 'sub' && e.st !== 'miss') e.st = 'sub';
+    if (st === 'miss') e.st = 'miss'; else if ((st === 'sub' || st === 'home') && e.st !== 'miss') e.st = 'sub';
     e.recs.push(r.name); need.set(row.id, e);
   }));
   const list = st => [...need].filter(([, e]) => e.st === st).sort((x, y) => y[1].recs.length - x[1].recs.length || ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
@@ -1046,7 +1069,7 @@ function shopTotals(recs, kOf) {
     r.ings.forEach((row, i) => {
       if (row.opt || STAPLES.includes(row.id)) return;
       const st = a.rows[i].st, e = tot.get(row.id) || { st: 'ok', qty: {}, recs: [] };
-      if (st === 'miss') e.st = 'miss'; else if (st === 'sub' && e.st !== 'miss') e.st = 'sub';
+      if (st === 'miss') e.st = 'miss'; else if (st === 'home' && e.st !== 'miss') { e.st = 'home'; e.prep = a.rows[i].prep; } else if (st === 'sub' && e.st !== 'miss' && e.st !== 'home') e.st = 'sub';
       if (row.unit === 'à compléter') e.fill = true;
       else { const u = row.unit === 'cl' ? 'ml' : row.unit; e.qty[u] = (e.qty[u] || 0) + (+row.qty || 0) * (row.unit === 'cl' ? 10 : 1) * k; }
       if (!e.recs.includes(r.name)) e.recs.push(r.name);
@@ -1086,7 +1109,7 @@ function renderShop(m) {
   const tot = shopTotals(recs, r => shopIn(r.id).amt / servCfg(r).base);
   const group = g => [...tot].filter(([, e]) => e.st === g).sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
   const li = (arr, cls) => `<ul>${arr.map(([id, e]) => `<li><i class="dot ${cls}"></i><span>${esc(ingName(id))} <b class="qty">${esc(shopQty(e))}</b><small>${esc(e.recs.slice(0, 3).join(', '))}${e.recs.length > 3 ? '…' : ''}</small></span></li>`).join('')}</ul>`;
-  const miss = group('miss'), sub = group('sub'), ok = group('ok');
+  const miss = group('miss'), home = group('home'), sub = group('sub'), ok = group('ok');
   const glass = items.filter(o => !batchBase(o.r)).map(o => o.x.amt), common = glass.length && glass.every(a => a === glass[0]) ? glass[0] : 0;
   const rows = items.map(({ x, r }) => `<div class="srec"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><button class="lname srec-n" data-act="open" data-id="${esc(r.id)}">${esc(r.name)}</button>${stepperHTML('shop-serv', r, x.amt, (servCfg(r).vol ? 'Volume pour ' : 'Verres pour ') + r.name)}<button class="icon-btn srm" data-act="shop-rm" data-id="${esc(r.id)}" aria-label="Retirer ${esc(r.name)} de la liste">×</button></div>`).join('');
   const addable = S.recipes.filter(r => !shopIn(r.id)).sort(byRecName);
@@ -1103,6 +1126,7 @@ function renderShop(m) {
     <aside class="coll-side panel shop"><div class="row-btns"><button class="btn small" data-act="shop-copy">Copier la liste</button>${items.length ? `<button class="btn small ghost danger" data-act="shop-clear">${UI.confirm === 'shop-clear' ? 'Confirmer : tout retirer' : 'Vider la liste'}</button>` : ''}</div>
       <h2>Ingrédients</h2>
       ${miss.length ? `<h3 class="lbl">À acheter (${miss.length})</h3>${li(miss, 'miss')}` : (items.length ? '<p class="avail ok">Rien à acheter : tout est dans le bar.</p>' : '<p class="muted">Rien pour l\'instant.</p>')}
+      ${home.length ? `<h3 class="lbl">À faire maison (${home.length})</h3><ul>${home.map(([id, e]) => `<li><i class="dot home"></i><span>${esc(ingName(id))} <b class="qty">${esc(shopQty(e))}</b><small><button type="button" class="ing-link" data-act="open-prep" data-id="${esc(e.prep)}">${esc(prepName(e.prep))}</button> · ${esc(e.recs.slice(0, 3).join(', '))}${e.recs.length > 3 ? '…' : ''}</small></span></li>`).join('')}</ul>` : ''}
       ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${li(sub, 'sub')}` : ''}
       ${ok.length ? `<details data-keep="shop-ok"${UI.keep.has('shop-ok') ? ' open' : ''}><summary class="lbl" style="cursor:pointer">Dans le bar (${ok.length})</summary>${li(ok, '')}</details>` : ''}
     </aside>
@@ -1120,17 +1144,19 @@ function openDetail(id, keep, back) {
   const avis = cls => `<section class="sec mynote${top ? ' top' : ''} ${cls}"><div class="shead"><h2>Mon avis</h2><div class="seg mini" role="group" aria-label="Visibilité de l'avis">${[['0', 'Privé'], ['1', 'Public']].map(([v, l]) => `<button data-act="note-vis" data-id="${esc(r.id)}" data-v="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${l}</button>`).join('')}</div></div>
       <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ressenti, ajustements, accords…">${esc(nt.text)}</textarea>
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
-  const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec le bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec le bar.') : `Manquant : ${a.miss.map(ingName).join(', ')}.`;
+  const homeTxt = a.home.length ? ` ${a.home.length > 1 ? 'Préparations' : 'Une préparation'} à faire maison : ${a.home.map(prepName).join(', ')}.` : '';
+  const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec le bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec le bar.') + homeTxt : `Manquant : ${a.miss.map(ingName).join(', ')}.` + homeTxt;
   const kServ = servK(r);
   const sx = shopIn(r.id), amtNow = servAmt(r), cfgNow = servCfg(r);
   const shopHTML = `<div class="shop-add">${sx ? `<span class="hint">Dans la liste de courses : <b>${esc(cfgNow.fmt(sx.amt))}</b></span>${sx.amt !== amtNow ? `<button class="btn small" data-act="shop-add" data-id="${esc(r.id)}">Passer à ${esc(cfgNow.fmt(amtNow))}</button>` : ''}<button class="btn small ghost" data-act="shop-rm" data-id="${esc(r.id)}">Retirer</button><button class="btn small ghost" data-act="go-shop">Voir la liste</button>` : `<button class="btn small" data-act="shop-add" data-id="${esc(r.id)}">Ajouter aux courses (${esc(cfgNow.fmt(amtNow))})</button>`}</div>`;
   const rowsHTML = r.ings.map((row, i) => {
     const s = a.rows[i], info = [], ing = S.ings[row.id];
     if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
+    if (s.st === 'home') info.push(`À faire maison : <button type="button" class="ing-link" data-act="open-prep" data-id="${esc(s.prep)}">${esc(prepName(s.prep))}</button>`);
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(a => altTxt(a, kServ)).join(' ; '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
@@ -1153,7 +1179,7 @@ function openDetail(id, keep, back) {
         ${shopHTML}
         <p class="avail ${a.miss.length ? 'miss' : 'ok'}">${esc(availTxt)}</p>
         <ul class="ings">${rowsHTML}</ul>
-        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
+        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot home"></i>À faire maison</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
       ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><ul class="notes">${String(r.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
     </div>

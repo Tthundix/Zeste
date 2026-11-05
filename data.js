@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 20;
+const DATA_VERSION = 21;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -154,6 +154,7 @@ const INGREDIENTS = [
   ['ananas-frais', 'Ananas frais', 'Ananas frais', 'Fruits & légumes', '', 0],
   ['fraise', 'Fraises', 'Fraise', 'Fruits & légumes', '', 0],
   ['framboise', 'Framboises', 'Framboise', 'Fruits & légumes', '', 0],
+  ['peche-blanche', 'Pêches blanches', 'Pêche blanche', 'Fruits & légumes', '', 0],
   ['mure', 'Mûres', 'Mûre', 'Fruits & légumes', '', 0],
   ['concombre', 'Concombre', 'Concombre', 'Fruits & légumes', '', 0],
   ['gingembre', 'Gingembre frais', 'Gingembre', 'Fruits & légumes', '', 0],
@@ -1317,6 +1318,10 @@ const PREPS = [
     [['miel', 150, 'g'], ['eau', 100, 'ml']],
     ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le miel et remuer jusqu\'à obtenir un liquide homogène.', 'Laisser refroidir, puis mettre en bouteille.'],
     'Au réfrigérateur : environ 1 mois.', 'Le miel seul est trop épais pour se mélanger à froid dans un shaker : le diluer le rend facile à doser.', 'Formule classique de bar'),
+  P('prep-puree-peche', 'Purée de pêche blanche', 'puree-peche', 'Autres', 350,
+    [['peche-blanche', 500, 'g'], ['citron', 10, 'ml', 'o']],
+    ['Plonger les pêches 30 secondes dans l\'eau bouillante, puis dans l\'eau froide : la peau s\'enlève toute seule.', 'Dénoyauter et couper la chair en morceaux.', 'Mixer avec le jus de citron jusqu\'à obtenir une purée lisse, puis passer au tamis fin si besoin.', 'Utiliser aussitôt ou conserver au froid.'],
+    'Au réfrigérateur : 2 jours. Au congélateur : 3 mois.', 'Le jus de citron évite que la purée ne brunisse. Choisir des pêches très mûres : elles donnent une purée parfumée et sucrée, sans sucre ajouté.', 'Préparation classique du Bellini'),
   P('prep-sirop-gingembre', 'Sirop de gingembre', 'sirop-gingembre', 'Sirops & cordials', 450,
     [['gingembre', 200, 'g'], ['sucre-blanc', 300, 'g'], ['eau', 300, 'ml']],
     ['Éplucher le gingembre et le couper en fines lamelles.', 'Porter l\'eau et le sucre à frémissement, ajouter le gingembre et laisser frémir 15 à 20 minutes.', 'Éteindre et laisser infuser 30 minutes de plus pour un goût plus fort.', 'Filtrer en pressant bien, laisser refroidir et mettre en bouteille.'],

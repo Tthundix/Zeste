@@ -309,6 +309,7 @@ input[type=radio]{accent-color:var(--accent)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
 .dot.sub{background:transparent;border:2px solid var(--ok)}
 .dot.miss{background:var(--miss)}
+.dot.home{background:#D98A2B}
 .dot.opt{background:var(--line)}
 .q{font-family:var(--font-mono);font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ings .nm{font-weight:600;min-width:0}
@@ -665,3 +666,5 @@ input[type=radio]{accent-color:var(--accent)}
   .detail h1{font-size:clamp(34px,6vw,48px)}
   .dhero{aspect-ratio:16/10}
 }
+
+.mini-ings .mi.home>span{color:var(--muted)}

@@ -148,6 +148,7 @@ const INFOS = {
   "citron-entier": ["Citron jaune entier, de préférence non traité si l'on utilise le zeste.", "2 à 3 semaines au réfrigérateur.", "Jus, zeste et rondelle. Le zeste torsadé parfume la surface du verre : Martini, Old fashioned."],
   "orange-entiere": ["Orange entière, de préférence non traitée si l'on utilise le zeste.", "1 à 2 semaines au réfrigérateur.", "Zeste torsadé pour un Negroni ou un Old fashioned, rondelle pour décorer, jus pour allonger."],
   "ananas-frais": ["Ananas frais entier ou en morceaux.", "Une fois coupé : 3 à 5 jours au réfrigérateur.", "Jus frais mixé, feuilles et quartier pour la garniture : Piña Colada, cocktails tiki."],
+  "peche-blanche": ["Fruit de l'été, à chair blanche, plus parfumée et moins acide que la jaune.", "Mûre : 2 à 3 jours au réfrigérateur ; à garder à température ambiante tant qu'elle n'est pas mûre.", "Mixée en purée, c'est la base du Bellini. Sa recette maison est dans l'onglet Préparations maison."],
   fraise: ["Fraise fraîche, de saison.", "2 à 3 jours au réfrigérateur.", "Écrasée au shaker ou mixée : Strawberry Daiquiri, Fraise-basilic. Douce et colorée."],
   framboise: ["Framboise fraîche, fruit très fragile.", "1 à 2 jours au réfrigérateur ; se congèle.", "Écrasée ou mixée : Bramble, French Martini. Acidulée et très parfumée."],
   mure: ["Mûre fraîche, sauvage ou cultivée.", "2 à 3 jours au réfrigérateur ; se congèle.", "Sucrée, acidulée et boisée. Garniture du Bramble, écrasée au shaker."],
