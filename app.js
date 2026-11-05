@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.31.1';
+const APP_VERSION = '0.31.2';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -642,12 +642,13 @@ function openIngInfo(id, keep) {
 
 /* ---------- préparations maison : sirops, liqueurs, spiritueux infusés ---------- */
 const PREP_COL = { 'Sirops & cordials': '#FFE14D', 'Liqueurs': '#FF9A1F', 'Spiritueux infusés': '#C8E04A', 'Autres': '#E8F1F2' };
-const prepColor = p => okColor(p.color || PREP_COL[p.kind] || PREP_COL.Autres);
-const JAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3l1.6 2.4V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4L9 6z"/><path d="M7.4 12h9.2"/></svg>';
+const PREP_COL_ID = { 'prep-sirop-sucre': '#E8F1F2', 'prep-sirop-sucre-riche': '#F6EBC8', 'prep-sirop-miel': '#D98A2B', 'prep-sirop-gingembre': '#FFE14D', 'prep-sirop-cannelle': '#9A4A1E', 'prep-sirop-vanille': '#F6EBC8', 'prep-grenadine': '#E2232E', 'prep-shrub-framboise': '#F04E7A', 'prep-limoncello': '#FFE14D', 'prep-vodka-vanille': '#F6EBC8', 'prep-vodka-citron': '#F6EBC8', 'prep-orgeat': '#F6EBC8' };
+const prepColor = p => okColor(p.color || PREP_COL_ID[p.id] || PREP_COL[p.kind] || PREP_COL.Autres);
+const jarSVG = c => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 12h9.2V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1z" fill="${c}" stroke="none"/><path d="M9 3h6v3l1.6 2.4V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4L9 6z"/><path d="M7.4 12h9.2"/></svg>`;
 const mlTxt = ml => fmtQty({ qty: ml, unit: 'ml' });
 function prepRow(p) {
   const sub = [p.makes && S.ings[p.makes] ? 'Pour ' + S.ings[p.makes].name : '', p.batch ? '≈ ' + mlTxt(p.batch.ml) : ''].filter(Boolean).join(' · ');
-  return `<button class="lrow prow" data-act="open-prep" data-id="${esc(p.id)}"><span class="pdot" style="--c:${prepColor(p)}" aria-hidden="true"></span><span class="lname">${esc(p.name)}<small>${esc(sub)}</small></span><span></span></button>`;
+  return `<button class="lrow prow" data-act="open-prep" data-id="${esc(p.id)}"><span class="lthumb prep-ico" style="--c:${prepColor(p)}" aria-hidden="true">${jarSVG(prepColor(p))}</span><span class="lname">${esc(p.name)}<small>${esc(sub)}</small></span><span></span></button>`;
 }
 function renderPrepsTab() {
   const kinds = [...PREP_KINDS]; S.preps.forEach(p => { const k = p.kind || 'Autres'; if (!kinds.includes(k)) kinds.push(k); });
