@@ -11,7 +11,7 @@ Zeste est une application web installable (PWA). Elle fonctionne hors ligne et g
 | `index.html` | Structure de la page |
 | `app.css` | Styles (téléphone et grand écran) |
 | `app.js` | Logique de l'application |
-| `data.js` | Données de départ : ingrédients, recettes (dont la liste officielle IBA), collections |
+| `data.js` | Données de départ : ingrédients, recettes, collections |
 | `infos.js` | Fiches des ingrédients (origine, conservation, rôle en cocktail) ; recettes maison de départ dans `data.js` (`PREPS`) |
 | `manifest.webmanifest` | Nom, icônes et couleurs de l'appli installée |
 | `sw.js` | Fonctionnement hors ligne et mises à jour |

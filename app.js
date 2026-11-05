@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.31.3';
+const APP_VERSION = '0.32.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -9,7 +9,7 @@ const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
 const TASTE = [['su', 'Sucré'], ['ac', 'Acide'], ['am', 'Amer'], ['as', 'Astringent'], ['fo', 'Force']];
 const TAG_SUGG = ['Apéritif', 'Digestif', 'Rafraîchissant', 'Réconfortant', 'Festif', 'Estival', 'Hivernal', 'Fin de soirée', 'Fruité', 'Herbacé', 'Floral', 'Crémeux', 'Pétillant', 'Amer', 'Brunch', 'Tiki', 'Univers JV', 'Univers ciné'];
-const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['iba', 'Liste officielle IBA'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
+const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
 const FAM_MAP = { 'Liqueurs & apéritifs': 'Liqueurs', 'Agrumes & jus': 'Jus & purées', 'Softs': 'Softs & eaux', 'Frais & autres': 'Épicerie' };
 const FAM_IDS = FAMILIES.map(f => f.id);
 const PLACES = FAMILIES.flatMap(f => f.subs ? f.subs.map(s => [f.id + '|' + s, f.id + ' › ' + s]) : [[f.id + '|', f.id]]);
@@ -59,6 +59,7 @@ function upgrade(d) {
   if (!Array.isArray(d.preps)) d.preps = [];
   if (!Array.isArray(d.prepsRemoved)) d.prepsRemoved = [];
   d.recipes.forEach(r => {
+    delete r.iba;
     if (r.origin === 'Ma création') { r.origin = 'Original'; r.by = 'me'; }
     else if (r.origin === 'Autre barman') { r.origin = 'Original'; r.by = 'other'; }
     else if (r.origin !== 'Original') r.origin = 'Classique';
@@ -71,7 +72,7 @@ function upgrade(d) {
     // Recettes d'exemple de la première version : on garde celles qui ont une photo, on remplace les autres par la version complète.
     d.recipes = d.recipes.map(r => {
       const b = BUILTIN.get(r.id); if (!b) return r;
-      if (okPhoto(r.photo)) return Object.assign(r, { src: 'builtin', edited: true, garn: b.garn, rim: b.rim, garnish: b.garnish, iba: b.iba });
+      if (okPhoto(r.photo)) return Object.assign(r, { src: 'builtin', edited: true, garn: b.garn, rim: b.rim, garnish: b.garnish });
       return clone(b);
     });
     d.v = 2; d.dataVersion = 0;
@@ -300,7 +301,7 @@ function isEasy(r) {
 }
 function origLabel(r) {
   if (r.origin === 'Original') return 'Original · ' + (r.by === 'other' ? (r.author || 'Autre barman') : 'Ma création');
-  return r.iba ? 'Classique · IBA, ' + r.iba.charAt(0).toLowerCase() + r.iba.slice(1) : 'Classique';
+  return 'Classique';
 }
 function statusPill(a) {
   if (!a.miss.length) return a.subs ? ['sub', 'Avec substitut'] : ['ok', 'Réalisable'];
@@ -423,7 +424,6 @@ function renderResults() {
     if (F.glass && r.glass !== F.glass) return false;
     if (F.tag && !r.tags.includes(F.tag)) return false;
     if (F.origin === 'classic' && r.origin !== 'Classique') return false;
-    if (F.origin === 'iba' && !r.iba) return false;
     if (F.origin === 'mine' && !(r.origin === 'Original' && r.by !== 'other')) return false;
     if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
     if (F.level === 'easy' && !isEasy(r)) return false;
@@ -1238,7 +1238,6 @@ function openForm(id) {
           <label for="rf-by-other"><input type="radio" name="rf-by" id="rf-by-other" value="other"${r.by === 'other' ? ' checked' : ''}> Par quelqu'un d'autre</label>
         </div>
         <label class="field" for="rf-author" id="orig-src" ${r.origin === 'Original' && r.by !== 'other' ? 'hidden' : ''}><span>Source</span><input type="text" id="rf-author" value="${esc(r.origin === 'Original' ? r.author : r.source || '')}" placeholder="Barman, bar, livre, site…"></label>
-        <div class="field" id="iba-field"${r.origin === 'Classique' ? '' : ' hidden'}><span>Liste officielle IBA</span><input type="hidden" id="rf-iba" value="${esc(r.iba || '')}"><div class="chips">${[['', 'Aucune'], ['Les inoubliables', 'Inoubliables'], ['Classiques contemporains', 'Classiques contemporains'], ['Nouvelle ère', 'Nouvelle ère']].map(([v, l]) => `<button type="button" class="chip${(r.iba || '') === v ? ' on' : ''}" data-act="pick-chip" data-for="rf-iba" data-v="${esc(v)}" aria-pressed="${(r.iba || '') === v}">${l}</button>`).join('')}</div></div>
         <label class="field" for="rf-url"><span>Lien (facultatif)</span><input type="url" id="rf-url" inputmode="url" autocomplete="off" value="${esc(r.url || '')}" placeholder="https://…"></label>
       </div>
     </section>
@@ -1454,7 +1453,7 @@ function saveForm() {
   const orig = g('rf-origin').value === 'Classique' ? 'Classique' : 'Original', by = orig === 'Original' ? ((sh.querySelector('input[name=rf-by]:checked') || {}).value || 'me') : '';
   const srcTxt = g('rf-author').value.trim();
   const rec = Object.assign({}, old || {}, {
-    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url, iba: orig === 'Classique' ? g('rf-iba').value : '',
+    id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url,
     method: g('rf-method').value, glass: g('rf-glass').value, garn: currentGarn(), garnish: g('rf-garnish').value.trim(), rim: g('rf-rim').value,
     color: okColor(g('rf-color').value), photo: sheetState.photo || '', flavor, tags, ings,
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()
