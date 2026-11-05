@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.30.2';
+const APP_VERSION = '0.31.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -43,7 +43,7 @@ function seed() {
     lists: [{ id: 'fav', name: 'Favoris', fixed: true, items: ['negroni', 'daiquiri'] }, { id: 'try', name: 'À essayer', fixed: true, items: ['last-word', 'mai-tai'] }],
     ratings: { negroni: 5, daiquiri: 4, bramble: 4.5 }, collections: [],
     notes: { negroni: { text: 'Parfait en apéro. Avec un vermouth plus vanillé, il devient plus rond. À tester avec un gin plus agrumes.', pub: false, at: Date.now() } },
-    unit: 'ml', example: true
+    unit: 'ml', example: true, shop: { recs: [] }, preps: clone(PREPS), prepsRemoved: []
   };
 }
 function upgrade(d) {
@@ -55,6 +55,9 @@ function upgrade(d) {
   if (!Array.isArray(d.collections)) d.collections = [];
   if (!d.views || typeof d.views !== 'object') d.views = {};
   if (!d.unit) d.unit = 'ml';
+  if (!d.shop || !Array.isArray(d.shop.recs)) d.shop = { recs: [] };
+  if (!Array.isArray(d.preps)) d.preps = [];
+  if (!Array.isArray(d.prepsRemoved)) d.prepsRemoved = [];
   d.recipes.forEach(r => {
     if (r.origin === 'Ma création') { r.origin = 'Original'; r.by = 'me'; }
     else if (r.origin === 'Autre barman') { r.origin = 'Original'; r.by = 'other'; }
@@ -95,6 +98,12 @@ function upgrade(d) {
       }
     });
     d.recipes = d.recipes.filter(r => !(RETIRED_IDS.includes(r.id) && r.src === 'builtin' && !r.edited));
+    // Préparations maison de départ : ajoutées, ou mises à jour tant qu'elles n'ont pas été modifiées ; une préparation supprimée ne revient pas.
+    PREPS.forEach(b => {
+      const k = d.preps.findIndex(x => x.id === b.id);
+      if (k < 0) { if (!d.prepsRemoved.includes(b.id)) d.preps.push(clone(b)); }
+      else if (d.preps[k].src === 'builtin' && !d.preps[k].edited) d.preps[k] = clone(b);
+    });
     // Vocabulaire : « shaker » plutôt que « secouer », y compris dans les recettes de départ déjà modifiées par l'utilisateur.
     const shk = t => typeof t === 'string' ? t.replace(/\bSecouer\b/g, 'Shaker').replace(/\bsecouer\b/g, 'shaker').replace(/\bon secoue\b/g, 'on shake') : t;
     d.recipes.forEach(r => { if (r.src === 'builtin') { if (Array.isArray(r.steps)) r.steps = r.steps.map(shk); r.note = shk(r.note); } });
@@ -119,7 +128,7 @@ async function load() {
   } catch (e) { storageOK = false; }
   return seed();
 }
-function save() { clearTimeout(saveT); saveT = setTimeout(flushSave, 250); }
+function save() { clearTimeout(saveT); saveT = setTimeout(flushSave, 250); updateShopBadge(); }
 async function flushSave() {
   clearTimeout(saveT); saveT = null;
   if (!IDB.db) { storageOK = false; return; }
@@ -158,7 +167,7 @@ function installBlock() {
 }
 
 /* ---------- état de l'interface ---------- */
-const UI = { view: 'home', q: '', avail: 'all', f: F_DEFAULT(), sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null, serv: {}, shop: null };
+const UI = { view: 'home', q: '', avail: 'all', f: F_DEFAULT(), sort: 'name', filtersOpen: false, barQ: '', open: new Set(), listTab: 'mine', confirm: null, serv: {}, barTab: 'ings', keep: new Set(), newList: null };
 let sheetState = null, rowN = 0;
 const STAPLES = ['eau']; // toujours disponible
 const ownedSet = () => new Set([...S.owned, ...STAPLES]);
@@ -350,7 +359,9 @@ function render() {
   else if (UI.view === 'catalogue') renderCatalogue(m);
   else if (UI.view === 'bar') renderBar(m);
   else if (UI.view === 'lists') renderLists(m);
+  else if (UI.view === 'shop') renderShop(m);
   else renderData(m);
+  updateShopBadge();
 }
 
 const SEARCH_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
@@ -527,8 +538,10 @@ function renderHome(m) {
 /* ---------- mon bar ---------- */
 const CHEV_R = '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 function renderBar(m) {
+  const tabs = `<div class="seg tabs" role="tablist" aria-label="Mon bar">${[['ings', 'Ingrédients'], ['preps', 'Préparations maison']].map(([v, l]) => `<button role="tab" data-act="bar-tab" data-v="${v}" class="${UI.barTab === v ? 'on' : ''}" aria-selected="${UI.barTab === v}">${l}</button>`).join('')}</div>`;
+  if (UI.barTab === 'preps') { m.innerHTML = `<h1 class="view">Mon bar</h1>${tabs}${renderPrepsTab()}`; return; }
   const cats = [...new Set(Object.values(S.ings).map(i => i.cat))].sort((a, b) => a.localeCompare(b, 'fr'));
-  m.innerHTML = `<h1 class="view">Mon bar</h1>
+  m.innerHTML = `<h1 class="view">Mon bar</h1>${tabs}
   <div class="bar-layout">
     <div class="bar-side">
       <div id="bartop" class="bar-top"></div>
@@ -566,7 +579,7 @@ function renderBarTop() {
 }
 function ownRow(id, own) {
   const i = S.ings[id], extra = [i.cat !== i.name ? i.cat : '', +i.abv ? fr(+i.abv) + ' %' : ''].filter(Boolean).join(' · ');
-  return `<label class="own" for="own-${esc(id)}"><input type="checkbox" id="own-${esc(id)}" data-own="${esc(id)}"${own.has(id) ? ' checked' : ''}><span class="nm">${esc(i.name)}${i.custom ? '<span class="perso">perso</span>' : ''}</span><small>${esc(extra)}</small></label>`;
+  return `<div class="own"><label class="own-chk" for="own-${esc(id)}"><input type="checkbox" id="own-${esc(id)}" data-own="${esc(id)}"${own.has(id) ? ' checked' : ''}><span class="sr">Dans mon bar : ${esc(i.name)}</span></label><button type="button" class="own-i" data-act="ing-info" data-id="${esc(id)}" title="Voir la fiche de cet ingrédient"><span class="nm">${esc(i.name)}${i.custom ? '<span class="perso">perso</span>' : ''}</span><small>${esc(extra)}</small>${CHEV_R}</button></div>`;
 }
 function accHTML(key, title, ids, own, body, cls) {
   const n = ids.filter(id => own.has(id)).length, open = UI.barQ ? true : UI.open.has(key);
@@ -602,6 +615,132 @@ function updateAccCounts(input) {
   }
 }
 
+
+/* ---------- fiche d'un ingrédient ---------- */
+function openIngInfo(id, keep) {
+  const i = S.ings[id], sh = $('#sheet'); if (!i) { closeSheet(); return; }
+  if (!keep) keepSheetScroll();
+  sheetState = { type: 'ing', id };
+  const inf = INFOS[id], have = ownedSet().has(id), abv = +i.abv || 0, st = keep ? sh.scrollTop : 0;
+  const same = Object.keys(S.ings).filter(x => x !== id && !STAPLES.includes(x) && S.ings[x].cat === i.cat).sort((a, b) => S.ings[a].name.localeCompare(S.ings[b].name, 'fr'));
+  const mine = S.preps.filter(p => p.makes === id), nR = S.recipes.filter(r => r.ings.some(x => x.id === id)).length;
+  const place = [i.fam, i.sub].filter(Boolean).join(' › ');
+  const block = (t, txt) => txt ? `<section class="sec"><h2>${t}</h2><p class="ing-txt">${esc(txt)}</p></section>` : '';
+  sh.innerHTML = `
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ Retour</button><span class="grow"></span><button class="btn small${have ? '' : ' primary'}" data-act="own-tog" data-id="${esc(id)}" aria-pressed="${have}">${have ? '✓ Dans mon bar' : "Je l'ai"}</button></div></div>
+  <div class="sheet-body"><article class="inner detail ing-page" style="--c:var(--accent)">
+    <header class="dhead"><p class="eyebrow"><span class="orig">${esc(place || 'Ingrédient')}</span></p><h1>${esc(i.name)}</h1></header>
+    <dl class="facts"><div><dt>Degré d'alcool</dt><dd class="mono">${abv ? esc(fr(abv)) + ' % vol.' : 'Sans alcool'}</dd></div><div><dt>Groupe de substitution</dt><dd>${esc(i.cat)}</dd></div></dl>
+    ${inf ? block('Origine', inf[0]) + block('Conservation', inf[1]) + block('Dans un cocktail', inf[2]) : `${block('Dans un cocktail', INFO_FAMILY[i.fam] || '')}<p class="hint">Pas de fiche détaillée : cet ingrédient a été ajouté à la main.</p>`}
+    ${mine.length ? `<section class="sec"><h2>Recette maison</h2><div class="lrows">${mine.map(prepRow).join('')}</div></section>` : ''}
+    ${same.length ? `<section class="sec"><h2>Peut se remplacer par</h2><p class="hint">Les ingrédients du même groupe de substitution, quand la recette l'accepte.</p><div class="chips">${same.map(x => `<button class="chip" data-act="ing-info" data-id="${esc(x)}">${esc(S.ings[x].name)}</button>`).join('')}</div></section>` : ''}
+    ${nR ? `<div class="row-btns"><button class="btn" data-act="ing-search" data-id="${esc(id)}">${nR === 1 ? 'Voir la recette' : `Voir les ${nR} recettes`}</button></div>` : ''}
+  </article></div>`;
+  showSheet(); sh.scrollTop = st;
+  if (!keep) pushNav();
+}
+
+/* ---------- préparations maison : sirops, liqueurs, spiritueux infusés ---------- */
+const JAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3l1.6 2.4V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4L9 6z"/><path d="M7.4 12h9.2"/></svg>';
+const mlTxt = ml => fmtQty({ qty: ml, unit: 'ml' });
+function prepRow(p) {
+  const sub = [p.makes && S.ings[p.makes] ? 'Pour ' + S.ings[p.makes].name : '', p.batch ? '≈ ' + mlTxt(p.batch.ml) : ''].filter(Boolean).join(' · ');
+  return `<button class="lrow prow" data-act="open-prep" data-id="${esc(p.id)}"><span class="lthumb prep-ico">${JAR}</span><span class="lname">${esc(p.name)}<small>${esc(sub)}</small></span><span></span></button>`;
+}
+function renderPrepsTab() {
+  const kinds = [...PREP_KINDS]; S.preps.forEach(p => { const k = p.kind || 'Autres'; if (!kinds.includes(k)) kinds.push(k); });
+  const body = kinds.map(k => { const ps = S.preps.filter(p => (p.kind || 'Autres') === k).sort(byRecName); return ps.length ? `<section class="sec"><div class="shead"><h2>${esc(k)}</h2><span class="count">${ps.length}</span></div><div class="lrows">${ps.map(prepRow).join('')}</div></section>` : ''; }).join('');
+  return `<div class="ctl-row preps-top"><p class="pro-note grow">Sirops, liqueurs et spiritueux infusés à faire soi-même, avec le volume obtenu et la conservation.</p><button class="btn primary" data-act="prep-new">Ajouter une préparation</button></div>
+  <div class="preps-grid">${body || '<p class="muted">Aucune préparation pour l\'instant.</p>'}</div>`;
+}
+function openPrep(id, keep) {
+  const sh = $('#sheet'), st = keep ? sh.scrollTop : 0, p = S.preps.find(x => x.id === id);
+  if (!p) { closeSheet(); return; }
+  if (!keep) keepSheetScroll();
+  sheetState = { type: 'prep', id };
+  const a = analyze(p, ownedSet()), k = servK(p), c = servCfg(p), amt = servAmt(p), del = UI.confirm === 'pdel:' + id;
+  const rowsHTML = p.ings.map((row, i) => {
+    const s2 = a.rows[i], info = [], ing = S.ings[row.id];
+    if (s2.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s2.by))}`);
+    if (row.opt) info.push('Facultatif');
+    if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
+    if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(x => altTxt(x, k)).join(' ; '))}`);
+    return `<li><span class="dot ${s2.st === 'ok' ? '' : s2.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s2.st]}"></span><span class="q">${esc(fmtQty(row, k))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+  }).join('');
+  const mk = p.makes && S.ings[p.makes];
+  sh.innerHTML = `
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ Retour</button><span class="grow"></span><button class="btn small" data-act="prep-edit" data-id="${esc(id)}">Modifier</button><button class="btn small ghost danger" data-act="prep-del" data-id="${esc(id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
+  <div class="sheet-body"><article class="inner detail prep-page" style="--c:var(--accent)">
+    <header class="dhead"><p class="eyebrow"><span class="orig">Préparation maison · ${esc(p.kind || 'Autres')}</span></p><h1>${esc(p.name)}</h1></header>
+    <dl class="facts"><div><dt>Volume obtenu</dt><dd class="mono">≈ ${esc(mlTxt(amt))}</dd></div><div><dt>Ingrédient obtenu</dt><dd>${mk ? `<button class="ing-link" data-act="ing-info" data-id="${esc(p.makes)}">${esc(mk.name)}</button>` : '—'}</dd></div>${p.keep ? `<div class="wide"><dt>Conservation</dt><dd>${esc(p.keep)}</dd></div>` : ''}${p.source ? `<div class="wide"><dt>Source</dt><dd>${esc(p.source)}</dd></div>` : ''}</dl>
+    <section class="sec ings-sec"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
+      ${servRow(p, 'pserv', 'pserv-set')}
+      <ul class="ings">${rowsHTML}</ul>
+      <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
+    ${p.steps.length ? `<section class="sec"><h2>Préparation</h2><ol class="steps">${p.steps.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ol></section>` : ''}
+    ${p.note ? `<section class="sec"><h2>Notes</h2><ul class="notes">${String(p.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+  </article></div>`;
+  showSheet(); sh.scrollTop = st;
+  if (!keep) pushNav();
+}
+function openPrepForm(id) {
+  const src = id ? S.preps.find(x => x.id === id) : null;
+  const p = src ? clone(src) : { name: '', kind: PREP_KINDS[0], makes: '', batch: null, ings: [], steps: [], keep: '', note: '', source: '' };
+  sheetState = { type: 'pform', id: id || null }; rowN = 0; UI.confirm = null;
+  const rows = p.ings.length ? p.ings : [null, null, null], ml = p.batch ? p.batch.ml : 0, big = ml >= 1000;
+  const cats = [...new Set(Object.values(S.ings).map(i => i.cat))].sort((x, y) => x.localeCompare(y, 'fr'));
+  const kind = PREP_KINDS.includes(p.kind) ? p.kind : (p.kind || PREP_KINDS[0]), kinds = PREP_KINDS.includes(kind) ? PREP_KINDS : [...PREP_KINDS, kind];
+  const sh = $('#sheet');
+  sh.innerHTML = `
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="${id ? 'back-detail' : 'close'}">Annuler</button><span class="grow sheet-title">${id ? 'Modifier la préparation' : 'Nouvelle préparation'}</span><button class="btn primary small" data-act="prep-save">Enregistrer</button></div></div>
+  <div class="sheet-body"><form class="inner form" id="pform" novalidate>
+    <datalist id="dl-ings">${Object.values(S.ings).map(i => i.name).sort((x, y) => x.localeCompare(y, 'fr')).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+    <datalist id="dl-cats">${cats.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
+    <section class="sec"><h2>L'essentiel</h2>
+      <label class="field" for="pf-name"><span>Nom</span><input type="text" id="pf-name" value="${esc(p.name)}" placeholder="ex. Sirop de gingembre" autocomplete="off"></label>
+      <div class="field"><span>Type</span><input type="hidden" id="pf-kind" value="${esc(kind)}"><div class="chips">${kinds.map(k => `<button type="button" class="chip${k === kind ? ' on' : ''}" data-act="pick-chip" data-for="pf-kind" data-v="${esc(k)}" aria-pressed="${k === kind}">${esc(k)}</button>`).join('')}</div></div>
+      <label class="field" for="pf-makes"><span>Ingrédient obtenu (facultatif)</span><input type="text" id="pf-makes" list="dl-ings" value="${esc(p.makes && S.ings[p.makes] ? S.ings[p.makes].name : '')}" placeholder="ex. Sirop de gingembre" autocomplete="off"><small class="hint">Celui que cette préparation remplace dans les recettes : sa fiche renvoie alors vers cette recette.</small></label>
+      <div class="field"><span>Volume obtenu</span><div class="batch-vol"><input type="text" inputmode="decimal" id="pf-vol" aria-label="Volume obtenu" value="${ml ? esc(big ? fr(ml / 1000) : ml) : ''}" placeholder="ex. 500"><select id="pf-vol-u" aria-label="Unité du volume">${opts(['L', 'cl', 'ml'], big ? 'L' : 'ml')}</select></div><small class="hint">Les quantités ci-dessous sont celles de ce volume ; sur la fiche, le volume se règle ensuite.</small></div>
+    </section>
+    <section class="sec"><h2>Ingrédients</h2>
+      <p class="hint">Un nom inconnu crée un nouvel ingrédient. Pour une infusion, indiquer le spiritueux et la plante comme n'importe quel ingrédient.</p>
+      <div id="frows" class="frows">${rows.map(rowHTML).join('')}</div>
+      <div><button type="button" class="btn small" data-act="row-add">+ Ajouter un ingrédient</button></div>
+    </section>
+    <section class="sec"><h2>Préparation</h2>
+      <label class="field" for="pf-steps"><span>Une étape par ligne</span><textarea id="pf-steps" rows="5">${esc(p.steps.join('\n'))}</textarea></label>
+      <label class="field" for="pf-keep"><span>Conservation</span><input type="text" id="pf-keep" value="${esc(p.keep || '')}" placeholder="ex. Au réfrigérateur : 2 semaines" autocomplete="off"></label>
+      <label class="field" for="pf-note"><span>Notes (une par ligne)</span><textarea id="pf-note" rows="3" placeholder="Variantes, astuces…">${esc(p.note || '')}</textarea></label>
+      <label class="field" for="pf-source"><span>Source (facultatif)</span><input type="text" id="pf-source" value="${esc(p.source || '')}" placeholder="Auteur, livre, site…" autocomplete="off"></label>
+    </section>
+    <p class="err" id="pf-err" hidden></p>
+    <div><button type="button" class="btn primary" data-act="prep-save">Enregistrer la préparation</button></div>
+  </form></div>`;
+  sh.querySelectorAll('.frow').forEach(checkNew);
+  showSheet(); sh.scrollTop = 0; pushNav();
+}
+function savePrep() {
+  const sh = $('#sheet'), g = x => sh.querySelector('#' + x), errs = [];
+  const name = g('pf-name').value.trim(); if (!name) errs.push('Le nom est requis.');
+  const R = readIngRows(sh); errs.push(...R.errs);
+  const q = parseFloat(String(g('pf-vol').value).replace(',', '.')), ml = q * ({ L: 1000, cl: 10, ml: 1 }[g('pf-vol-u').value] || 1);
+  if (!(ml >= 10)) errs.push('Indiquer le volume obtenu, par exemple 500 ml.');
+  const mkTxt = g('pf-makes').value.trim(); let makes = '';
+  if (mkTxt) { makes = findIng(mkTxt) || (R.newIngs[norm(mkTxt)] && R.newIngs[norm(mkTxt)].id) || ''; if (!makes) errs.push("L'ingrédient obtenu doit être choisi dans la liste des ingrédients."); }
+  const e = g('pf-err');
+  if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  Object.values(R.newIngs).forEach(({ id, data }) => S.ings[id] = data);
+  const old = sheetState.id && S.preps.find(x => x.id === sheetState.id);
+  const rec = Object.assign({}, old || {}, {
+    id: old ? old.id : 'p-' + Date.now().toString(36), name, kind: g('pf-kind').value, makes, batch: { ml: Math.round(ml) }, ings: R.ings,
+    steps: g('pf-steps').value.split('\n').map(x => x.trim()).filter(Boolean), keep: g('pf-keep').value.trim(), note: g('pf-note').value.trim(), source: g('pf-source').value.trim(), created: old ? old.created : Date.now()
+  });
+  if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }
+  if (old) S.preps[S.preps.indexOf(old)] = rec; else S.preps.push(rec);
+  save(); toast(old ? 'Préparation mise à jour' : 'Préparation ajoutée');
+  if (old) history.back(); else { render(); restoring = true; openPrep(rec.id); restoring = false; replaceNav(); }
+}
+
 /* ---------- listes et collections ---------- */
 function lrowHTML(r, own) {
   const a = analyze(r, own), rt = S.ratings[r.id] || 0, nt = S.notes[r.id] && String(S.notes[r.id].text || '').trim();
@@ -616,7 +755,7 @@ function renderLists(m) {
   <div class="lists-grid">
   ${S.lists.map(l => {
     const items = l.items.map(id => S.recipes.find(r => r.id === id)).filter(Boolean), del = UI.confirm === 'list:' + l.id;
-    return `<section class="sec"><div class="shead"><h2>${esc(l.name)}</h2><span class="count">${items.length}</span>${items.length ? `<button class="btn small ghost" data-act="shop" data-v="list:${esc(l.id)}">Liste de courses</button>` : ''}${l.fixed ? '' : `<button class="btn small ghost danger" data-act="del-list" data-list="${esc(l.id)}">${del ? 'Confirmer la suppression' : 'Supprimer'}</button>`}</div>
+    return `<section class="sec"><div class="shead"><h2>${esc(l.name)}</h2><span class="count">${items.length}</span>${items.length ? `<button class="btn small ghost" data-act="shop-list" data-list="${esc(l.id)}">Ajouter aux courses</button>` : ''}${l.fixed ? '' : `<button class="btn small ghost danger" data-act="del-list" data-list="${esc(l.id)}">${del ? 'Confirmer la suppression' : 'Supprimer'}</button>`}</div>
     ${items.length ? `<div class="lrows">${items.map(r => lrowHTML(r, own)).join('')}</div>` : `<p class="muted">Liste vide. Les recettes s'ajoutent depuis leur fiche.</p>`}</section>`;
   }).join('')}
   <section class="sec"><div class="shead"><h2>Mieux notés</h2><span class="count">${rated.length}</span></div>
@@ -684,7 +823,7 @@ function openCollection(cid, keep) {
     <div class="coll-body">
       <div class="blocks">${blocks}</div>
       <aside class="coll-side panel shop"><h2>Ingrédients</h2><p class="hint">Tout ce qu'il faut pour cette collection, du plus utile au moins utile.</p>
-        <button class="btn small" data-act="shop" data-v="coll:${esc(cid)}">Liste de courses avec quantités</button>
+        <button class="btn small" data-act="shop-coll" data-id="${esc(cid)}">Ajouter aux courses</button>
         ${miss.length ? `<h3 class="lbl">Manquants (${miss.length})</h3>${shopUl(miss, 'miss')}` : '<p class="avail ok">Rien ne manque : tout est dans le bar.</p>'}
         ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${shopUl(sub, 'sub')}` : ''}
         ${ok.length ? `<details><summary class="lbl" style="cursor:pointer">Dans le bar (${ok.length})</summary>${shopUl(ok, '')}</details>` : ''}
@@ -838,7 +977,9 @@ window.addEventListener('popstate', e => {
       else if (sh.type === 'coll') openCollection(sh.id);
       else if (sh.type === 'form') openForm(sh.id);
       else if (sh.type === 'colled') openCollEditor(sh.id);
-      else if (sh.type === 'shop') openShop(sh.id);
+      else if (sh.type === 'prep') openPrep(sh.id);
+      else if (sh.type === 'pform') openPrepForm(sh.id);
+      else if (sh.type === 'ing') openIngInfo(sh.id);
       if (st.scroll) { const box = $('#sheet'), y = st.scroll; box.scrollTop = y; requestAnimationFrame(() => { box.scrollTop = y; }); }
     }
   } finally { restoring = false; }
@@ -877,17 +1018,12 @@ const servK = r => servAmt(r) / servCfg(r).base;
 const clampServ = (c, v) => Math.max(c.min, Math.min(c.max, v));
 const stepperHTML = (act, r, amt, label) => { const c = servCfg(r); return `<span class="stepper" role="group" aria-label="${esc(label)}"><button data-act="${act}" data-id="${esc(r.id)}" data-v="-1" aria-label="${c.vol ? 'Moins' : 'Un verre de moins'}"${amt <= c.min ? ' disabled' : ''}>−</button><span class="stepper-v">${c.vol ? `<b>${esc(c.fmt(amt))}</b>` : `<b>${amt}</b> ${plural(amt, 'verre')}`}</span><button data-act="${act}" data-id="${esc(r.id)}" data-v="1" aria-label="${c.vol ? 'Plus' : 'Un verre de plus'}"${amt >= c.max ? ' disabled' : ''}>+</button></span>`; };
 const presetsHTML = (act, c, amt) => `<span class="seg mini" role="group" aria-label="${c.vol ? 'Choisir un volume' : 'Choisir un nombre de verres'}">${c.presets.map(n => `<button data-act="${act}" data-v="${n}" class="${n === c.base ? 'base ' : ''}${amt === n ? 'on' : ''}" aria-pressed="${amt === n}"${n === c.base ? ' title="Quantité de la recette"' : ''}>${c.vol ? esc(fmtVol(n)) : n}</button>`).join('')}</span>`;
-function servRow(r) {
+function servRow(r, a1 = 'serv', a2 = 'serv-set') {
   const c = servCfg(r), amt = servAmt(r);
-  return `<div class="serv-row">${stepperHTML('serv', r, amt, c.vol ? 'Volume' : 'Nombre de verres')}${presetsHTML('serv-set', c, amt)}</div>`;
+  return `<div class="serv-row">${stepperHTML(a1, r, amt, c.vol ? 'Volume' : 'Nombre de verres')}${presetsHTML(a2, c, amt)}</div>`;
 }
 
-/* ---------- liste de courses ---------- */
-function shopSource(sid) {
-  const k = sid.indexOf(':'), kind = sid.slice(0, k), id = sid.slice(k + 1);
-  if (kind === 'list') { const l = S.lists.find(x => x.id === id); return l ? { name: l.name, recs: l.items.map(i => S.recipes.find(r => r.id === i)).filter(Boolean) } : null; }
-  const c = findColl(id); return c ? { name: c.name, recs: collRecipes(c) } : null;
-}
+/* ---------- liste de courses : une seule liste, globale, gardée sur l'appareil ---------- */
 /* Cumule les quantités par ingrédient (en ml pour les liquides), selon les verres choisis pour chaque recette. */
 function shopTotals(recs, kOf) {
   const own = ownedSet(), tot = new Map();
@@ -906,38 +1042,62 @@ function shopTotals(recs, kOf) {
   return tot;
 }
 const shopQty = e => [...Object.entries(e.qty).map(([u, q]) => fmtQty({ qty: q, unit: u })), ...(e.fill ? ['à compléter'] : [])].join(' + ');
-const shopAmt = (P, r) => P.serv[r.id] > 0 ? P.serv[r.id] : (batchBase(r) || P.all);
-function openShop(sid, keep) {
-  const src = shopSource(sid), sh = $('#sheet'); if (!src) return closeSheet();
-  if (!keep) keepSheetScroll();
-  if (!UI.shop || UI.shop.sid !== sid) UI.shop = { sid, all: 1, serv: {} };
-  const P = UI.shop, kOf = r => shopAmt(P, r) / servCfg(r).base, st = keep ? sh.scrollTop : 0;
-  sheetState = { type: 'shop', id: sid };
-  const tot = shopTotals(src.recs, kOf);
+const shopRecs = () => S.shop.recs.map(x => ({ x, r: S.recipes.find(r => r.id === x.id) })).filter(o => o.r);
+const shopIn = id => S.shop.recs.find(x => x.id === id);
+const shopDefault = r => batchBase(r) || 1;
+function shopSet(r, amt) { const v = clampServ(servCfg(r), amt), e = shopIn(r.id); if (e) e.amt = v; else S.shop.recs.push({ id: r.id, amt: v }); }
+function shopAddMany(recs) { let n = 0; recs.forEach(r => { if (!shopIn(r.id)) { shopSet(r, shopDefault(r)); n++; } }); save(); return n; }
+function shopRemove(id) { S.shop.recs = S.shop.recs.filter(x => x.id !== id); save(); }
+const shopAmtTxt = (r, a) => servCfg(r).vol ? `${fmtVol(a)} ${r.name}` : `${a} × ${r.name}`;
+function updateShopBadge() {
+  const n = S && S.shop ? shopRecs().length : 0;
+  document.querySelectorAll('.shop-badge').forEach(b => { b.textContent = n; b.hidden = !n; });
+}
+/* Ouvre la liste de courses, y compris depuis une feuille (fiche, collection) qu'on referme au passage. */
+function goShop() {
+  if (sheetState) { closeSheetRaw(); UI.view = 'shop'; render(); window.scrollTo(0, 0); replaceNav(); }
+  else navView('shop');
+}
+function refreshShop() { const y = window.scrollY; renderShop($('#view')); window.scrollTo(0, y); updateShopBadge(); }
+function shopAddByName() {
+  const inp = $('#shop-add-i'); if (!inp) return; const k = norm(inp.value); if (!k) return;
+  const part = S.recipes.filter(r => norm(r.name).includes(k));
+  const r = S.recipes.find(x => norm(x.name) === k) || (part.length === 1 ? part[0] : null);
+  if (!r) { toast('Recette introuvable : choisir un nom dans la liste.'); return; }
+  if (shopIn(r.id)) { toast('Déjà dans la liste de courses'); return; }
+  shopSet(r, shopDefault(r)); save(); refreshShop(); const n = $('#shop-add-i'); if (n) n.focus({ preventScroll: true });
+}
+function renderShop(m) {
+  const items = shopRecs(), recs = items.map(o => o.r);
+  const tot = shopTotals(recs, r => shopIn(r.id).amt / servCfg(r).base);
   const group = g => [...tot].filter(([, e]) => e.st === g).sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
   const li = (arr, cls) => `<ul>${arr.map(([id, e]) => `<li><i class="dot ${cls}"></i><span>${esc(ingName(id))} <b class="qty">${esc(shopQty(e))}</b><small>${esc(e.recs.slice(0, 3).join(', '))}${e.recs.length > 3 ? '…' : ''}</small></span></li>`).join('')}</ul>`;
   const miss = group('miss'), sub = group('sub'), ok = group('ok');
-  const rows = src.recs.map(r => `<div class="srec"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><span class="lname">${esc(r.name)}</span>${stepperHTML('shop-serv', r, shopAmt(P, r), (servCfg(r).vol ? 'Volume pour ' : 'Verres pour ') + r.name)}</div>`).join('');
-  sh.innerHTML = `
-  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="close">‹ Retour</button><span class="grow"></span><button class="btn small" data-act="shop-copy">Copier la liste</button></div></div>
-  <div class="sheet-body"><div class="coll-page">
-    <header class="coll-hero"><span class="curator">Liste de courses</span><h1>${esc(src.name)}</h1><p class="lead">Le nombre de verres se règle pour chaque recette : les quantités se cumulent, et ce qui est déjà dans le bar est mis de côté.</p></header>
-    <div class="coll-body">
-      <div class="blocks"><section class="sec"><div class="shead"><h2>Combien de verres ?</h2>${presetsHTML('shop-all', servCfg({}), P.all)}</div>
-        ${src.recs.length ? `<p class="hint">Le choix du haut s'applique à toutes les recettes servies au verre ; chaque recette se règle ensuite séparément.</p><div class="srecs">${rows}</div>` : '<p class="muted">Aucune recette pour l’instant.</p>'}</section></div>
-      <aside class="coll-side panel shop"><h2>Ingrédients</h2>
-        ${miss.length ? `<h3 class="lbl">À acheter (${miss.length})</h3>${li(miss, 'miss')}` : (src.recs.length ? '<p class="avail ok">Rien à acheter : tout est dans le bar.</p>' : '')}
-        ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${li(sub, 'sub')}` : ''}
-        ${ok.length ? `<details><summary class="lbl" style="cursor:pointer">Dans le bar (${ok.length})</summary>${li(ok, '')}</details>` : ''}
-      </aside>
-    </div>
+  const glass = items.filter(o => !batchBase(o.r)).map(o => o.x.amt), common = glass.length && glass.every(a => a === glass[0]) ? glass[0] : 0;
+  const rows = items.map(({ x, r }) => `<div class="srec"><span class="lthumb" style="--c:${okColor(r.color)}">${visual(r)}</span><button class="lname srec-n" data-act="open" data-id="${esc(r.id)}">${esc(r.name)}</button>${stepperHTML('shop-serv', r, x.amt, (servCfg(r).vol ? 'Volume pour ' : 'Verres pour ') + r.name)}<button class="icon-btn srm" data-act="shop-rm" data-id="${esc(r.id)}" aria-label="Retirer ${esc(r.name)} de la liste">×</button></div>`).join('');
+  const addable = S.recipes.filter(r => !shopIn(r.id)).sort(byRecName);
+  m.innerHTML = `<h1 class="view">Liste de courses</h1>
+  <div class="coll-page"><div class="coll-body">
+    <div class="blocks"><section class="sec">
+      <p class="hint">Une seule liste pour tout l'appareil : les recettes ajoutées s'y cumulent, avec les quantités à acheter. Ce qui est déjà dans le bar est mis de côté.</p>
+      ${items.length ? `<div class="shead"><h2>Combien de verres ?</h2>${glass.length ? presetsHTML('shop-all', servCfg({}), common) : ''}</div>
+        ${glass.length ? '<p class="hint">Le choix du haut s\'applique à toutes les recettes servies au verre ; chaque recette se règle ensuite séparément.</p>' : ''}
+        <div class="srecs">${rows}</div>` : `<p class="muted">La liste est vide. Une recette s'ajoute depuis sa fiche ; toutes celles d'une liste ou d'une collection s'ajoutent d'un seul geste depuis la page Listes.</p>`}
+      <div class="inline-form"><input id="shop-add-i" type="text" list="dl-shop" placeholder="Ajouter une recette du catalogue" aria-label="Ajouter une recette à la liste de courses" autocomplete="off"><button class="btn small" data-act="shop-add-name">Ajouter</button></div>
+      <datalist id="dl-shop">${addable.map(r => `<option value="${esc(r.name)}"></option>`).join('')}</datalist>
+    </section></div>
+    <aside class="coll-side panel shop"><div class="row-btns"><button class="btn small" data-act="shop-copy">Copier la liste</button>${items.length ? `<button class="btn small ghost danger" data-act="shop-clear">${UI.confirm === 'shop-clear' ? 'Confirmer : tout retirer' : 'Vider la liste'}</button>` : ''}</div>
+      <h2>Ingrédients</h2>
+      ${miss.length ? `<h3 class="lbl">À acheter (${miss.length})</h3>${li(miss, 'miss')}` : (items.length ? '<p class="avail ok">Rien à acheter : tout est dans le bar.</p>' : '<p class="muted">Rien pour l\'instant.</p>')}
+      ${sub.length ? `<h3 class="lbl">Remplaçables (${sub.length})</h3>${li(sub, 'sub')}` : ''}
+      ${ok.length ? `<details data-keep="shop-ok"${UI.keep.has('shop-ok') ? ' open' : ''}><summary class="lbl" style="cursor:pointer">Dans le bar (${ok.length})</summary>${li(ok, '')}</details>` : ''}
+    </aside>
   </div></div>`;
-  showSheet(); if (!keep) { sh.scrollTop = 0; pushNav(); } else sh.scrollTop = st;
 }
 function openDetail(id, keep, back) {
   const sh = $('#sheet'), st = keep ? sh.scrollTop : 0, r = S.recipes.find(x => x.id === id);
   if (!r) { closeSheet(); return; }
-  if (!keep) keepSheetScroll();
+  if (!keep) { keepSheetScroll(); UI.newList = null; }
   if (back === undefined && keep && sheetState) back = sheetState.back;
   sheetState = { type: 'detail', id, back: back || null };
   if (!keep) { S.views = S.views || {}; const v = S.views[id] || { n: 0 }; v.n++; v.t = Date.now(); S.views[id] = v; save(); }
@@ -948,6 +1108,8 @@ function openDetail(id, keep, back) {
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
   const availTxt = !a.miss.length ? (a.subs ? `Réalisable avec le bar, avec ${a.subs} ${plural(a.subs, 'substitution')}.` : 'Réalisable avec le bar.') : `Manquant : ${a.miss.map(ingName).join(', ')}.`;
   const kServ = servK(r);
+  const sx = shopIn(r.id), amtNow = servAmt(r), cfgNow = servCfg(r);
+  const shopHTML = `<div class="shop-add">${sx ? `<span class="hint">Dans la liste de courses : <b>${esc(cfgNow.fmt(sx.amt))}</b></span>${sx.amt !== amtNow ? `<button class="btn small" data-act="shop-add" data-id="${esc(r.id)}">Passer à ${esc(cfgNow.fmt(amtNow))}</button>` : ''}<button class="btn small ghost" data-act="shop-rm" data-id="${esc(r.id)}">Retirer</button><button class="btn small ghost" data-act="go-shop">Voir la liste</button>` : `<button class="btn small" data-act="shop-add" data-id="${esc(r.id)}">Ajouter aux courses (${esc(cfgNow.fmt(amtNow))})</button>`}</div>`;
   const rowsHTML = r.ings.map((row, i) => {
     const s = a.rows[i], info = [], ing = S.ings[row.id];
     if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
@@ -969,10 +1131,12 @@ function openDetail(id, keep, back) {
       <div class="d-head dz">
       <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
       <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${sourceFact(r)}</dl>
-      <div class="chips o4" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}</div>
+      <div class="o4 lists-pick"><div class="chips" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}<button class="chip chip-new" data-act="new-list-open" data-id="${esc(r.id)}" aria-expanded="${UI.newList === r.id}">+ Nouvelle liste</button></div>
+        ${UI.newList === r.id ? `<div class="inline-form"><input id="nl-detail" type="text" aria-label="Nom de la nouvelle liste" placeholder="Nom de la liste" maxlength="40" autocomplete="off"><button class="btn primary small" data-act="new-list-ok" data-id="${esc(r.id)}">Créer et ajouter</button><button class="btn small ghost" data-act="new-list-cancel" data-id="${esc(r.id)}">Annuler</button></div>` : ''}</div>
     </div>
       <section class="sec ings-sec o5"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
         ${servRow(r)}
+        ${shopHTML}
         <p class="avail ${a.miss.length ? 'miss' : 'ok'}">${esc(availTxt)}</p>
         <ul class="ings">${rowsHTML}</ul>
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
@@ -981,6 +1145,7 @@ function openDetail(id, keep, back) {
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
+  if (UI.newList === id) { const nl = $('#nl-detail'); if (nl) nl.focus({ preventScroll: true }); }
   if (!keep) pushNav();
 }
 
@@ -1220,9 +1385,9 @@ document.addEventListener('pointercancel', () => { if (RATE.el) { paintRate(RATE
 /* ---------- enregistrement d'une recette ---------- */
 function makeId(name, taken) { const base = norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ing'; let id = base, i = 2; while (taken[id]) id = base + '-' + (i++); return id; }
 function parsePlace(v) { const [fam, sub] = String(v || 'Mes ingrédients|').split('|'); return { fam: FAM_IDS.includes(fam) ? fam : 'Mes ingrédients', sub: sub || '' }; }
-function saveForm() {
-  const sh = $('#sheet'), g = x => sh.querySelector('#' + x), errs = [];
-  const name = g('rf-name').value.trim(); if (!name) errs.push('Le nom du cocktail est requis.');
+/* Lit les lignes d'ingrédients d'un formulaire (recette ou préparation) : renvoie les ingrédients, les nouveaux ingrédients à créer et les erreurs. */
+function readIngRows(sh) {
+  const errs = [];
   const newIngs = {}, taken = Object.assign({}, S.ings), rows = [], unknown = [];
   const resolve = n => { const id = findIng(n); if (id) return id; const k = norm(n); return newIngs[k] ? newIngs[k].id : null; };
   sh.querySelectorAll('.frow').forEach(frw => {
@@ -1251,6 +1416,13 @@ function saveForm() {
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
+  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent être choisis dans la liste des ingrédients (ou créés d'abord comme ingrédient de la recette ou dans Mon bar).`);
+  return { ings, newIngs, errs };
+}
+function saveForm() {
+  const sh = $('#sheet'), g = x => sh.querySelector('#' + x), errs = [];
+  const name = g('rf-name').value.trim(); if (!name) errs.push('Le nom du cocktail est requis.');
+  const R = readIngRows(sh); errs.push(...R.errs); const ings = R.ings, newIngs = R.newIngs;
   const url = g('rf-url').value.trim();
   if (url && !/^https?:\/\//i.test(url)) errs.push('Le lien doit commencer par http:// ou https://.');
   let batch = null;
@@ -1258,7 +1430,6 @@ function saveForm() {
     const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ L: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
     if (!(ml >= 10)) errs.push('Indiquer le volume obtenu, par exemple 2 L.'); else batch = { ml: Math.round(ml) };
   }
-  if (unknown.length) errs.push(`Remplaçants inconnus : ${unknown.join(', ')}. Ils doivent être choisis dans la liste des ingrédients (ou créés d'abord comme ingrédient de la recette ou dans Mon bar).`);
   const e = g('rf-err');
   if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   Object.values(newIngs).forEach(({ id, data }) => S.ings[id] = data);
@@ -1283,12 +1454,22 @@ function saveForm() {
   if (old) history.back(); else { render(); restoring = true; openDetail(rec.id); restoring = false; replaceNav(); }
 }
 
+/* ---------- nouvelle liste créée depuis une fiche recette ---------- */
+function newListFromRecipe(id) {
+  const inp = $('#nl-detail'), n = inp ? inp.value.trim().replace(/\s+/g, ' ') : '';
+  if (!n) { if (inp) inp.focus(); return; }
+  let l = S.lists.find(x => norm(x.name) === norm(n)), created = false;
+  if (!l) { l = { id: 'l-' + Date.now().toString(36), name: n, fixed: false, items: [] }; S.lists.push(l); created = true; }
+  if (!l.items.includes(id)) l.items.push(id);
+  UI.newList = null; save(); toast(created ? `Liste « ${l.name} » créée, recette ajoutée` : `Ajoutée à « ${l.name} »`); openDetail(id, true);
+}
+
 /* ---------- événements ---------- */
 document.addEventListener('click', async e => {
   if (e.target.id === 'pick') { closePick(); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
-  if (!['del', 'del-list', 'import', 'reset', 'coll-del'].includes(a)) UI.confirm = null;
+  if (!['del', 'del-list', 'import', 'reset', 'coll-del', 'prep-del', 'shop-clear'].includes(a)) UI.confirm = null;
   switch (a) {
     case 'view': navView(b.dataset.v); break;
     case 'new': openForm(null); break;
@@ -1326,21 +1507,61 @@ document.addEventListener('click', async e => {
     case 'unit': S.unit = b.dataset.v; save(); openDetail(sheetState.id, true); break;
     case 'serv': { const r = S.recipes.find(x => x.id === sheetState.id), c = servCfg(r); UI.serv[r.id] = clampServ(c, servAmt(r) + (+b.dataset.v) * c.step); openDetail(r.id, true); break; }
     case 'serv-set': { const rid = sheetState.id; UI.serv[rid] = +b.dataset.v; openDetail(rid, true); break; }
-    case 'shop': openShop(b.dataset.v); break;
-    case 'shop-all': UI.shop.all = +b.dataset.v; UI.shop.serv = {}; openShop(sheetState.id, true); break;
-    case 'shop-serv': { const P = UI.shop, r = S.recipes.find(x => x.id === id), c = servCfg(r); if (!r) break; P.serv[id] = clampServ(c, shopAmt(P, r) + (+b.dataset.v) * c.step); openShop(sheetState.id, true); break; }
+    case 'pserv': { const p = S.preps.find(x => x.id === sheetState.id), c = servCfg(p); UI.serv[p.id] = clampServ(c, servAmt(p) + (+b.dataset.v) * c.step); openPrep(p.id, true); break; }
+    case 'pserv-set': { const pid = sheetState.id; UI.serv[pid] = +b.dataset.v; openPrep(pid, true); break; }
+    case 'go-shop': goShop(); break;
+    case 'shop-add': {
+      const r = S.recipes.find(x => x.id === id); if (!r) break;
+      const had = !!shopIn(id); shopSet(r, servAmt(r)); save(); toast(had ? 'Liste de courses mise à jour' : 'Ajouté à la liste de courses'); openDetail(id, true); break;
+    }
+    case 'shop-rm': { shopRemove(id); if (sheetState && sheetState.type === 'detail') openDetail(sheetState.id, true); else refreshShop(); break; }
+    case 'shop-list': {
+      const l = S.lists.find(x => x.id === b.dataset.list); if (!l) break;
+      const n = shopAddMany(l.items.map(i => S.recipes.find(r => r.id === i)).filter(Boolean));
+      toast(n ? `${n} ${plural(n, 'recette')} ${plural(n, 'ajoutée')} à la liste de courses` : 'Déjà dans la liste de courses'); goShop(); break;
+    }
+    case 'shop-coll': {
+      const c = findColl(id); if (!c) break;
+      const n = shopAddMany(collRecipes(c));
+      toast(n ? `${n} ${plural(n, 'recette')} ${plural(n, 'ajoutée')} à la liste de courses` : 'Déjà dans la liste de courses'); goShop(); break;
+    }
+    case 'shop-add-name': shopAddByName(); break;
+    case 'shop-all': { const n = +b.dataset.v; S.shop.recs.forEach(e => { const r = S.recipes.find(x => x.id === e.id); if (r && !batchBase(r)) e.amt = n; }); save(); refreshShop(); break; }
+    case 'shop-serv': { const r = S.recipes.find(x => x.id === id), e = shopIn(id); if (!r || !e) break; const c = servCfg(r); e.amt = clampServ(c, e.amt + (+b.dataset.v) * c.step); save(); refreshShop(); break; }
+    case 'shop-clear':
+      if (UI.confirm === 'shop-clear') { S.shop.recs = []; UI.confirm = null; save(); toast('Liste de courses vidée'); }
+      else UI.confirm = 'shop-clear';
+      refreshShop(); break;
     case 'shop-copy': {
-      const src = shopSource(sheetState.id), P = UI.shop; if (!src) break;
-      const tot = shopTotals(src.recs, r => shopAmt(P, r) / servCfg(r).base), need = [...tot].filter(([, e]) => e.st === 'miss').sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
+      const items = shopRecs(); if (!items.length) { toast('La liste de courses est vide'); break; }
+      const tot = shopTotals(items.map(o => o.r), r => shopIn(r.id).amt / servCfg(r).base), need = [...tot].filter(([, e]) => e.st === 'miss').sort((x, y) => ingName(x[0]).localeCompare(ingName(y[0]), 'fr'));
       if (!need.length) { toast('Rien à acheter : tout est dans le bar'); break; }
-      const txt = `Liste de courses · ${src.name}\n` + need.map(([iid, e]) => `- ${ingName(iid)} : ${shopQty(e)}`).join('\n');
+      const txt = `Liste de courses\nPour : ${items.map(o => shopAmtTxt(o.r, o.x.amt)).join(', ')}\n` + need.map(([iid, e]) => `- ${ingName(iid)} : ${shopQty(e)}`).join('\n');
       try { navigator.clipboard.writeText(txt).then(() => toast('Liste copiée'), () => toast('Copie refusée par le navigateur')); } catch (err) { toast('Copie refusée par le navigateur'); }
       break; }
+    case 'new-list-open': UI.newList = id; openDetail(id, true); break;
+    case 'new-list-cancel': UI.newList = null; openDetail(id, true); break;
+    case 'new-list-ok': newListFromRecipe(id); break;
+    case 'bar-tab': UI.barTab = b.dataset.v; renderBar($('#view')); break;
+    case 'ing-info': openIngInfo(id); break;
+    case 'own-tog': S.owned = S.owned.includes(id) ? S.owned.filter(x => x !== id) : [...S.owned, id]; save(); openIngInfo(id, true); break;
+    case 'open-prep': openPrep(id); break;
+    case 'prep-new': openPrepForm(null); break;
+    case 'prep-edit': openPrepForm(id); break;
+    case 'prep-save': savePrep(); break;
+    case 'prep-del':
+      if (UI.confirm === 'pdel:' + id) {
+        const p = S.preps.find(x => x.id === id);
+        if (p && (p.src === 'builtin' || PREPS.some(x => x.id === id)) && !S.prepsRemoved.includes(id)) S.prepsRemoved.push(id);
+        S.preps = S.preps.filter(x => x.id !== id); delete UI.serv[id];
+        save(); closeSheet(); toast('Préparation supprimée');
+      } else { UI.confirm = 'pdel:' + id; openPrep(id, true); }
+      break;
     case 'del':
       if (UI.confirm === 'del:' + id) {
         const r = S.recipes.find(x => x.id === id);
         if (r && (r.src === 'builtin' || BUILTIN.has(id)) && !S.removed.includes(id)) S.removed.push(id);
-        S.recipes = S.recipes.filter(x => x.id !== id); S.lists.forEach(l => l.items = l.items.filter(x => x !== id)); delete S.ratings[id]; delete S.notes[id];
+        S.recipes = S.recipes.filter(x => x.id !== id); S.lists.forEach(l => l.items = l.items.filter(x => x !== id)); delete S.ratings[id]; delete S.notes[id]; S.shop.recs = S.shop.recs.filter(x => x.id !== id);
         save(); closeSheet(); toast('Recette supprimée');
       } else { UI.confirm = 'del:' + id; openDetail(id, true); }
       break;
@@ -1486,7 +1707,7 @@ document.addEventListener('change', e => {
     }
   }
 });
-document.addEventListener('toggle', e => { const d = e.target; if (!d.dataset || !d.dataset.acc || UI.barQ) return; if (d.open) UI.open.add(d.dataset.acc); else UI.open.delete(d.dataset.acc); }, true);
+document.addEventListener('toggle', e => { const d = e.target; if (!d.dataset) return; if (d.dataset.keep) { if (d.open) UI.keep.add(d.dataset.keep); else UI.keep.delete(d.dataset.keep); return; } if (!d.dataset.acc || UI.barQ) return; if (d.open) UI.open.add(d.dataset.acc); else UI.open.delete(d.dataset.acc); }, true);
 document.addEventListener('submit', e => e.preventDefault());
 document.addEventListener('keydown', e => {
   const rs = e.target.closest && e.target.closest('.rate-stars');
@@ -1496,6 +1717,11 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') { e.preventDefault(); commitRate(rs.dataset.id, 0); return; }
   }
   if (e.key === 'Enter' && e.target.id === 'f-ing-i') { e.preventDefault(); addFilterIng(); return; }
+  if (e.key === 'Enter' && e.target.id === 'shop-add-i') { e.preventDefault(); shopAddByName(); return; }
+  if (e.target.id === 'nl-detail') {
+    if (e.key === 'Enter') { e.preventDefault(); newListFromRecipe(sheetState.id); return; }
+    if (e.key === 'Escape') { e.preventDefault(); UI.newList = null; openDetail(sheetState.id, true); return; }
+  }
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('ed-add-i')) { e.preventDefault(); edAddRecipe(+e.target.dataset.bk); return; }
   if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
 });

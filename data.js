@@ -3,7 +3,7 @@
    les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 17;
+const DATA_VERSION = 18;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -175,6 +175,7 @@ const INGREDIENTS = [
   ['poivre', 'Poivre noir', 'Poivre', 'Herbes & épices', '', 0],
   ['sel-celeri', 'Sel de céleri', 'Sel de céleri', 'Herbes & épices', '', 0],
   ['cardamome', 'Cardamome moulue', 'Cardamome', 'Herbes & épices', '', 0],
+  ['gousse-vanille', 'Gousse de vanille', 'Gousse de vanille', 'Herbes & épices', '', 0],
   ['cumin', 'Cumin en poudre', 'Cumin', 'Herbes & épices', '', 0],
   ['girofle', 'Clous de girofle', 'Girofle', 'Herbes & épices', '', 0],
   ['curcuma', 'Curcuma en poudre', 'Curcuma', 'Herbes & épices', '', 0],
@@ -227,6 +228,7 @@ const INGREDIENTS = [
   ['chia', 'Graines de chia', 'Chia', 'Épicerie', '', 0],
   ['oeuf', 'Œuf entier', 'Œuf', 'Épicerie', '', 0],
   ['marmelade', "Marmelade d'orange", 'Marmelade', 'Épicerie', '', 0],
+  ['amandes', "Amandes émondées ou en poudre", 'Amandes', 'Épicerie', '', 0],
   ['chocolat', 'Chocolat noir', 'Chocolat', 'Épicerie', '', 0],
   ['matcha', 'Thé matcha en poudre', 'Matcha', 'Épicerie', '', 0],
   ['yerba-mate', 'Infusion de yerba maté', 'Maté', 'Épicerie', '', 0]
@@ -1293,4 +1295,67 @@ const COLLECTIONS = [
   { id: 'iba-inoubliables', group: 'Liste officielle IBA', name: 'Les inoubliables', curator: 'Liste officielle IBA', desc: 'Les grands classiques d’avant-guerre, toujours servis dans les bars du monde entier.', filter: r => r.iba === INO },
   { id: 'iba-contemporains', group: 'Liste officielle IBA', name: 'Classiques contemporains', curator: 'Liste officielle IBA', desc: 'Les recettes qui ont marqué la seconde moitié du XXe siècle.', filter: r => r.iba === CON },
   { id: 'iba-nouvelle-ere', group: 'Liste officielle IBA', name: 'Nouvelle ère', curator: 'Liste officielle IBA', desc: 'Les créations récentes entrées dans la liste officielle.', filter: r => r.iba === NEW }
+];
+
+
+/* ---------- préparations maison : sirops, liqueurs, spiritueux infusés ----------
+   P(id, nom, ingrédient obtenu, type, volume obtenu en ml, ingrédients, étapes, conservation, note, source)
+   Mêmes ingrédients que les recettes : [id, quantité, unité, options]. Les quantités sont celles du volume obtenu. */
+const PREP_KINDS = ['Sirops & cordials', 'Liqueurs', 'Spiritueux infusés', 'Autres'];
+function P(id, name, makes, kind, ml, ings, steps, keep, note, source) {
+  return {
+    id, name, makes: makes || '', kind, batch: { ml },
+    ings: ings.map(([iid, qty, unit, o]) => ({ id: iid, qty, unit: unit == null ? 'ml' : unit, sub: false, opt: typeof o === 'string' && o.includes('o'), alts: [], ...((o && o.tip) ? { tip: o.tip } : {}) })),
+    steps, keep: keep || '', note: note || '', source: source || '', src: 'builtin'
+  };
+}
+const PREPS = [
+  P('prep-sirop-sucre', 'Sirop de sucre (1:1)', 'sirop-sucre', 'Sirops & cordials', 320,
+    [['sucre-blanc', 200, 'g'], ['eau', 200, 'ml']],
+    ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le sucre et remuer jusqu\'à ce qu\'il soit entièrement dissous.', 'Laisser refroidir, puis verser dans une bouteille propre.'],
+    'Au réfrigérateur, bouteille fermée : environ 1 mois.', 'Le sirop de base de la plupart des cocktails : un poids de sucre pour un volume d\'eau égal. À froid, en secouant longtemps le sucre dans l\'eau tiède, cela marche aussi.', 'Formule classique de bar'),
+  P('prep-sirop-sucre-riche', 'Sirop de sucre riche (2:1)', 'sirop-sucre-riche', 'Sirops & cordials', 450,
+    [['sucre-blanc', 400, 'g'], ['eau', 200, 'ml']],
+    ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le sucre en une fois et remuer jusqu\'à dissolution complète (cela peut prendre quelques minutes).', 'Laisser refroidir, puis mettre en bouteille.'],
+    'Au réfrigérateur : environ 1 mois, souvent plus car il est très concentré.', 'Deux poids de sucre pour un volume d\'eau : plus sucré et plus onctueux que le 1:1. Pour remplacer 1 mesure de sirop 1:1, en utiliser environ la moitié.', 'Formule classique de bar'),
+  P('prep-sirop-miel', 'Sirop de miel', 'sirop-miel', 'Sirops & cordials', 200,
+    [['miel', 150, 'g'], ['eau', 100, 'ml']],
+    ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le miel et remuer jusqu\'à obtenir un liquide homogène.', 'Laisser refroidir, puis mettre en bouteille.'],
+    'Au réfrigérateur : environ 1 mois.', 'Le miel seul est trop épais pour se mélanger à froid dans un shaker : le diluer le rend facile à doser.', 'Formule classique de bar'),
+  P('prep-sirop-gingembre', 'Sirop de gingembre', 'sirop-gingembre', 'Sirops & cordials', 450,
+    [['gingembre', 200, 'g'], ['sucre-blanc', 300, 'g'], ['eau', 300, 'ml']],
+    ['Éplucher le gingembre et le couper en fines lamelles.', 'Porter l\'eau et le sucre à frémissement, ajouter le gingembre et laisser frémir 15 à 20 minutes.', 'Éteindre et laisser infuser 30 minutes de plus pour un goût plus fort.', 'Filtrer en pressant bien, laisser refroidir et mettre en bouteille.'],
+    'Au réfrigérateur : 2 à 3 semaines.', 'Pour un sirop plus piquant, râper le gingembre au lieu de le couper.', 'Formule classique de bar'),
+  P('prep-sirop-cannelle', 'Sirop de cannelle', 'sirop-cannelle', 'Sirops & cordials', 450,
+    [['sucre-blanc', 300, 'g'], ['eau', 300, 'ml'], ['cannelle', 4, 'pièce']],
+    ['Porter l\'eau et le sucre à frémissement en remuant jusqu\'à dissolution.', 'Ajouter les bâtons de cannelle cassés en deux et laisser frémir 10 minutes.', 'Éteindre, couvrir et laisser infuser 1 heure.', 'Retirer la cannelle, laisser refroidir et mettre en bouteille.'],
+    'Au réfrigérateur : 2 à 3 semaines.', '', 'Formule classique de bar'),
+  P('prep-sirop-vanille', 'Sirop de vanille', 'sirop-vanille', 'Sirops & cordials', 380,
+    [['sucre-blanc', 250, 'g'], ['eau', 250, 'ml'], ['gousse-vanille', 1, 'pièce']],
+    ['Fendre la gousse dans la longueur et gratter les graines.', 'Chauffer l\'eau, le sucre, la gousse et les graines jusqu\'à dissolution du sucre, sans faire bouillir.', 'Éteindre, couvrir et laisser infuser au moins 30 minutes.', 'Filtrer (ou laisser la gousse dans la bouteille pour un goût plus marqué) et laisser refroidir.'],
+    'Au réfrigérateur : environ 3 semaines.', 'La gousse peut être rincée, séchée et réutilisée pour une seconde infusion.', 'Formule classique de bar'),
+  P('prep-grenadine', 'Grenadine maison', 'grenadine', 'Sirops & cordials', 390,
+    [['grenade', 240, 'ml'], ['sucre-blanc', 240, 'g'], ['fleur-oranger', 0.5, 'c. à café', 'o']],
+    ['Chauffer doucement le jus de grenade (sans bouillir, pour garder le goût du fruit).', 'Ajouter le sucre et remuer jusqu\'à dissolution complète.', 'Hors du feu, ajouter l\'eau de fleur d\'oranger si désiré.', 'Laisser refroidir et mettre en bouteille.'],
+    'Au réfrigérateur : 2 à 4 semaines.', 'Choisir un jus de grenade 100 % pur jus, sans sucre ajouté. Bien plus fruité que la grenadine du commerce.', 'Formule classique de bar'),
+  P('prep-orgeat', "Sirop d'orgeat", 'orgeat', 'Sirops & cordials', 550,
+    [['amandes', 200, 'g'], ['eau', 400, 'ml'], ['sucre-blanc', 350, 'g'], ['fleur-oranger', 1, 'c. à café'], ['vodka', 15, 'ml', 'o']],
+    ['Verser l\'eau chaude (non bouillante) sur les amandes en poudre, ou sur des amandes broyées finement, et laisser infuser 2 heures.', 'Filtrer en pressant dans un tissu fin pour obtenir un « lait d\'amande » ; en peser environ 350 g.', 'Ajouter le sucre et chauffer doucement en remuant jusqu\'à dissolution, sans bouillir.', 'Hors du feu, ajouter l\'eau de fleur d\'oranger et, si désiré, la vodka (elle aide à la conservation).', 'Laisser refroidir et mettre en bouteille.'],
+    'Au réfrigérateur : environ 2 semaines. Bien secouer avant emploi, il se sépare en repos.', 'Poids de sucre égal au poids du lait d\'amande obtenu : ajuster si la quantité de liquide récupérée diffère.', 'Formule classique de bar'),
+  P('prep-shrub-framboise', 'Shrub à la framboise', 'shrub-framboise', 'Sirops & cordials', 500,
+    [['framboise', 250, 'g'], ['sucre-blanc', 250, 'g'], ['vinaigre-cidre', 250, 'ml']],
+    ['Écraser légèrement les framboises avec le sucre dans un bocal et laisser macérer 24 à 48 heures au réfrigérateur, jusqu\'à ce que le sucre soit fondu.', 'Filtrer en pressant pour récupérer le sirop.', 'Ajouter le vinaigre de cidre et mélanger.', 'Mettre en bouteille et attendre quelques jours : le goût s\'arrondit.'],
+    'Au réfrigérateur : plusieurs semaines (le vinaigre aide à la conservation).', 'La méthode à froid garde le goût frais du fruit. On peut aussi essayer avec d\'autres fruits rouges.', 'Formule classique de bar'),
+  P('prep-limoncello', 'Limoncello maison', 'limoncello', 'Liqueurs', 1500,
+    [['citron-entier', 8, 'pièce'], ['vodka', 700, 'ml'], ['sucre-blanc', 500, 'g'], ['eau', 500, 'ml']],
+    ['Laver soigneusement des citrons non traités et prélever le zeste en évitant la partie blanche, amère.', 'Faire macérer les zestes dans la vodka, dans un bocal fermé à l\'abri de la lumière, 7 à 10 jours en remuant de temps en temps.', 'Préparer un sirop avec le sucre et l\'eau, le laisser refroidir complètement.', 'Filtrer l\'alcool, le mélanger au sirop et mettre en bouteille.', 'Laisser reposer 1 à 2 semaines avant de servir, très frais ou presque glacé.'],
+    'Plusieurs mois à l\'abri de la lumière, au frais ou au congélateur.', 'Utiliser des citrons non traités puisque la peau est consommée. Le jus des citrons peut servir à autre chose.', 'Formule classique italienne'),
+  P('prep-vodka-vanille', 'Vodka infusée à la vanille', 'vodka-vanille', 'Spiritueux infusés', 700,
+    [['vodka', 700, 'ml'], ['gousse-vanille', 2, 'pièce']],
+    ['Fendre les gousses dans la longueur et les mettre dans la bouteille de vodka.', 'Fermer et laisser infuser à l\'abri de la lumière, 3 à 7 jours, en goûtant au bout de 3 jours.', 'Retirer les gousses une fois le goût souhaité atteint.'],
+    'Plusieurs mois, à température ambiante et à l\'abri de la lumière.', 'Plus l\'infusion dure, plus le goût est marqué : ne pas attendre trop pour garder de l\'équilibre.', 'Formule classique de bar'),
+  P('prep-vodka-citron', 'Vodka infusée au citron', 'vodka-citron', 'Spiritueux infusés', 700,
+    [['vodka', 700, 'ml'], ['citron-entier', 3, 'pièce']],
+    ['Prélever les zestes de citrons non traités, sans la partie blanche.', 'Les plonger dans la vodka et laisser infuser 3 à 5 jours à l\'abri de la lumière.', 'Filtrer et remettre en bouteille.'],
+    'Plusieurs mois, à l\'abri de la lumière.', 'Les zestes laissés trop longtemps rendent l\'amertume : goûter à partir du troisième jour.', 'Formule classique de bar')
 ];
