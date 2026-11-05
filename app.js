@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.34.0';
+const APP_VERSION = '0.35.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -9,7 +9,7 @@ const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
 const TASTE = [['su', 'Sucré'], ['ac', 'Acide'], ['am', 'Amer'], ['as', 'Astringent'], ['fo', 'Force']];
 const TAG_SUGG = ['Apéritif', 'Digestif', 'Rafraîchissant', 'Réconfortant', 'Festif', 'Estival', 'Hivernal', 'Fin de soirée', 'Fruité', 'Herbacé', 'Floral', 'Crémeux', 'Pétillant', 'Amer', 'Brunch', 'Tiki', 'Univers JV', 'Univers ciné'];
-const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
+const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['zeste', 'Cocktails Zeste'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
 const FAM_MAP = { 'Liqueurs & apéritifs': 'Liqueurs', 'Agrumes & jus': 'Jus & purées', 'Softs': 'Softs & eaux', 'Frais & autres': 'Épicerie' };
 const FAM_IDS = FAMILIES.map(f => f.id);
 const PLACES = FAMILIES.flatMap(f => f.subs ? f.subs.map(s => [f.id + '|' + s, f.id + ' › ' + s]) : [[f.id + '|', f.id]]);
@@ -322,6 +322,7 @@ function isEasy(r) {
   return DIRECT.includes(r.method) ? main.length <= 4 : main.length <= 3;
 }
 function origLabel(r) {
+  if (isZeste(r)) return 'Cocktail Zeste';
   if (r.origin === 'Original') return 'Original · ' + (r.by === 'other' ? (r.author || 'Autre barman') : 'Ma création');
   return r.source ? 'Classique · ' + r.source : 'Classique';
 }
@@ -457,7 +458,8 @@ function renderResults() {
     if (F.tag && !r.tags.includes(F.tag)) return false;
     if (F.origin === 'classic' && r.origin !== 'Classique') return false;
     if (F.origin === 'mine' && !(r.origin === 'Original' && r.by !== 'other')) return false;
-    if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other')) return false;
+    if (F.origin === 'zeste' && !isZeste(r)) return false;
+    if (F.origin === 'other' && !(r.origin === 'Original' && r.by === 'other' && !isZeste(r))) return false;
     if (F.level === 'easy' && !isEasy(r)) return false;
     if (F.alc === 'na' && !isNA(r)) return false;
     if (F.ings.length) { const hits = F.ings.map(id => ingMatch(r, id)); if (F.ingMode === 'any' ? !hits.some(Boolean) : !hits.every(Boolean)) return false; }
@@ -492,7 +494,7 @@ function renderResults() {
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
       <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
       <span class="cb"><span class="cname">${esc(r.name)}</span>${r.subtitle ? `<span class="csub">${esc(r.subtitle)}</span>` : ''}<span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
-      <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${isNA(r) ? '<span class="otag">Sans alcool</span>' : r.origin === 'Original' ? `<span class="otag">${r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
+      <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${isNA(r) ? '<span class="otag">Sans alcool</span>' : r.origin === 'Original' ? `<span class="otag">${isZeste(r) ? 'Zeste' : r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
 }
 
@@ -674,7 +676,7 @@ function openIngInfo(id, keep) {
 
 /* ---------- préparations maison : sirops, liqueurs, spiritueux infusés ---------- */
 const PREP_COL = { 'Sirops & cordials': '#FFE14D', 'Liqueurs': '#FF9A1F', 'Spiritueux infusés': '#C8E04A', 'Autres': '#E8F1F2' };
-const PREP_COL_ID = { 'prep-sirop-sucre': '#E8F1F2', 'prep-sirop-sucre-riche': '#F6EBC8', 'prep-sirop-miel': '#D98A2B', 'prep-sirop-gingembre': '#FFE14D', 'prep-sirop-cannelle': '#9A4A1E', 'prep-sirop-vanille': '#F6EBC8', 'prep-grenadine': '#E2232E', 'prep-shrub-framboise': '#F04E7A', 'prep-limoncello': '#FFE14D', 'prep-vodka-vanille': '#F6EBC8', 'prep-vodka-citron': '#F6EBC8', 'prep-orgeat': '#F6EBC8' };
+const PREP_COL_ID = { 'prep-sirop-sucre': '#E8F1F2', 'prep-sirop-sucre-riche': '#F6EBC8', 'prep-sirop-miel': '#D98A2B', 'prep-sirop-rose': '#FF8FB8', 'prep-sirop-gingembre': '#FFE14D', 'prep-sirop-cannelle': '#9A4A1E', 'prep-sirop-vanille': '#F6EBC8', 'prep-grenadine': '#E2232E', 'prep-shrub-framboise': '#F04E7A', 'prep-limoncello': '#FFE14D', 'prep-vodka-vanille': '#F6EBC8', 'prep-vodka-citron': '#F6EBC8', 'prep-orgeat': '#F6EBC8' };
 const prepColor = p => okColor(p.color || PREP_COL_ID[p.id] || PREP_COL[p.kind] || PREP_COL.Autres);
 const jarSVG = c => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 12h9.2V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1z" fill="${c}" stroke="none"/><path d="M9 3h6v3l1.6 2.4V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4L9 6z"/><path d="M7.4 12h9.2"/></svg>`;
 const mlTxt = ml => fmtQty({ qty: ml, unit: 'ml' });
