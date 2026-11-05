@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 21;
+const DATA_VERSION = 22;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -142,6 +142,7 @@ const INGREDIENTS = [
   ['cranberry', 'Jus de cranberry', 'Cranberry', 'Jus & purées', '', 0],
   ['tomate', 'Jus de tomate', 'Tomate', 'Jus & purées', '', 0],
   ['pomme', 'Jus de pomme', 'Pomme', 'Jus & purées', '', 0],
+  ['pomme-fruit', 'Pommes', 'Pomme', 'Fruits & légumes', '', 0],
   ['grenade', 'Jus de grenade', 'Grenade', 'Jus & purées', '', 0],
   ['jus-canne', 'Jus de canne à sucre', 'Jus de canne', 'Jus & purées', '', 0],
   ['puree-peche', 'Purée de pêche blanche', 'Purée de pêche', 'Jus & purées', '', 0],
@@ -168,6 +169,7 @@ const INGREDIENTS = [
   ['menthe', 'Menthe fraîche', 'Menthe', 'Herbes & épices', '', 0],
   ['basilic', 'Basilic', 'Basilic', 'Herbes & épices', '', 0],
   ['romarin', 'Romarin', 'Romarin', 'Herbes & épices', '', 0],
+  ['roses', 'Roses', 'Rose', 'Herbes & épices', '', 0],
   ['thym', 'Thym', 'Thym', 'Herbes & épices', '', 0],
   ['cannelle', 'Cannelle en bâton', 'Cannelle', 'Herbes & épices', '', 0],
   ['muscade', 'Noix de muscade', 'Muscade', 'Herbes & épices', '', 0],
@@ -255,7 +257,7 @@ function R(id, name, m, glass, garn, garnish, rim, color, taste, tags, ings, ste
     tags: tags ? tags.split(',') : [],
     ings: ings.map(([iid, qty, unit, o]) => ({
       id: iid, qty, unit: unit == null ? 'ml' : unit,
-      sub: typeof o === 'string' && o.includes('s'), opt: typeof o === 'string' && o.includes('o'),
+      sub: typeof o === 'string' && o.includes('s'), opt: (typeof o === 'string' && o.includes('o')) || !!(o && o.opt),
       alts: (o && o.alts) || [],
       ...((o && o.tip) ? { tip: o.tip } : {})
     })),
@@ -1068,6 +1070,9 @@ RECIPES.push(
 );
 
 /* Recettes retirées du catalogue : supprimées des appareils si elles n'ont pas été modifiées. */
+/* Créations originales de Zeste (par opposition aux classiques et aux recettes d'autres barmen). */
+const isZeste = r => r.origin === 'Original' && r.by === 'other' && r.author === 'Zeste';
+
 const RETIRED_IDS = ['potion-soin'];
 
 /* Collection anisée : créations personnelles à base de pastis */
@@ -1092,12 +1097,103 @@ RECIPES.push(
       ['Dans un verre rempli de glaçons, verser tous les ingrédients, sauf l’eau.', 'Mélanger et compléter avec de l’eau.'],
       'Ajuster la quantité de jus de citron pour contrebalancer la sucrosité du jus de pomme.'),
     { origin: 'Original', by: 'other', author: 'Zeste' }
+  ),
+  Object.assign(
+    R('calisson', 'Calisson', 'B', 'Highball', '', '', '', '#EACB6B', '41102', 'Fruité,Estival,Rafraîchissant,Brunch',
+      [['pomme-fruit', 80, 'g'], ['pastis', 30], ['amaretto', 15, 'ml', { alts: ['pastis'], opt: true }], ['citron', 20], ['angostura', 2, 'trait'], ['eau-gazeuse', 0, 'à compléter', 'o']],
+      ['Congeler les pommes en morceaux quelques heures.', 'Blender tous les ingrédients hormis l’eau gazeuse avec des glaçons.', 'Si le mixage bloque, rajouter un peu d’eau gazeuse.', 'Servir dans un verre frais avec une paille large ou une cuillère.'],
+      'Si vous n’êtes pas amateur d’amaretto ou n’en possédez pas, seulement du pastis fonctionne aussi.'),
+    { origin: 'Original', by: 'other', author: 'Zeste', subtitle: 'Pastis, pomme & amande' }
   )
 );
+
+/* Retouches de recettes du catalogue (appliquées après leur définition). */
+const RECIPE_EDITS = {
+  'alexander': {
+    subtitle: "Brandy Alexander",
+    source: "Hugo Ensslin, Recipes for Mixed Drinks, 1915"
+  },
+  'aviation': {
+    source: "Aurait été crée par le chef barman de l'hôtel Wallick (NYC, US), 1916"
+  },
+  'between-the-sheets': {
+    flavor: {"su": 1, "ac": 1, "am": 0, "as": 0, "fo": 4},
+    source: "Harry MacElhone, Harry's New York Bar (Paris, France), 1930s"
+  },
+  'bellini': {
+    method: "Dans un pichet",
+    garnish: "Quartier de pêche",
+    steps: ["Verser la purée de pêche dans une carafe avec de la glace.", "Ajouter le Prosecco et remuer très doucement.", "Verser dans une flûte refroidie."],
+    note: "Il est possible de remplacer une partie du Prosecco par du schnaps de pêche pour plus de profondeur et de force.\nVariantes : Puccini (jus de mandarine), Rossini (purée de fraise), Tintoretto (jus de grenade).",
+    source: "Giuseppe Cipriani, Harry's Bar (Venise, Italie), 1948"
+  },
+  'barracuda': {
+    glass: "Coupe",
+    garn: "pineapple",
+    tags: ["Pétillant", "Festif", "Fruité"],
+    steps: ["Shaker tous les ingrédients sauf le Prosecco avec des glaçons.", "Filtrer dans un verre highball rempli de glace.", "Compléter avec le Prosecco."],
+    source: "Benito Cuppari, late 1950s on the Cristoforo Colombo cruise"
+  },
+  'bees-knees': {
+    flavor: {"su": 3, "ac": 1, "am": 0, "as": 0, "fo": 3},
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans une coupe refroidie."],
+    note: "Cette recette était particulièrement utilisée durant la Prohibition afin de masquer l'arôme du gin de mauvaise qualité.\nCertaines variantes enlèvent le jus d'orange pour passer à une recette à 2 parts de gin, 1 de jus de citron et 3/4 de sirop de miel.",
+    source: "Frank Meier, Le Ritz (Paris, France), 1929"
+  },
+  'bijou': {
+    flavor: {"su": 3, "ac": 0, "am": 1, "as": 0, "fo": 5},
+    note: "Pour diminuer la puissance du cocktail et la présence de la Chartreuse, des alternatives diminuent sa quantité pour plus de gin et/ou de vermouth.\nSi vous trouvez cette boisson trop sucrée, vous pouvez exprimer un zeste de citron dessus.",
+    author: "Harry Johnson's Bartender's Manual, 1900"
+  },
+  'adonis': {
+    source: "Waldorf-Astoria (NYC, US) nommé selon la comedie musicale éponyme, 1880s"
+  },
+  'bamboo': {
+    author: "Popularisé par Louis Eppinger, années 1880"
+  },
+  'bitter-giuseppe': {
+    color: "#631e18",
+    ings: [{"id": "cynar", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "vermouth-rouge", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": [], "tip": "Carpano Antica"}, {"id": "citron", "qty": 7.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "orange-bitters", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}],
+    note: "On penche plutôt pour le Carpano Antica dans cette recette pour ses notes de vanille se mariant bien avec le bitter orange. Néanmoins, d'autres vermouths fonctionneront aussi."
+  },
+  'batanga': {
+    subtitle: "Charro Negro",
+    garn: "",
+    ings: [{"id": "tequila", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sel", "qty": 1, "unit": "pincée", "sub": false, "opt": false, "alts": []}, {"id": "cola", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
+    steps: ["Givrer le bord du verre avec du sel.", "Mélanger le jus de citron vert et le sel dans le fond du verre jusqu'à dissolution.", "Remplir de glaçons et verser la tequila.", "Compléter avec le cola et remuer, traditionnellement avec le couteau qui a coupé le citron."],
+    note: "Il est préférable d'utiliser du jus de citron vert fraîchement obtenu pour son acidité."
+  },
+  'air-mail': {
+    source: "Whitfield, Here's How: Mixed Drinks, 1941"
+  },
+  'bandung': {
+    ings: [{"id": "sirop-rose", "qty": 75, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "lait", "qty": 225, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "eau", "qty": 0, "unit": "à compléter", "sub": false, "opt": true, "alts": []}],
+    steps: ["Ajouter le lait au sirop de rose jusqu'à obtenir la texture voulue.", "Ajouter de l'eau si nécessaire et des glaçons à votre convenance."]
+  },
+  'big-juicy': {
+    flavor: {"su": 4, "ac": 3, "am": 0, "as": 3, "fo": 0},
+    ings: [{"id": "cranberry", "qty": 75, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ananas", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 20, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre-riche", "qty": 10, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "grenadine", "qty": 10, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "eau-gazeuse", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
+    note: "Pensez à varier la quantité des sirops selon que votre jus de cranberry soit sucré ou non. Ne pas hésiter à retirer du jus de citron vert si la recette vous paraît trop acidulée.",
+    author: "Jose « Juice » Miranda, WD-50 (NYC, US), 2006"
+  },
+  'berry-blast': {
+    flavor: {"su": 4, "ac": 2, "am": 0, "as": 2, "fo": 0},
+    steps: ["Écraser les framboises au fond du shaker avec le jus de citron.", "Ajouter le reste des ingrédients et shaker avec des glaçons.", "Filtrer dans un verre rempli de glace et décorer."]
+  }
+};
+Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
 
 /* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
    Une recette sans entrée garde l'illustration du verre. */
 const PHOTOS = {
+  'bamboo': 'photos/bamboo.jpg',
+  'bandung': 'photos/bandung.jpg',
+  'barracuda': 'photos/barracuda.jpg',
+  'batanga': 'photos/batanga.jpg',
+  'between-the-sheets': 'photos/between-the-sheets.jpg',
+  'bijou': 'photos/bijou.jpg',
+  'bitter-giuseppe': 'photos/bitter-giuseppe.jpg',
+  'calisson': 'photos/calisson.jpg',
   'la-ruche': 'photos/la-ruche.jpg',
   'le-verger': 'photos/le-verger.jpg',
   'mauresque-pomme': 'photos/mauresque-pomme.jpg',
@@ -1285,10 +1381,11 @@ const COLLECTIONS = [
   { id: 'sans-shaker', group: 'Sélections Zeste', name: 'Sans shaker', curator: 'Sélection Zeste', desc: 'Tout se prépare directement dans le verre, sans matériel.', filter: r => r.method === 'Dans le verre' },
   { id: 'sours', group: 'Sélections Zeste', name: 'La famille des sours', curator: 'Sélection Zeste', desc: 'Un alcool, du citron, du sucre : la structure la plus copiée du bar.', ids: ['whiskey-sour', 'pisco-sour', 'daiquiri', 'margarita', 'sidecar', 'white-lady', 'new-york-sour', 'bees-knees', 'clover-club', 'penicillin'] },
   { id: 'bulles', group: 'Sélections Zeste', name: 'Avec des bulles', curator: 'Sélection Zeste', desc: 'Champagne, prosecco et crémant pour les grandes occasions.', ids: ['french-75', 'champagne-cocktail', 'kir-royal', 'mimosa', 'bellini', 'old-cuban', 'russian-spring-punch', 'spritz', 'hugo-spritz'] },
+  { id: 'cocktails-zeste', group: 'Sélections Zeste', name: 'Cocktails Zeste', curator: 'Sélection Zeste', desc: 'Les créations originales de Zeste, imaginées et testées pour l’appli.', filter: isZeste },
   { id: 'anisee', group: 'Sélections Zeste', name: 'La collection anisée', curator: 'Sélection Zeste', desc: 'Des créations originales à base de pastis : herbes, miel, pomme et glace pilée.',
     blocks: [
-      { type: 'text', title: 'Le pastis autrement', text: 'Le pastis ne se limite pas au verre d’eau fraîche. Son anis et sa réglisse s’accordent avec le miel, les fruits blancs et l’amertume d’un bitter. Ces trois recettes sont des créations Zeste.\n\nLes pastis diffèrent par leur dosage de réglisse et d’herbes : n’hésitez pas à comparer plusieurs marques.' },
-      { type: 'recipes', title: 'Les créations', cols: 3, ids: ['la-ruche', 'le-verger', 'mauresque-pomme'] },
+      { type: 'text', title: 'Le pastis autrement', text: 'Le pastis ne se limite pas au verre d’eau fraîche. Son anis et sa réglisse s’accordent avec le miel, les fruits blancs et l’amertume d’un bitter. Ces quatre recettes sont des créations Zeste.\n\nLes pastis diffèrent par leur dosage de réglisse et d’herbes : n’hésitez pas à comparer plusieurs marques.' },
+      { type: 'recipes', title: 'Les créations', cols: 3, ids: ['la-ruche', 'le-verger', 'mauresque-pomme', 'calisson'] },
       { type: 'tip', text: 'Le pastis se marie très bien avec le froid : servir bien glacé, avec beaucoup de glaçons, et ne pas hésiter à ajouter quelques traits de bitter.' }
     ] },
 ];
@@ -1318,6 +1415,10 @@ const PREPS = [
     [['miel', 150, 'g'], ['eau', 100, 'ml']],
     ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le miel et remuer jusqu\'à obtenir un liquide homogène.', 'Laisser refroidir, puis mettre en bouteille.'],
     'Au réfrigérateur : environ 1 mois.', 'Le miel seul est trop épais pour se mélanger à froid dans un shaker : le diluer le rend facile à doser.', 'Formule classique de bar'),
+  P('prep-sirop-rose', 'Sirop de rose', 'sirop-rose', 'Sirops & cordials', 1000,
+    [['sucre-blanc', 600, 'g'], ['eau', 600, 'ml'], ['roses', 20, ''], ['citron', 1, 'c. à soupe']],
+    ['Ajouter les pétales de rose, séparés de leurs boutons, à l’eau dans une casserole.', 'Faire chauffer l’eau autour de 30 °C. L’eau doit être tiède au toucher, sans bulle au fond.', 'Ajouter le sucre une fois la température atteinte en retirant du feu.', 'Ajouter le jus de citron afin de favoriser la conservation.', 'Laisser reposer au moins toute une nuit à couvert.', 'Filtrer dans un contenant hermétique.'],
+    'Au réfrigérateur, 1 à 2 mois selon la quantité de sucre.', 'Les variétés de rose plus anciennes ont un goût plus prononcé. Essayez de varier les variétés dans une même recette pour trouver le mélange qui vous convient le plus.', 'Zeste'),
   P('prep-puree-peche', 'Purée de pêche blanche', 'puree-peche', 'Autres', 350,
     [['peche-blanche', 500, 'g'], ['citron', 10, 'ml', 'o']],
     ['Plonger les pêches 30 secondes dans l\'eau bouillante, puis dans l\'eau froide : la peau s\'enlève toute seule.', 'Dénoyauter et couper la chair en morceaux.', 'Mixer avec le jus de citron jusqu\'à obtenir une purée lisse, puis passer au tamis fin si besoin.', 'Utiliser aussitôt ou conserver au froid.'],
