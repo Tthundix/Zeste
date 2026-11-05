@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.32.0';
+const APP_VERSION = '0.32.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -301,7 +301,7 @@ function isEasy(r) {
 }
 function origLabel(r) {
   if (r.origin === 'Original') return 'Original · ' + (r.by === 'other' ? (r.author || 'Autre barman') : 'Ma création');
-  return 'Classique';
+  return r.source ? 'Classique · ' + r.source : 'Classique';
 }
 function statusPill(a) {
   if (!a.miss.length) return a.subs ? ['sub', 'Avec substitut'] : ['ok', 'Réalisable'];
@@ -1003,12 +1003,12 @@ function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
   return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Pas encore noté'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
 }
-/* Source de la recette, dans les infos de la fiche : texte (source ou auteur) et lien « voir la source » (http ou https).
-   Pour une création d'un autre barman, l'auteur est déjà dans le bandeau : la ligne n'apparaît que s'il y a un lien. */
+/* Source de la recette : le texte (source ou auteur) est dans le bandeau au-dessus du titre, pour toutes les recettes ;
+   la ligne « Source » des infos n'apparaît que s'il y a un lien (http ou https). */
 function sourceFact(r) {
-  const label = (r.origin === 'Original' ? (r.by === 'other' ? r.author : '') : r.source) || '', url = /^https?:\/\//i.test(r.url || '') ? r.url : '';
-  if (!(url || (r.origin !== 'Original' && label))) return '';
-  return `<div class="wide"><dt>Source</dt><dd>${esc(label)}${url ? `${label ? ' · ' : ''}<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">voir la source</a>` : ''}</dd></div>`;
+  const url = /^https?:\/\//i.test(r.url || '') ? r.url : '';
+  if (!url) return '';
+  return `<div class="wide"><dt>Source</dt><dd><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">voir la source</a></dd></div>`;
 }
 /* Crédit d'une photo sous licence libre ; le lien n'est affiché que s'il commence par http(s). */
 function creditHTML(r) {
