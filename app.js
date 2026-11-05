@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.33.0';
+const APP_VERSION = '0.34.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -331,7 +331,7 @@ function statusPill(a) {
 }
 function estAbv(r) {
   let alc = 0, vol = 0;
-  r.ings.forEach(row => { const f = ML[row.unit]; if (f == null) return; const ml = row.unit === 'à compléter' ? f : (+row.qty || 0) * f; const i = S.ings[row.id]; vol += ml; alc += ml * ((i && +i.abv) || 0) / 100; });
+  r.ings.forEach(row => { const f = ML[row.unit]; if (f == null) return; const ml = row.unit === 'à compléter' ? f : qMid(row) * f; const i = S.ings[row.id]; vol += ml; alc += ml * ((i && +i.abv) || 0) / 100; });
   if (!vol) return null;
   const d = DIL[r.method] != null ? DIL[r.method] : .15;
   return Math.round(alc / (vol * (1 + d)) * 100);
@@ -347,7 +347,17 @@ function fmtFrac(x) {
   return w ? (best[1] && best[0] < 1 ? `${w} ${best[1]}` : `${w}`) : (best[1] && best[0] < 1 ? best[1] : '0');
 }
 const fmtCup = fmtFrac, fmtOz = fmtFrac;
+/* Fourchette : row.qty2 (> qty) donne la quantité maximale, ex. « 3 à 6 dashs ». */
+const hasRange = row => row.unit !== 'à compléter' && +row.qty2 > +row.qty && +row.qty > 0;
+const qMid = row => hasRange(row) ? (+row.qty + +row.qty2) / 2 : (+row.qty || 0);
+const qMax = row => hasRange(row) ? +row.qty2 : (+row.qty || 0);
 function fmtQty(row, k) {
+  if (hasRange(row)) {
+    const a = fmtQty({ ...row, qty2: 0 }, k), b = fmtQty({ ...row, qty: row.qty2, qty2: 0 }, k);
+    const sp = t => { const i = t.search(/[A-Za-zÀ-ÿ]/); return i < 0 ? [t, ''] : [t.slice(0, i).trim(), t.slice(i)]; };
+    const [na, ua] = sp(a), [nb, ub] = sp(b), base = u => u.replace(/(es|s)$/, '');
+    return base(ua) === base(ub) ? `${na} à ${nb} ${ub}`.trim() : `${a} à ${b}`;
+  }
   const q = (+row.qty || 0) * (k || 1);
   if (row.unit === 'à compléter') return 'Compléter';
   if (row.unit === 'ml' || row.unit === 'cl') {
@@ -1071,7 +1081,7 @@ function shopTotals(recs, kOf) {
       const st = a.rows[i].st, e = tot.get(row.id) || { st: 'ok', qty: {}, recs: [] };
       if (st === 'miss') e.st = 'miss'; else if (st === 'home' && e.st !== 'miss') { e.st = 'home'; e.prep = a.rows[i].prep; } else if (st === 'sub' && e.st !== 'miss' && e.st !== 'home') e.st = 'sub';
       if (row.unit === 'à compléter') e.fill = true;
-      else { const u = row.unit === 'cl' ? 'ml' : row.unit; e.qty[u] = (e.qty[u] || 0) + (+row.qty || 0) * (row.unit === 'cl' ? 10 : 1) * k; }
+      else { const u = row.unit === 'cl' ? 'ml' : row.unit; e.qty[u] = (e.qty[u] || 0) + qMax(row) * (row.unit === 'cl' ? 10 : 1) * k; }
       if (!e.recs.includes(r.name)) e.recs.push(r.name);
       tot.set(row.id, e);
     });
@@ -1206,6 +1216,7 @@ function rowHTML(row) {
       <select class="f-unit" id="ri-u${n}" aria-label="Unité">${opts(UNITS, row ? row.unit : 'ml')}</select>
       <button type="button" class="icon-btn" data-act="row-del" aria-label="Retirer cet ingrédient">×</button>
     </div>
+    <div class="frow-range"><label for="ri-q2${n}">Fourchette : jusqu'à</label><input type="number" class="f-qty2" id="ri-q2${n}" inputmode="decimal" step="any" min="0" placeholder="Qté max" aria-label="Quantité maximale (facultatif), pour indiquer par exemple 3 à 6" value="${row && hasRange(row) ? esc(row.qty2) : ''}"><span class="hint">facultatif, ex. 3 à 6 dashs</span></div>
     <div class="frow-new" hidden><span class="hint-new">Nouvel ingrédient : à préciser</span>
       <input type="text" class="f-cat" id="ri-c${n}" list="dl-cats" placeholder="Groupe de substitution" aria-label="Groupe de substitution">
       <select class="f-fam" id="ri-f${n}" aria-label="Rangement dans le bar">${opts(PLACES, 'Mes ingrédients|')}</select>
@@ -1451,8 +1462,10 @@ function readIngRows(sh) {
     }).filter(Boolean);
     const q = parseFloat(String(frw.querySelector('.f-qty').value).replace(',', '.')), unit = frw.querySelector('.f-unit').value;
     const us = unit === 'oz' || unit === 'cup', okq = isFinite(q) && q > 0;
+    const q2 = parseFloat(String(frw.querySelector('.f-qty2').value).replace(',', '.')), q2ok = okq && unit !== 'à compléter' && isFinite(q2) && q2 > q;
+    if (frw.querySelector('.f-qty2').value.trim() && !q2ok && okq && unit !== 'à compléter') errs.push(`« ${frw.querySelector('.f-ing').value.trim()} » : la quantité maximale doit être supérieure à la quantité.`);
     const tip = frw.querySelector('.f-tip').value.trim().replace(/\s+/g, ' ');
-    return Object.assign({ id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: alts.filter((a, i) => alts.findIndex(b => altId(b) === altId(a)) === i) }, tip ? { tip } : {});
+    return Object.assign({ id, qty: unit === 'à compléter' ? 0 : (okq ? (us ? usToMl(q, unit) : q) : 0), unit: us ? 'ml' : unit, sub: frw.querySelector('.f-sub').checked, opt: frw.querySelector('.f-opt').checked, alts: alts.filter((a, i) => alts.findIndex(b => altId(b) === altId(a)) === i) }, q2ok ? { qty2: us ? usToMl(q2, unit) : q2 } : {}, tip ? { tip } : {});
   });
   if (!ings.length) errs.push('Au moins un ingrédient est requis.');
   if (ings.some(i => !i.qty && i.unit !== 'à compléter')) errs.push('Chaque ingrédient doit avoir une quantité, ou l’unité « à compléter ».');
