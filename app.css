@@ -648,3 +648,20 @@ input[type=radio]{accent-color:var(--accent)}
 .ing-page h1,.prep-page h1{font-size:clamp(38px,9vw,60px)}
 .shop .inline-form{margin-top:4px}
 @media (max-width:639px){.preps-top{flex-direction:column;align-items:stretch}.preps-top .btn{align-self:flex-start}}
+
+/* ---------- 0.31.1 : pastille de couleur des préparations, fiche en 2 colonnes, accueil en paysage ---------- */
+.pdot{width:46px;height:46px;border-radius:8px;flex:none;background:var(--surface-2);background:color-mix(in srgb,var(--c) 55%,var(--surface-2));border:1px solid color-mix(in srgb,var(--c) 70%,var(--line))}
+.pbar{display:block;width:56px;height:6px;border-radius:3px;background:var(--c);margin-bottom:12px}
+.prep-page .ings-sec{align-self:start}
+@media (orientation:landscape) and (max-height:540px) and (min-width:560px){
+  .moment{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+  .moment-v{aspect-ratio:auto;height:190px}
+  .moment-t{padding:14px 18px;gap:6px;justify-content:center}
+  .moment-t h1{font-size:clamp(30px,6vw,44px)}
+  .moment-t .lead{font-size:14px}
+  .hrow{grid-auto-columns:112px;gap:10px}
+  .hcard .cv{aspect-ratio:1/1}
+  .ing-page h1,.prep-page h1{font-size:clamp(32px,6vw,44px)}
+  .detail h1{font-size:clamp(34px,6vw,48px)}
+  .dhero{aspect-ratio:16/10}
+}

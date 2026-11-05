@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.31.0';
+const APP_VERSION = '0.31.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -623,7 +623,7 @@ function openIngInfo(id, keep) {
   sheetState = { type: 'ing', id };
   const inf = INFOS[id], have = ownedSet().has(id), abv = +i.abv || 0, st = keep ? sh.scrollTop : 0;
   const same = Object.keys(S.ings).filter(x => x !== id && !STAPLES.includes(x) && S.ings[x].cat === i.cat).sort((a, b) => S.ings[a].name.localeCompare(S.ings[b].name, 'fr'));
-  const mine = S.preps.filter(p => p.makes === id), nR = S.recipes.filter(r => r.ings.some(x => x.id === id)).length;
+  const mine = S.preps.filter(p => p.makes === id), nR = S.recipes.filter(r => ingMatch(r, id)).length;
   const place = [i.fam, i.sub].filter(Boolean).join(' › ');
   const block = (t, txt) => txt ? `<section class="sec"><h2>${t}</h2><p class="ing-txt">${esc(txt)}</p></section>` : '';
   sh.innerHTML = `
@@ -641,11 +641,13 @@ function openIngInfo(id, keep) {
 }
 
 /* ---------- préparations maison : sirops, liqueurs, spiritueux infusés ---------- */
+const PREP_COL = { 'Sirops & cordials': '#FFE14D', 'Liqueurs': '#FF9A1F', 'Spiritueux infusés': '#C8E04A', 'Autres': '#E8F1F2' };
+const prepColor = p => okColor(p.color || PREP_COL[p.kind] || PREP_COL.Autres);
 const JAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3l1.6 2.4V20a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4L9 6z"/><path d="M7.4 12h9.2"/></svg>';
 const mlTxt = ml => fmtQty({ qty: ml, unit: 'ml' });
 function prepRow(p) {
   const sub = [p.makes && S.ings[p.makes] ? 'Pour ' + S.ings[p.makes].name : '', p.batch ? '≈ ' + mlTxt(p.batch.ml) : ''].filter(Boolean).join(' · ');
-  return `<button class="lrow prow" data-act="open-prep" data-id="${esc(p.id)}"><span class="lthumb prep-ico">${JAR}</span><span class="lname">${esc(p.name)}<small>${esc(sub)}</small></span><span></span></button>`;
+  return `<button class="lrow prow" data-act="open-prep" data-id="${esc(p.id)}"><span class="pdot" style="--c:${prepColor(p)}" aria-hidden="true"></span><span class="lname">${esc(p.name)}<small>${esc(sub)}</small></span><span></span></button>`;
 }
 function renderPrepsTab() {
   const kinds = [...PREP_KINDS]; S.preps.forEach(p => { const k = p.kind || 'Autres'; if (!kinds.includes(k)) kinds.push(k); });
@@ -670,15 +672,19 @@ function openPrep(id, keep) {
   const mk = p.makes && S.ings[p.makes];
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ Retour</button><span class="grow"></span><button class="btn small" data-act="prep-edit" data-id="${esc(id)}">Modifier</button><button class="btn small ghost danger" data-act="prep-del" data-id="${esc(id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
-  <div class="sheet-body"><article class="inner detail prep-page" style="--c:var(--accent)">
-    <header class="dhead"><p class="eyebrow"><span class="orig">Préparation maison · ${esc(p.kind || 'Autres')}</span></p><h1>${esc(p.name)}</h1></header>
-    <dl class="facts"><div><dt>Volume obtenu</dt><dd class="mono">≈ ${esc(mlTxt(amt))}</dd></div><div><dt>Ingrédient obtenu</dt><dd>${mk ? `<button class="ing-link" data-act="ing-info" data-id="${esc(p.makes)}">${esc(mk.name)}</button>` : '—'}</dd></div>${p.keep ? `<div class="wide"><dt>Conservation</dt><dd>${esc(p.keep)}</dd></div>` : ''}${p.source ? `<div class="wide"><dt>Source</dt><dd>${esc(p.source)}</dd></div>` : ''}</dl>
-    <section class="sec ings-sec"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
-      ${servRow(p, 'pserv', 'pserv-set')}
-      <ul class="ings">${rowsHTML}</ul>
-      <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
-    ${p.steps.length ? `<section class="sec"><h2>Préparation</h2><ol class="steps">${p.steps.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ol></section>` : ''}
-    ${p.note ? `<section class="sec"><h2>Notes</h2><ul class="notes">${String(p.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+  <div class="sheet-body"><article class="inner wide detail prep-page" style="--c:${prepColor(p)}">
+    <div class="d-left cols dz">
+      <header class="dhead o1"><span class="pbar" aria-hidden="true"></span><p class="eyebrow"><span class="orig">Préparation maison · ${esc(p.kind || 'Autres')}</span></p><h1>${esc(p.name)}</h1></header>
+      <dl class="facts o2"><div><dt>Volume obtenu</dt><dd class="mono">≈ ${esc(mlTxt(amt))}</dd></div><div><dt>Ingrédient obtenu</dt><dd>${mk ? `<button class="ing-link" data-act="ing-info" data-id="${esc(p.makes)}">${esc(mk.name)}</button>` : '—'}</dd></div>${p.keep ? `<div class="wide"><dt>Conservation</dt><dd>${esc(p.keep)}</dd></div>` : ''}${p.source ? `<div class="wide"><dt>Source</dt><dd>${esc(p.source)}</dd></div>` : ''}</dl>
+      ${p.note ? `<section class="sec o5"><h2>Notes</h2><ul class="notes">${String(p.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+    </div>
+    <div class="d-right cols dz">
+      <section class="sec ings-sec o3"><div class="shead"><h2>Ingrédients</h2><div class="seg mini" role="group" aria-label="Unité">${['ml', 'cl', 'oz'].map(u => `<button data-act="unit" data-v="${u}" class="${S.unit === u ? 'on' : ''}" aria-pressed="${S.unit === u}">${u}</button>`).join('')}</div></div>
+        ${servRow(p, 'pserv', 'pserv-set')}
+        <ul class="ings">${rowsHTML}</ul>
+        <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
+      ${p.steps.length ? `<section class="sec o4"><h2>Préparation</h2><ol class="steps">${p.steps.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ol></section>` : ''}
+    </div>
   </article></div>`;
   showSheet(); sh.scrollTop = st;
   if (!keep) pushNav();
@@ -701,6 +707,13 @@ function openPrepForm(id) {
       <div class="field"><span>Type</span><input type="hidden" id="pf-kind" value="${esc(kind)}"><div class="chips">${kinds.map(k => `<button type="button" class="chip${k === kind ? ' on' : ''}" data-act="pick-chip" data-for="pf-kind" data-v="${esc(k)}" aria-pressed="${k === kind}">${esc(k)}</button>`).join('')}</div></div>
       <label class="field" for="pf-makes"><span>Ingrédient obtenu (facultatif)</span><input type="text" id="pf-makes" list="dl-ings" value="${esc(p.makes && S.ings[p.makes] ? S.ings[p.makes].name : '')}" placeholder="ex. Sirop de gingembre" autocomplete="off"><small class="hint">Celui que cette préparation remplace dans les recettes : sa fiche renvoie alors vers cette recette.</small></label>
       <div class="field"><span>Volume obtenu</span><div class="batch-vol"><input type="text" inputmode="decimal" id="pf-vol" aria-label="Volume obtenu" value="${ml ? esc(big ? fr(ml / 1000) : ml) : ''}" placeholder="ex. 500"><select id="pf-vol-u" aria-label="Unité du volume">${opts(['L', 'cl', 'ml'], big ? 'L' : 'ml')}</select></div><small class="hint">Les quantités ci-dessous sont celles de ce volume ; sur la fiche, le volume se règle ensuite.</small></div>
+      <div class="field"><span>Couleur</span>
+        <input type="hidden" id="rf-color" value="${prepColor(p)}">
+        <div class="swatches" role="group" aria-label="Couleur de la préparation">${SWATCHES.map(([c, n]) => `<button type="button" class="sw${c.toLowerCase() === prepColor(p).toLowerCase() ? ' on' : ''}" data-act="swatch" data-v="${c}" style="--sw:${c}" title="${n}" aria-label="${n}"></button>`).join('')}</div>
+        <details class="custom-c"${SWATCHES.some(([c]) => c.toLowerCase() === prepColor(p).toLowerCase()) ? '' : ' open'}><summary>Couleur personnalisée</summary>
+          <div class="hsl">${[['h', 'Teinte', 0, 360], ['s', 'Intensité', 0, 100], ['l', 'Clarté', 10, 90]].map(([k, l, mn, mx]) => `<label class="slider" for="cc-${k}"><span>${l}</span><input type="range" class="cr" id="cc-${k}" min="${mn}" max="${mx}" step="1"><span></span></label>`).join('')}</div>
+        </details>
+      </div>
     </section>
     <section class="sec"><h2>Ingrédients</h2>
       <p class="hint">Un nom inconnu crée un nouvel ingrédient. Pour une infusion, indiquer le spiritueux et la plante comme n'importe quel ingrédient.</p>
@@ -717,7 +730,7 @@ function openPrepForm(id) {
     <div><button type="button" class="btn primary" data-act="prep-save">Enregistrer la préparation</button></div>
   </form></div>`;
   sh.querySelectorAll('.frow').forEach(checkNew);
-  showSheet(); sh.scrollTop = 0; pushNav();
+  syncHSL(); showSheet(); sh.scrollTop = 0; pushNav();
 }
 function savePrep() {
   const sh = $('#sheet'), g = x => sh.querySelector('#' + x), errs = [];
@@ -732,7 +745,7 @@ function savePrep() {
   Object.values(R.newIngs).forEach(({ id, data }) => S.ings[id] = data);
   const old = sheetState.id && S.preps.find(x => x.id === sheetState.id);
   const rec = Object.assign({}, old || {}, {
-    id: old ? old.id : 'p-' + Date.now().toString(36), name, kind: g('pf-kind').value, makes, batch: { ml: Math.round(ml) }, ings: R.ings,
+    id: old ? old.id : 'p-' + Date.now().toString(36), name, kind: g('pf-kind').value, color: okColor(g('rf-color').value), makes, batch: { ml: Math.round(ml) }, ings: R.ings,
     steps: g('pf-steps').value.split('\n').map(x => x.trim()).filter(Boolean), keep: g('pf-keep').value.trim(), note: g('pf-note').value.trim(), source: g('pf-source').value.trim(), created: old ? old.created : Date.now()
   });
   if (old && old.src === 'builtin') { rec.src = 'builtin'; rec.edited = true; }
@@ -1116,7 +1129,7 @@ function openDetail(id, keep, back) {
     if (row.opt) info.push('Facultatif');
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(a => altTxt(a, kServ)).join(' ; '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-search" data-id="${esc(row.id)}" title="Recettes avec cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
