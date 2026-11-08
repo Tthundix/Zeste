@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.36.0';
+const APP_VERSION = '0.36.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1583,7 +1583,7 @@ document.addEventListener('click', async e => {
     case 'rate-clear': commitRate(id, 0); break;
     case 'tog-list': { const l = S.lists.find(x => x.id === b.dataset.list); if (!l) break; l.items = l.items.includes(id) ? l.items.filter(x => x !== id) : [...l.items, id]; save(); openDetail(id, true); break; }
     case 'note-vis': { flushNote(); const cur = S.notes[id] || { text: '', at: Date.now() }; S.notes[id] = Object.assign({}, cur, { pub: b.dataset.v === '1' }); save(); openDetail(id, true); break; }
-    case 'unit': S.unit = b.dataset.v; save(); openDetail(sheetState.id, true); break;
+    case 'unit': S.unit = b.dataset.v; save(); if (sheetState.type === 'prep') openPrep(sheetState.id, true); else openDetail(sheetState.id, true); break;
     case 'serv': { const r = S.recipes.find(x => x.id === sheetState.id), c = servCfg(r); UI.serv[r.id] = clampServ(c, servAmt(r) + (+b.dataset.v) * c.step); openDetail(r.id, true); break; }
     case 'serv-set': { const rid = sheetState.id; UI.serv[rid] = +b.dataset.v; openDetail(rid, true); break; }
     case 'pserv': { const p = S.preps.find(x => x.id === sheetState.id), c = servCfg(p); UI.serv[p.id] = clampServ(c, servAmt(p) + (+b.dataset.v) * c.step); openPrep(p.id, true); break; }
