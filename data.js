@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 22;
+const DATA_VERSION = 23;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -1292,6 +1292,31 @@ const PHOTO_CREDITS = {
   'vin-chaud': { by: 'Gaby Dyson' }
 };
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
+
+/* Variantes : { id de la variante: id de la recette de base }. Seuls les cas évidents sont liés.
+   Le lien est un champ de la recette (`parent`), modifiable dans le formulaire comme les autres. */
+const PARENTS = {
+  'rum-old-fashioned': 'old-fashioned', 'oaxaca-old-fashioned': 'old-fashioned',
+  'tommys-margarita': 'margarita',
+  'strawberry-daiquiri': 'daiquiri', 'hemingway-special': 'daiquiri',
+  'negroni-sbagliato': 'negroni', 'white-negroni': 'negroni', 'boulevardier': 'negroni',
+  'rob-roy': 'manhattan', 'black-manhattan': 'manhattan',
+  'vodka-martini': 'dry-martini',
+  'new-york-sour': 'whiskey-sour',
+  'kir-royal': 'kir',
+  'white-russian': 'black-russian',
+  'rum-mule': 'moscow-mule', 'gin-gin-mule': 'moscow-mule',
+  'campari-spritz': 'spritz', 'limoncello-spritz': 'spritz', 'hugo-spritz': 'spritz',
+  'tequila-tonic': 'gin-tonic',
+  'salty-dog': 'greyhound',
+  'ginger-no-jito': 'mojito',
+  'cold-brew-julep': 'mint-julep',
+  'lime-rickey': 'gin-rickey',
+  'roy-rogers': 'shirley-temple',
+  'virgin-mary': 'bloody-mary',
+  'citronnade-fraise': 'citronnade-maison'
+};
+RECIPES.forEach(r => { if (PARENTS[r.id]) r.parent = PARENTS[r.id]; });
 
 /* Collections proposées. Chaque collection appartient à une catégorie (group) et se compose de blocs :
    { type: 'recipes', title, ids, cols }, { type: 'text', title, text }, { type: 'tip', text }.

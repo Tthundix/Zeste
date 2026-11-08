@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.35.0';
+const APP_VERSION = '0.36.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -67,6 +67,7 @@ function upgrade(d) {
     if (r.method === 'Direct dans le verre') r.method = 'Dans le verre';
     if (r.garn == null) r.garn = '';
     if (r.rim == null) r.rim = '';
+    if (r.parent != null && typeof r.parent !== 'string') delete r.parent;
   });
   if (d.v === 1) {
     // Recettes d'exemple de la première version : on garde celles qui ont une photo, on remplace les autres par la version complète.
@@ -97,6 +98,10 @@ function upgrade(d) {
         d.recipes[k].photo = b.photo;
         if (b.photoCredit) d.recipes[k].photoCredit = clone(b.photoCredit); else delete d.recipes[k].photoCredit;
       }
+      /* Lien de variante : une recette de départ déjà modifiée par l'utilisateur le reçoit tant qu'il ne l'a jamais touché.
+         Une fois le formulaire enregistré, le champ existe toujours (vide si le lien a été retiré) et n'est plus remplacé. */
+      const cur = d.recipes.find(r => r.id === b.id);
+      if (cur && b.parent && cur.src === 'builtin' && !Object.prototype.hasOwnProperty.call(cur, 'parent')) cur.parent = b.parent;
     });
     d.recipes = d.recipes.filter(r => !(RETIRED_IDS.includes(r.id) && r.src === 'builtin' && !r.edited));
     // Préparations maison de départ : ajoutées, ou mises à jour tant qu'elles n'ont pas été modifiées ; une préparation supprimée ne revient pas.
@@ -471,7 +476,7 @@ function renderResults() {
          Chaque mot cherché a un rang : 0 = dans le nom, 1 = dans un ingrédient, 2 = ailleurs (tags, auteur, notes…). Le rang de la recette est le pire de ses mots. */
       const toks = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
       const nameT = toks(r.name + ' ' + (r.subtitle || '')), ingT = toks(r.ings.map(i => ingName(i.id)).join(' '));
-      const otherT = toks([r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, ...r.tags, S.notes[r.id] ? S.notes[r.id].text : ''].join(' '));
+      const otherT = toks([r.author, r.source || '', isNA(r) ? 'sans alcool mocktail' : '', garnLabel(r), origLabel(r), r.method, ...r.tags, S.notes[r.id] ? S.notes[r.id].text : '', (parentOf(r) || {}).name || ''].join(' '));
       let tier = 0;
       for (const w of words) {
         const has = t => t.some(x => x.startsWith(w));
@@ -493,7 +498,7 @@ function renderResults() {
     const [cls, txt] = statusPill(a), rt = S.ratings[r.id] || 0;
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
       <span class="cv">${visual(r)}<span class="pill ${cls}">${txt}</span></span>
-      <span class="cb"><span class="cname">${esc(r.name)}</span>${r.subtitle ? `<span class="csub">${esc(r.subtitle)}</span>` : ''}<span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>
+      <span class="cb"><span class="cname">${esc(r.name)}</span>${r.subtitle ? `<span class="csub">${esc(r.subtitle)}</span>` : ''}<span class="cmeta">${esc(r.method)} · ${esc(r.glass)}</span>${parentOf(r) ? `<span class="cvar">Variante de ${esc(parentOf(r).name)}</span>` : ''}
       <span class="crow">${rt ? starsHTML(rt) : '<span class="unrated">Pas encore noté</span>'}${isNA(r) ? '<span class="otag">Sans alcool</span>' : r.origin === 'Original' ? `<span class="otag">${isZeste(r) ? 'Zeste' : r.by === 'other' ? 'Original' : 'Ma création'}</span>` : ''}</span></span></button>`;
   }).join('') : `<div class="empty"><p>Aucun cocktail ne correspond.</p><button class="btn small" data-act="clear-all">Tout réafficher</button></div>`;
 }
@@ -816,6 +821,14 @@ function renderLists(m) {
 const allColls = () => [...COLLECTIONS, ...(S.collections || [])];
 const findColl = cid => allColls().find(c => c.id === cid);
 const byRecName = (a, b) => a.name.localeCompare(b.name, 'fr');
+/* Variantes : `parent` est l'id de la recette de base. Un lien vers une recette supprimée est ignoré. */
+const parentOf = r => (r && r.parent && r.parent !== r.id && S.recipes.find(x => x.id === r.parent)) || null;
+const variantsOf = r => S.recipes.filter(x => x.parent === r.id && x.id !== r.id).sort(byRecName);
+function descendantIds(id) {
+  const out = new Set(), todo = [id];
+  while (todo.length) { const c = todo.pop(); S.recipes.forEach(x => { if (x.parent === c && !out.has(x.id)) { out.add(x.id); todo.push(x.id); } }); }
+  return out;
+}
 function collBlocks(c) {
   if (c.blocks && c.blocks.length) return c.blocks;
   const ids = c.ids || S.recipes.filter(c.filter).sort(byRecName).map(r => r.id);
@@ -1152,7 +1165,7 @@ function openDetail(id, keep, back) {
   sheetState = { type: 'detail', id, back: back || null };
   if (!keep) { S.views = S.views || {}; const v = S.views[id] || { n: 0 }; v.n++; v.t = Date.now(); S.views[id] = v; save(); }
   const a = analyze(r, ownedSet()), abv = estAbv(r), rt = S.ratings[r.id] || 0, del = UI.confirm === 'del:' + r.id, nt = S.notes[r.id] || { text: '', pub: false }, pv = nt.pub ? '1' : '0';
-  const top = !!String(nt.text || '').trim(), gl = garnLabel(r);
+  const top = !!String(nt.text || '').trim(), gl = garnLabel(r), par = parentOf(r), vars = variantsOf(r);
   const avis = cls => `<section class="sec mynote${top ? ' top' : ''} ${cls}"><div class="shead"><h2>Mon avis</h2><div class="seg mini" role="group" aria-label="Visibilité de l'avis">${[['0', 'Privé'], ['1', 'Public']].map(([v, l]) => `<button data-act="note-vis" data-id="${esc(r.id)}" data-v="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${l}</button>`).join('')}</div></div>
       <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ressenti, ajustements, accords…">${esc(nt.text)}</textarea>
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
@@ -1181,7 +1194,7 @@ function openDetail(id, keep, back) {
     </div>
     <div class="d-right cols dz">
       <div class="d-head dz">
-      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
+      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${par ? `<p class="variant-of">Variante de <button type="button" class="variant-link" data-act="open" data-id="${esc(par.id)}">${esc(par.name)}</button></p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
       <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${sourceFact(r)}</dl>
       <div class="o4 lists-pick"><div class="chips" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}<button class="chip chip-new" data-act="new-list-open" data-id="${esc(r.id)}" aria-expanded="${UI.newList === r.id}">+ Nouvelle liste</button></div>
         ${UI.newList === r.id ? `<div class="inline-form"><input id="nl-detail" type="text" aria-label="Nom de la nouvelle liste" placeholder="Nom de la liste" maxlength="40" autocomplete="off"><button class="btn primary small" data-act="new-list-ok" data-id="${esc(r.id)}">Créer et ajouter</button><button class="btn small ghost" data-act="new-list-cancel" data-id="${esc(r.id)}">Annuler</button></div>` : ''}</div>
@@ -1194,6 +1207,7 @@ function openDetail(id, keep, back) {
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot home"></i>À faire maison</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
       ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><ul class="notes">${String(r.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+      ${vars.length ? `<section class="sec o11"><div class="shead"><h2>Variantes</h2><span class="count">${vars.length}</span></div><p class="hint">Recettes dérivées de celle-ci : un autre alcool, un ingrédient en moins ou en plus. Utile pour trouver une alternative.</p><div class="rgrid">${vars.map(v => rcardHTML(v, ownedSet())).join('')}</div></section>` : ''}
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
@@ -1237,7 +1251,13 @@ const CUT_KEYS = GARNISH_CUTS.map(c => c[0]);
 function openForm(id) {
   const src = id ? S.recipes.find(r => r.id === id) : null;
   const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
-  sheetState = { type: 'form', id: id || null, photo: okPhoto(r.photo) }; rowN = 0; UI.confirm = null;
+  /* Recette de base possible : toutes, sauf elle-même et ses propres variantes (pas de boucle). Un nom porté par deux recettes est précisé par l'id. */
+  const noParent = new Set(id ? [id, ...descendantIds(id)] : []);
+  const pCand = S.recipes.filter(x => !noParent.has(x.id)).sort(byRecName), pCount = {};
+  pCand.forEach(x => pCount[norm(x.name)] = (pCount[norm(x.name)] || 0) + 1);
+  const pLabel = x => pCount[norm(x.name)] > 1 ? `${x.name} (${x.id})` : x.name, pmap = new Map(pCand.map(x => [norm(pLabel(x)), x.id]));
+  const pCur = r.parent && pCand.find(x => x.id === r.parent);
+  sheetState = { type: 'form', id: id || null, photo: okPhoto(r.photo), pmap }; rowN = 0; UI.confirm = null;
   const rows = r.ings.length ? r.ings : [null, null, null], bm = batchBase(r);
   const cats = [...new Set(Object.values(S.ings).map(i => i.cat))].sort((a, b) => a.localeCompare(b, 'fr'));
   const tagsAll = [...new Set([...TAG_SUGG, ...S.recipes.flatMap(x => x.tags)])];
@@ -1249,10 +1269,12 @@ function openForm(id) {
   <div class="sheet-body"><form class="inner wide form" id="rform" novalidate>
     <datalist id="dl-ings">${Object.values(S.ings).map(i => i.name).sort((a, b) => a.localeCompare(b, 'fr')).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
     <datalist id="dl-cats">${cats.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
+    <datalist id="dl-recipes">${pCand.map(x => `<option value="${esc(pLabel(x))}"></option>`).join('')}</datalist>
     <div class="cols col-a">
     <section class="sec"><h2>L'essentiel</h2>
       <label class="field" for="rf-name"><span>Nom</span><input type="text" id="rf-name" value="${esc(r.name)}" placeholder="ex. Hugo Spritz" autocomplete="off"></label>
       <label class="field" for="rf-sub"><span>Sous-titre ou autre nom (facultatif)</span><input type="text" id="rf-sub" value="${esc(r.subtitle || '')}" placeholder="ex. Cucumber agua fresca" autocomplete="off"><small class="hint">Affiché sous le nom, et retrouvé par la recherche.</small></label>
+      <label class="field" for="rf-parent"><span>Variante de (facultatif)</span><input type="text" id="rf-parent" list="dl-recipes" value="${esc(pCur ? pLabel(pCur) : '')}" placeholder="ex. Margarita" autocomplete="off"><small class="hint">Choisir la recette de base dans la liste : la fiche affichera « Variante de … » avec un lien vers elle, et la recette de base listera ses variantes. Effacer le champ pour retirer le lien.</small></label>
       <div class="photo-box" id="photo-box">
         <div class="photo-prev" id="photo-prev" style="--c:${okColor(r.color)}"></div>
         <div class="photo-ctrl">
@@ -1480,6 +1502,8 @@ function saveForm() {
   const R = readIngRows(sh); errs.push(...R.errs); const ings = R.ings, newIngs = R.newIngs;
   const url = g('rf-url').value.trim();
   if (url && !/^https?:\/\//i.test(url)) errs.push('Le lien doit commencer par http:// ou https://.');
+  let parent = ''; const pTxt = g('rf-parent').value.trim();
+  if (pTxt) { parent = (sheetState.pmap && sheetState.pmap.get(norm(pTxt))) || ''; if (!parent) errs.push('« Variante de » : aucune recette de l\'appli ne porte ce nom. Choisir une recette dans la liste, ou effacer le champ.'); }
   let batch = null;
   if (g('rf-batch').value === 'volume') {
     const q = parseFloat(String(g('rf-batch-qty').value).replace(',', '.')), ml = q * ({ L: 1000, cl: 10, ml: 1 }[g('rf-batch-unit').value] || 1);
@@ -1496,7 +1520,7 @@ function saveForm() {
   const rec = Object.assign({}, old || {}, {
     id: old ? old.id : 'r-' + Date.now().toString(36), name, origin: orig, by, author: by === 'other' ? srcTxt : '', source: orig === 'Classique' ? srcTxt : '', url,
     method: g('rf-method').value, glass: g('rf-glass').value, garn: currentGarn(), garnish: g('rf-garnish').value.trim(), rim: g('rf-rim').value,
-    color: okColor(g('rf-color').value), photo: sheetState.photo || '', flavor, tags, ings,
+    color: okColor(g('rf-color').value), photo: sheetState.photo || '', flavor, tags, ings, parent,
     steps: g('rf-steps').value.split('\n').map(s => s.trim()).filter(Boolean), note: g('rf-note').value.trim(), created: old ? old.created : Date.now()
   });
   if (batch) rec.batch = batch; else delete rec.batch;
@@ -1616,7 +1640,7 @@ document.addEventListener('click', async e => {
       if (UI.confirm === 'del:' + id) {
         const r = S.recipes.find(x => x.id === id);
         if (r && (r.src === 'builtin' || BUILTIN.has(id)) && !S.removed.includes(id)) S.removed.push(id);
-        S.recipes = S.recipes.filter(x => x.id !== id); S.lists.forEach(l => l.items = l.items.filter(x => x !== id)); delete S.ratings[id]; delete S.notes[id]; S.shop.recs = S.shop.recs.filter(x => x.id !== id);
+        S.recipes = S.recipes.filter(x => x.id !== id); S.recipes.forEach(x => { if (x.parent === id) x.parent = ''; }); S.lists.forEach(l => l.items = l.items.filter(x => x !== id)); delete S.ratings[id]; delete S.notes[id]; S.shop.recs = S.shop.recs.filter(x => x.id !== id);
         save(); closeSheet(); toast('Recette supprimée');
       } else { UI.confirm = 'del:' + id; openDetail(id, true); }
       break;
