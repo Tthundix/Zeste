@@ -1293,6 +1293,23 @@ const PHOTO_CREDITS = {
 };
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
 
+/* Version publique. false pendant le développement (0.x) ; à passer à true pour la 1.0, avec une hausse de DATA_VERSION.
+   Quand c'est true, seules les photos dont le statut est 'ok' sont affichées : les autres reviennent à l'illustration du verre. */
+const PUBLIC_RELEASE = false;
+
+/* Statut de licence des photos du dossier photos/, par id de recette :
+   'ok'   : utilisable publiquement. Photo faite pour Zeste (sans crédit), ou photo sous licence libre dont les conditions
+            sont respectées (crédit et lien renseignés dans PHOTO_CREDITS), ou photo avec autorisation de l'auteur.
+   'test' : pour les essais seulement (droits réservés, banque d'images payante, licence refusée…).
+   Une photo absente de cette liste est non vérifiée : elle n'apparaît pas en version publique.
+   Ne marquer 'ok' qu'après avoir vérifié la licence sur la page source de l'image. */
+const PHOTO_STATUS = {
+  'agua-pepino': 'test',  // Tous droits réservés
+  'ayran': 'test'         // iStock (Getty Images), photo sous licence payante
+};
+const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
+if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
+
 /* Variantes : { id de la variante: id de la recette de base }. Seuls les cas évidents sont liés.
    Le lien est un champ de la recette (`parent`), modifiable dans le formulaire comme les autres. */
 const PARENTS = {

@@ -677,3 +677,13 @@ input[type=radio]{accent-color:var(--accent)}
 .frow-range{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:6px;font-size:13px;color:var(--muted)}
 .frow-range input{width:84px;padding:6px 8px}
 .frow-range .hint{margin:0}
+
+/* Mentions, crédits et suivi des licences de photos */
+.legal{margin:28px 2px 8px;font-size:12px;color:var(--muted);text-align:center}
+.legal .btn.link{font-size:12px}
+.legal-big{margin:0 0 14px;font-size:15px;font-weight:600}
+.about{display:flex;flex-direction:column;gap:14px;max-width:720px}
+.pstat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.pstat b{color:var(--fg);font-weight:600}
+.pstat a{color:inherit;text-underline-offset:2px}
+.photo-flag{color:var(--accent);font-weight:600}
