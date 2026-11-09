@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.36.0';
+const APP_VERSION = '0.37.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -115,6 +115,11 @@ function upgrade(d) {
     d.recipes.forEach(r => { if (r.src === 'builtin') { if (Array.isArray(r.steps)) r.steps = r.steps.map(shk); r.note = shk(r.note); } });
     d.dataVersion = DATA_VERSION;
   }
+  /* Version publique : une recette de départ déjà enregistrée sur l'appareil ne garde pas une photo du dossier photos/ dont la licence n'est pas validée.
+     Les photos ajoutées par l'utilisateur (données enregistrées dans la sauvegarde) ne sont pas concernées. */
+  if (PUBLIC_RELEASE) d.recipes.forEach(r => {
+    if (r.src === 'builtin' && typeof r.photo === 'string' && r.photo.startsWith('photos/') && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; }
+  });
   return d;
 }
 
@@ -255,7 +260,13 @@ function garnIcon(key) {
   const G = { rim: [26, 28, 38], lt: 27 };
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
-const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" data-rid="${esc(r.id)}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+/* Photo introuvable (fichier retiré de la version publique, ou hors ligne sans que la photo ait été mise en cache) : retour à l'illustration du verre. */
+document.addEventListener('error', e => {
+  const i = e.target; if (!i || i.tagName !== 'IMG' || !i.dataset || !i.dataset.rid) return;
+  const r = S.recipes.find(x => x.id === i.dataset.rid); if (!r) return;
+  i.insertAdjacentHTML('afterend', glassSVG(r.glass, okColor(r.color), r.garn, r.rim)); i.remove();
+}, true);
 
 /* ---------- disponibilité, substitutions, dosage ---------- */
 // Un remplaçant est soit un identifiant (même dosage), soit { id, qty, unit } (autre dosage).
@@ -389,8 +400,11 @@ function lockScroll() { document.body.classList.add('locked'); }
 function unlockScroll() { if (!sheetState && $('#crop').hidden && $('#pick').hidden) document.body.classList.remove('locked'); }
 
 /* ---------- vues ---------- */
+/* Mention de santé publique et accès aux crédits, en bas de chaque écran. */
+const legalHTML = () => `<p class="legal">L'abus d'alcool est dangereux pour la santé. À consommer avec modération. <button type="button" class="btn link small" data-act="view" data-v="about">Crédits et mentions</button></p>`;
 function render() {
-  document.querySelectorAll('[data-act="view"][data-v]').forEach(b => { const on = b.dataset.v === UI.view; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  const cur = UI.view === 'about' ? 'data' : UI.view;
+  document.querySelectorAll('[data-act="view"][data-v]').forEach(b => { const on = b.dataset.v === cur; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   const m = $('#view');
   // Les rangées horizontales de l'accueil gardent leur position de défilement d'un affichage à l'autre.
   const rows = {}; m.querySelectorAll('.hrow[data-row]').forEach(el => rows[el.dataset.row] = el.scrollLeft);
@@ -399,7 +413,9 @@ function render() {
   else if (UI.view === 'bar') renderBar(m);
   else if (UI.view === 'lists') renderLists(m);
   else if (UI.view === 'shop') renderShop(m);
+  else if (UI.view === 'about') renderAbout(m);
   else renderData(m);
+  if (UI.view !== 'about') m.insertAdjacentHTML('beforeend', legalHTML());
   updateShopBadge();
 }
 
@@ -974,6 +990,8 @@ function renderData(m) {
     ${storageOK ? '' : `<p class="warn">Ce navigateur bloque l'enregistrement : les modifications seront perdues à la fermeture. Penser à télécharger une sauvegarde ci-dessous.</p>`}
   </section>
   <section class="panel"><h2>Appli</h2>${installBlock()}<p class="hint">Version ${APP_VERSION} · ${S.recipes.length} recettes, ${Object.keys(S.ings).length} ingrédients</p></section>
+  <section class="panel"><h2>À propos</h2><p class="hint">Sources des recettes, crédits des photos, polices et mentions.</p><div class="row-btns"><button class="btn small" data-act="view" data-v="about">Crédits et mentions</button></div></section>
+  ${photoReviewPanel()}
   <section class="panel"><h2>Sauvegarder</h2>
     <p class="hint">Un fichier de sauvegarde permet de ne rien perdre, ou de passer sur un autre appareil. Les photos sont incluses.</p>
     <div class="row-btns"><button class="btn primary small" data-act="dl-exp">Télécharger une sauvegarde</button><button class="btn small" data-act="copy-exp">Copier en texte</button></div>
@@ -994,6 +1012,40 @@ function renderData(m) {
   const el = $('#st-size');
   if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { if (el) el.textContent = `Espace utilisé : ${fr((e.usage || 0) / 1048576)} Mo.`; }).catch(() => { if (el) el.textContent = ''; });
   else if (el) el.textContent = '';
+}
+
+/* Suivi des licences de photos, visible seulement pendant le développement (voir PHOTO_STATUS dans data.js). */
+function photoReviewPanel() {
+  if (PUBLIC_RELEASE) return '';
+  const g = { ok: [], test: [], unverified: [] };
+  Object.keys(PHOTOS).forEach(id => { const r = BUILTIN.get(id); if (r) g[photoState(id)].push(r); });
+  const line = r => { const c = r.photoCredit; return `<li><b>${esc(r.name)}</b> · ${c && c.by ? esc(c.by) + (c.lic ? ' (' + esc(c.lic) + ')' : '') : 'sans crédit'}</li>`; };
+  const n = g.ok.length;
+  return `<section class="panel"><h2>Photos avant la 1.0</h2>
+    <p class="hint">${n} validée${n > 1 ? 's' : ''}, ${g.test.length} pour les essais seulement, ${g.unverified.length} à vérifier. Seules les photos validées seront dans la version publique : les autres reviendront à l'illustration du verre.</p>
+    ${g.test.length ? `<h3 class="lbl">Pour les essais seulement</h3><ul class="pstat">${g.test.map(line).join('')}</ul>` : ''}
+    ${g.unverified.length ? `<h3 class="lbl">À vérifier</h3><ul class="pstat">${g.unverified.map(line).join('')}</ul>` : ''}
+  </section>`;
+}
+
+/* ---------- à propos et crédits ---------- */
+function renderAbout(m) {
+  const cred = RECIPES.filter(r => okPhoto(r.photo) && r.photoCredit && r.photoCredit.by).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const photos = cred.length ? `<section class="panel"><h2>Photos</h2>
+    ${PUBLIC_RELEASE ? '<p class="hint">Les photos sans mention ont été réalisées pour Zeste.</p>' : '<p class="hint">Version de développement : certaines photos n\'ont pas encore de licence validée.</p>'}
+    <ul class="pstat">${cred.map(r => `<li><b>${esc(r.name)}</b> · ${creditWho(r.photoCredit)}${r.photoCredit.lic ? ' · ' + esc(r.photoCredit.lic) : ''}</li>`).join('')}</ul></section>` : '';
+  m.innerHTML = `<h1 class="view">Crédits et mentions</h1>
+  <div class="about">
+  <p class="legal-big">L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
+  <section class="panel"><h2>Recettes</h2>
+    <p>La source de chaque recette (auteur, bar, ouvrage) figure en haut de sa fiche, avec un lien quand il existe. Les recettes classiques appartiennent à la tradition des bars.</p>
+    <p class="hint">Les marques citées appartiennent à leurs propriétaires. Zeste n'est lié à aucune d'elles.</p>
+  </section>
+  ${photos}
+  <section class="panel"><h2>Polices</h2><p>Big Shoulders Display, Figtree et IBM Plex Mono, sous licence SIL Open Font License.</p></section>
+  <section class="panel"><h2>Appli</h2><p class="hint">Zeste, version ${APP_VERSION}. Les données restent sur l'appareil : rien n'est envoyé en ligne.</p>
+    <div class="row-btns"><button class="btn small" data-act="view" data-v="data">← Données</button></div></section>
+  </div>`;
 }
 
 /* ---------- feuilles ---------- */
@@ -1059,10 +1111,16 @@ function sourceFact(r) {
   return `<div class="wide"><dt>Source</dt><dd><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">voir la source</a></dd></div>`;
 }
 /* Crédit d'une photo sous licence libre ; le lien n'est affiché que s'il commence par http(s). */
+const creditWho = c => /^https?:\/\//.test(c.url || '') ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.by)}</a>` : esc(c.by);
 function creditHTML(r) {
-  const c = r.photoCredit; if (!c || !c.by || !okPhoto(r.photo)) return '';
-  const who = /^https?:\/\//.test(c.url || '') ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.by)}</a>` : esc(c.by);
-  return `<p class="photo-credit">Photo : ${who}${c.lic ? ' · ' + esc(c.lic) : ''}</p>`;
+  const c = r.photoCredit; if (!c || !c.by || !okPhoto(r.photo)) return photoFlagHTML(r);
+  return `<p class="photo-credit">Photo : ${creditWho(c)}${c.lic ? ' · ' + esc(c.lic) : ''}</p>` + photoFlagHTML(r);
+}
+/* En développement seulement : rappelle le statut de licence d'une photo du dossier photos/ (PHOTO_STATUS dans data.js). */
+function photoFlagHTML(r) {
+  if (PUBLIC_RELEASE || r.src !== 'builtin' || !/^photos\//.test(r.photo || '')) return '';
+  const s = photoState(r.id); if (s === 'ok') return '';
+  return `<p class="photo-credit photo-flag">${s === 'test' ? 'Photo pour les essais seulement : elle sera retirée de la version publique.' : 'Licence de la photo à vérifier : elle ne sera pas dans la version publique tant qu\'elle n\'est pas validée.'}</p>`;
 }
 const SERV_PRESETS = [1, 2, 4, 8, 12];
 /* Une recette est donnée pour un verre, ou pour un volume (pichet, carafe) quand r.batch = { ml }.

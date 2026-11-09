@@ -32,3 +32,21 @@ Les appareils qui ont déjà l'appli affichent alors « Une nouvelle version de 
 
 - Stockage : IndexedDB, sur l'appareil.
 - Sauvegarde et restauration : onglet **Données**, avec un fichier `.json` qui inclut les photos.
+
+## Photos et licences
+
+Les photos du dossier `photos/` ont chacune un statut dans `PHOTO_STATUS` (`data.js`) :
+
+- `'ok'` : utilisable publiquement. Photo faite pour Zeste (sans crédit), photo sous licence libre dont les conditions sont respectées (crédit et lien dans `PHOTO_CREDITS`), ou photo avec l'accord de l'auteur. Ne marquer `'ok'` qu'après avoir vérifié la licence sur la page source.
+- `'test'` : pour les essais seulement (droits réservés, banque d'images payante…).
+- Absente de la liste : non vérifiée, traitée comme non utilisable en version publique.
+
+Pendant le développement (`PUBLIC_RELEASE = false`), toutes les photos s'affichent, avec un rappel sur les fiches dont la licence n'est pas validée. L'onglet **Données** liste les photos « à vérifier » et « pour les essais seulement ».
+
+Pour la mise en ligne publique (1.0) :
+
+1. Valider ou retirer chaque photo non vérifiée.
+2. Passer `PUBLIC_RELEASE` à `true` et augmenter `DATA_VERSION` dans `data.js`. Seules les photos `'ok'` sont alors affichées ; les autres reviennent à l'illustration du verre, y compris sur les appareils qui ont déjà l'appli.
+3. Retirer du dépôt les fichiers des photos non validées (`photos/…`) : le filtre les masque dans l'appli, mais tant que les fichiers sont publiés sur GitHub Pages, quelqu'un peut les télécharger à leur adresse.
+
+La page **Crédits et mentions** (Données › Crédits et mentions, ou lien en bas de chaque écran) reprend les crédits des photos affichées, les polices et la mention « L'abus d'alcool est dangereux pour la santé. À consommer avec modération. ».
