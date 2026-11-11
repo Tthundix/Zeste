@@ -1198,8 +1198,6 @@ const PHOTOS = {
   'le-verger': 'photos/le-verger.jpg',
   'mauresque-pomme': 'photos/mauresque-pomme.jpg',
   'adonis': 'photos/adonis.jpg',
-  'agua-jamaica': 'photos/agua-jamaica.jpg',
-  'agua-limon-chia': 'photos/agua-limon-chia.jpg',
   'agua-pepino': 'photos/agua-pepino.jpg',
   'agua-pina': 'photos/agua-pina.jpg',
   'agua-sandia': 'photos/agua-sandia.jpg',
@@ -1257,15 +1255,36 @@ RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 /* Crédits des photos sous licence libre (CC BY, CC BY-SA…), à renseigner pour toute photo qui n'est pas de Zeste :
    { 'id-recette': { by: 'Auteur', lic: 'CC BY-SA 4.0', url: 'https://…page du fichier…' } }. Le crédit s'affiche sous la photo. */
 const PHOTO_CREDITS = {
-  'adonis': { by: 'Cocktailmarler' },
-  'agua-pepino': { by: 'Piloncillo y Vainilla', lic: 'Tous droits réservés', url: 'https://piloncilloyvainilla.com/' },
-  'angel-face': { by: 'Tyler Zieliniski' },
-  'aviation': { by: 'Ahtziri Lagarde' },
-  'ayran': { by: 'Ika Rahma', lic: 'iStock (Getty Images)', url: 'https://www.istockphoto.com/photo/license-gm1646322276-' },
-  'bees-knees': { by: 'Daniel Neuhaus' },
-  'black-russian': { by: 'Mae Mu' },
-  'bloody-mary': { by: 'Margaret Jaszowska' },
-  'bramble': { by: 'David Foodphototasty' },
+  'adonis': { by: 'Cocktailmarler', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Adonis_Cocktail.JPG'},
+  'agua-pepino': { by: 'T.Tseng', lic: 'CC BY 2.0', url: 'https://www.flickr.com/photos/68147320@N02/30255982132/' },
+  'agua-sandia': { by: 'Joy', lic: 'CC-BY 2.0', url: 'https://the-cooking-of-joy.blogspot.com/2014/07/watermelon-agua-fresca-and-popsicles.html'},
+  'aguapanela': { by: 'Mappa Stellae', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Aguapanela_variante_fr%C3%ADa_con_lim%C3%B3n_verde.jpg'},
+  'air-mail': { by: 'Matthias Friedlein', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Air_Mail_Cocktail.png'},
+  'alexander': { by: 'Jason Lam', lic: 'CC BY-SA 2.0', url: 'https://www.mightysweet.com/2008/10/17/take-on-me/'},
+  'amaretto-sour' { by: 'Poul Hoang', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gros-plan-dun-verre-sur-une-table-1Q1XtVgzo0I'},
+  'americano': { by: 'popvoid', lic: 'CC BY 2.0', url: 'https://flic.kr/p/2kZyvmo'},
+  'angel-face': { by: 'Bruce The Deus', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Angel_Face_cocktail_-_martini_glass_(italy,_2023).png'},
+  'spritz': { by: 'Viacheslav Shatunov' lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-rafraichissant-avec-des-fruits-et-de-la-glace-hu69KCZgBiw'},
+  'apfelschorle': { by: 'Richard Wang', lic: 'Licence Unsplash' url: 'https://unsplash.com/fr/photos/une-pomme-et-un-verre-de-liquide-sur-une-table-k7yKyGgGSsw'},
+  'arnold-palmer': { by: 'Misunderstood Whiskey', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-du-jus-dorange-zW5xki2fvcw'},
+  'aviation': { by: 'Ahtziri Lagarde', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-avec-une-paille-et-un-verre-avec-de-la-creme-glacee-dedans-t-sVvlwHUh0'},
+  'ayran': { by: 'Tomislav Medak', lic: 'CC BY 2.0', url: 'https://flic.kr/p/8AAP1U'},
+  'bandung': { by: 'Kyle Lam', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Bandung_Drinks.jpg'},
+  'barracuda': { by: 'Pippo Tocci', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Barracuda_Sparkling_Cocktail.png'},
+  'bees-knees': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://bevvy.co/cocktail/bees-knees/visy'},
+  'bellini': { by: 'Bruce the Deus', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Bellini_cocktail_in_a_flute-glass.png'},
+  'between-the-sheets': { by: 'Zach', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Between_The_Sheets_Cocktail.jpg'},
+  'bijou': { by: 'Edsel Little', lic: 'CC BY-SA 2.0', url: 'https://flic.kr/p/BodetG'},
+  'black-manhattan': { by: 'Emily Andreeva', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-vin-transparent-avec-liquide-brun-sur-la-table-BuuQJ3QxZ_A'},
+  'black-russian': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:Black_Russian.jpg'},
+  'bloody-mary': { by: 'Adrian Infernus', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-rouge-surmontee-dune-feuille-verte-r_DjmPeiXo8'},
+  'blue-hawaiian': { by: 'Mohrez Labaf', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gobelet-en-verre-transparent-sur-surface-noire-iyY_HcxDJa0'},
+  'blue-lagoon': { by: 'Oliver Esquivel', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-bleue-vibrante-avec-un-quartier-de-citron-vert-frais-H0MaHemMxdU'},
+  'boulevardier': { by: 'Edsel Little', lic: 'CC BY-SA 2.0', url: 'https://flic.kr/p/qCrpJ7'},
+  'bramble': { by: 'Erich Wagner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Bramble_Cocktail.jpg'},
+  'brandy-crusta': { by: 'Ralf Roletschek', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:15-09-26-RalfR-WLC-0306.jpg'},
+  'breakfast-martini': { by: 'popvoid', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Breakfast_Martini.jpg'},
+  'brown-derby': { by: 'Steven Guzzardi', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/rTUVeP'},
   'caipirinha': { by: 'Leighann Blackwood' },
   'clover-club': { by: 'Ferals Studio' },
   'daiquiri': { by: 'Marta Smith' },
@@ -1304,8 +1323,8 @@ const PUBLIC_RELEASE = false;
    Une photo absente de cette liste est non vérifiée : elle n'apparaît pas en version publique.
    Ne marquer 'ok' qu'après avoir vérifié la licence sur la page source de l'image. */
 const PHOTO_STATUS = {
-  'agua-pepino': 'test',  // Tous droits réservés
-  'ayran': 'test'         // iStock (Getty Images), photo sous licence payante
+  'adonis': 'ok',
+  'ayran': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
