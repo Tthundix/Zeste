@@ -687,3 +687,12 @@ input[type=radio]{accent-color:var(--accent)}
 .pstat b{color:var(--fg);font-weight:600}
 .pstat a{color:inherit;text-underline-offset:2px}
 .photo-flag{color:var(--accent);font-weight:600}
+
+/* ---------- suggestions des champs de saisie (insensibles aux accents) ---------- */
+.ac-box{position:fixed;z-index:62;margin:0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgb(0 0 0 / .18);max-height:260px;overflow-y:auto}
+.ac-box li{padding:9px 10px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1.25}
+.ac-box li:hover,.ac-box li.on{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+
+/* ---------- catalogue : la recherche reste visible en haut de l'écran pendant le défilement ---------- */
+.cat-search{position:sticky;top:calc(var(--topbar-h,57px) + env(safe-area-inset-top,0px));z-index:15;background:var(--bg);margin-block:-8px;padding-block:8px}
+@media (min-width:1024px),(orientation:landscape) and (max-height:540px) and (min-width:560px){.cat-search{top:0;padding-top:16px}}
