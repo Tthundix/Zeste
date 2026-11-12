@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.39.0';
+const APP_VERSION = '0.40.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1480,7 +1480,7 @@ function openCrop(src) {
   const img = new Image();
   img.onload = () => {
     CROP.img = img; CROP.zoom = 1; $('#crop-zoom').value = 1; $('#crop-img').src = src; $('#crop').hidden = false; lockScroll();
-    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = /^photos\//.test(src) ? 0 : (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
+    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
   };
   img.onerror = () => toast('Image illisible. Formats conseillés : JPEG ou PNG.');
   img.src = src;
