@@ -33,6 +33,18 @@ Les appareils qui ont déjà l'appli affichent alors « Une nouvelle version de 
 - Stockage : IndexedDB, sur l'appareil.
 - Sauvegarde et restauration : onglet **Données**, avec un fichier `.json` qui inclut les photos.
 
+## Photos
+
+Fichiers JPEG de 800 px de large dans `photos/`, nommés d'après l'id de la recette (`photos/french-75.jpg`), déclarés dans `PHOTOS` (`data.js`).
+
+Format « en croix », pour un seul fichier par recette quel que soit l'affichage :
+
+- les **600 px du haut**, sur toute la largeur : cadrage paysage (4:3), utilisé par le catalogue et la fiche recette ;
+- la **colonne centrale** (x de 100 à 700), sur toute la hauteur (600 à 800 px) : cadrage portrait (3:4), utilisé par les cartes de l'accueil ; il montre le bas du verre que le paysage coupe ;
+- les **deux coins du bas** ne servent à aucun cadrage : couleur unie, qui ne pèse presque rien.
+
+Le haut du verre doit toujours être dans les 600 px du haut : les cadres sont ancrés en haut et ne coupent jamais le haut de l'image. Une photo 800 × 600 classique fonctionne aussi (le portrait prend alors la bande centrale).
+
 ## Photos et licences
 
 Les photos du dossier `photos/` ont chacune un statut dans `PHOTO_STATUS` (`data.js`) :

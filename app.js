@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.37.0';
+const APP_VERSION = '0.39.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -45,6 +45,15 @@ function seed() {
     notes: { negroni: { text: 'Parfait en apéro. Avec un vermouth plus vanillé, il devient plus rond. À tester avec un gin plus agrumes.', pub: false, at: Date.now() } },
     unit: 'ml', example: true, shop: { recs: [] }, preps: clone(PREPS), prepsRemoved: []
   };
+}
+/* Change l'identifiant d'une recette partout où il est cité (listes, notes, vues, courses, variantes). */
+function renameRecipe(d, from, to) {
+  const r = d.recipes.find(x => x.id === from); if (!r) return;
+  r.id = to;
+  (d.lists || []).forEach(l => { l.items = (l.items || []).map(i => i === from ? to : i); });
+  ['ratings', 'notes', 'views'].forEach(k => { if (d[k] && Object.prototype.hasOwnProperty.call(d[k], from)) { d[k][to] = d[k][from]; delete d[k][from]; } });
+  if (d.shop && Array.isArray(d.shop.recs)) d.shop.recs.forEach(x => { if (x.id === from) x.id = to; });
+  d.recipes.forEach(x => { if (x.parent === from) x.parent = to; });
 }
 function upgrade(d) {
   if (!d.notes || typeof d.notes !== 'object') d.notes = {};
@@ -91,12 +100,25 @@ function upgrade(d) {
     Object.assign(d.ings, base);
     RECIPES.forEach(b => {
       const k = d.recipes.findIndex(r => r.id === b.id);
-      if (k < 0) { if (!d.removed.includes(b.id)) d.recipes.push(clone(b)); }
+      if (k < 0) {
+        if (d.removed.includes(b.id)) return;
+        /* Recette déjà créée par l'utilisateur sous le même nom (une création reprise dans le catalogue) :
+           sa version devient la recette de départ, marquée comme modifiée, au lieu d'un doublon. */
+        const own = d.recipes.find(r => r.src !== 'builtin' && norm(r.name) === norm(b.name));
+        if (own) { renameRecipe(d, own.id, b.id); Object.assign(own, { src: 'builtin', edited: true }); if (!okPhoto(own.photo) && b.photo) { own.photo = b.photo; if (b.photoCredit) own.photoCredit = clone(b.photoCredit); } }
+        else d.recipes.push(clone(b));
+      }
       else if (d.recipes[k].src === 'builtin' && !d.recipes[k].edited) d.recipes[k] = clone(b);
-      else if (d.recipes[k].src === 'builtin' && !okPhoto(d.recipes[k].photo) && okPhoto(b.photo)) {
-        // Recette de départ modifiée par l'utilisateur mais sans photo : elle reçoit la photo ajoutée par une mise à jour (le reste de la recette ne change pas).
-        d.recipes[k].photo = b.photo;
-        if (b.photoCredit) d.recipes[k].photoCredit = clone(b.photoCredit); else delete d.recipes[k].photoCredit;
+      else if (d.recipes[k].src === 'builtin') {
+        /* Recette de départ modifiée par l'utilisateur : le reste de la recette ne change pas, mais la photo suit celle du catalogue
+           tant qu'elle vient du dossier photos/ (nouvelle photo, photo remplacée ou retirée, crédit mis à jour).
+           Une photo prise par l'utilisateur (enregistrée dans ses données) est conservée. */
+        const r = d.recipes[k];
+        const mine = okPhoto(r.photo) && !(typeof r.photo === 'string' && r.photo.startsWith('photos/'));
+        if (!mine) {
+          r.photo = b.photo || '';
+          if (b.photoCredit) r.photoCredit = clone(b.photoCredit); else delete r.photoCredit;
+        }
       }
       /* Lien de variante : une recette de départ déjà modifiée par l'utilisateur le reçoit tant qu'il ne l'a jamais touché.
          Une fois le formulaire enregistré, le champ existe toujours (vide si le lien a été retiré) et n'est plus remplacé. */
@@ -107,7 +129,11 @@ function upgrade(d) {
     // Préparations maison de départ : ajoutées, ou mises à jour tant qu'elles n'ont pas été modifiées ; une préparation supprimée ne revient pas.
     PREPS.forEach(b => {
       const k = d.preps.findIndex(x => x.id === b.id);
-      if (k < 0) { if (!d.prepsRemoved.includes(b.id)) d.preps.push(clone(b)); }
+      if (k < 0) {
+        if (d.prepsRemoved.includes(b.id)) return;
+        const own = d.preps.find(x => x.src !== 'builtin' && norm(x.name) === norm(b.name) && !PREPS.some(y => y.id === x.id));
+        if (own) Object.assign(own, { id: b.id, src: 'builtin', edited: true }); else d.preps.push(clone(b));
+      }
       else if (d.preps[k].src === 'builtin' && !d.preps[k].edited) d.preps[k] = clone(b);
     });
     // Vocabulaire : « shaker » plutôt que « secouer », y compris dans les recettes de départ déjà modifiées par l'utilisateur.
@@ -261,6 +287,8 @@ function garnIcon(key) {
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
 const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" data-rid="${esc(r.id)}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+/* Proportions réelles de chaque photo affichée (voir « Photos » dans app.css) : sert au cadrage paysage / portrait des photos en croix. */
+document.addEventListener('load', e => { const i = e.target; if (i && i.tagName === 'IMG' && i.naturalHeight) i.style.setProperty('--r', (i.naturalWidth / i.naturalHeight).toFixed(4)); }, true);
 /* Photo introuvable (fichier retiré de la version publique, ou hors ligne sans que la photo ait été mise en cache) : retour à l'illustration du verre. */
 document.addEventListener('error', e => {
   const i = e.target; if (!i || i.tagName !== 'IMG' || !i.dataset || !i.dataset.rid) return;
@@ -452,7 +480,7 @@ function renderCatalogue(m) {
       <label class="field" for="cf-tag"><span>Mood / tag</span><select id="cf-tag">${opts([['', 'Tous'], ...tags.map(x => [x, x])], UI.f.tag)}</select></label>
     </aside>
     <div class="cat-main">
-      <label class="search" for="cf-q">${SEARCH_ICON}<input id="cf-q" type="search" placeholder="Nom, ingrédient, tag, barman…" value="${esc(UI.q)}" autocomplete="off"></label>
+      <div class="cat-search"><label class="search" for="cf-q">${SEARCH_ICON}<input id="cf-q" type="search" placeholder="Nom, ingrédient, tag, barman…" value="${esc(UI.q)}" autocomplete="off"></label></div>
       <div class="seg" role="group" aria-label="Disponibilité">${[['all', 'Tous', all.length], ['ok', 'Réalisables', nOk], ['one', 'Manque 1', nOne]].map(([v, l, n]) => `<button data-act="avail" data-v="${v}" class="${UI.avail === v ? 'on' : ''}" aria-pressed="${UI.avail === v}">${l}<span class="n">${n}</span></button>`).join('')}</div>
       <div class="ctl-row">
         <button class="btn small btn-filters" data-act="toggle-filters" aria-expanded="${UI.filtersOpen}">Filtres<span id="nf-badge">${nf ? ` · ${nf}` : ''}</span></button>
@@ -678,7 +706,9 @@ function openIngInfo(id, keep) {
   sheetState = { type: 'ing', id };
   const inf = INFOS[id], have = ownedSet().has(id), abv = +i.abv || 0, st = keep ? sh.scrollTop : 0;
   const same = Object.keys(S.ings).filter(x => x !== id && !STAPLES.includes(x) && S.ings[x].cat === i.cat).sort((a, b) => S.ings[a].name.localeCompare(S.ings[b].name, 'fr'));
-  const mine = S.preps.filter(p => p.makes === id), nR = S.recipes.filter(r => ingMatch(r, id)).length;
+  const mine = S.preps.filter(p => p.makes === id), own = ownedSet();
+  const recs = S.recipes.filter(r => ingMatch(r, id)).sort(byRecName), nR = recs.length;
+  const LIM = 6, showAll = UI.ingMore === id || nR <= LIM + 2, shown = showAll ? recs : recs.slice(0, LIM);
   const place = [i.fam, i.sub].filter(Boolean).join(' › ');
   const block = (t, txt) => txt ? `<section class="sec"><h2>${t}</h2><p class="ing-txt">${esc(txt)}</p></section>` : '';
   sh.innerHTML = `
@@ -687,9 +717,10 @@ function openIngInfo(id, keep) {
     <header class="dhead"><p class="eyebrow"><span class="orig">${esc(place || 'Ingrédient')}</span></p><h1>${esc(i.name)}</h1></header>
     <dl class="facts"><div><dt>Degré d'alcool</dt><dd class="mono">${abv ? esc(fr(abv)) + ' % vol.' : 'Sans alcool'}</dd></div><div><dt>Groupe de substitution</dt><dd>${esc(i.cat)}</dd></div></dl>
     ${inf ? block('Origine', inf[0]) + block('Conservation', inf[1]) + block('Dans un cocktail', inf[2]) : `${block('Dans un cocktail', INFO_FAMILY[i.fam] || '')}<p class="hint">Pas de fiche détaillée : cet ingrédient a été ajouté à la main.</p>`}
+    ${nR ? `<section class="sec"><div class="shead"><h2>Les recettes</h2><span class="count">${nR}</span></div><div class="lrows">${shown.map(r => lrowHTML(r, own)).join('')}</div>
+      <div class="row-btns">${showAll ? '' : `<button class="btn" data-act="ing-more" data-id="${esc(id)}">Voir les ${nR - LIM} autres</button>`}${nR > 1 ? `<button class="btn ghost" data-act="ing-search" data-id="${esc(id)}">Filtrer le catalogue</button>` : ''}</div></section>` : ''}
     ${mine.length ? `<section class="sec"><h2>Recette maison</h2><div class="lrows">${mine.map(prepRow).join('')}</div></section>` : ''}
     ${same.length ? `<section class="sec"><h2>Peut se remplacer par</h2><p class="hint">Les ingrédients du même groupe de substitution, quand la recette l'accepte.</p><div class="chips">${same.map(x => `<button class="chip" data-act="ing-info" data-id="${esc(x)}">${esc(S.ings[x].name)}</button>`).join('')}</div></section>` : ''}
-    ${nR ? `<div class="row-btns"><button class="btn" data-act="ing-search" data-id="${esc(id)}">${nR === 1 ? 'Voir la recette' : `Voir les ${nR} recettes`}</button></div>` : ''}
   </article></div>`;
   showSheet(); sh.scrollTop = st;
   if (!keep) pushNav();
@@ -1449,7 +1480,7 @@ function openCrop(src) {
   const img = new Image();
   img.onload = () => {
     CROP.img = img; CROP.zoom = 1; $('#crop-zoom').value = 1; $('#crop-img').src = src; $('#crop').hidden = false; lockScroll();
-    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
+    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = /^photos\//.test(src) ? 0 : (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
   };
   img.onerror = () => toast('Image illisible. Formats conseillés : JPEG ou PNG.');
   img.src = src;
@@ -1627,6 +1658,7 @@ document.addEventListener('click', async e => {
     case 'f-ing-rm': UI.f.ings = UI.f.ings.filter(x => x !== id); renderCatalogue($('#view')); break;
     case 'f-ing-mode': UI.f.ingMode = b.dataset.v; renderCatalogue($('#view')); break;
     case 'go-ing': UI.f = F_DEFAULT(); UI.q = ''; UI.avail = 'all'; UI.filtersOpen = true; navView('catalogue'); setTimeout(() => { const i = $('#f-ing-i'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } }, 50); break;
+    case 'ing-more': UI.ingMore = b.dataset.id; openIngInfo(b.dataset.id, true); break;
     case 'ing-search': { /* on empile une entrée d'historique : « retour » ramène à la fiche d'où l'on vient */
       /* La fiche garde en mémoire les filtres d'avant ; l'entrée ajoutée porte ceux de l'ingrédient. Le retour les remet tels quels (cf. popstate). */
       const snap = () => ({ f: structuredClone(UI.f), q: UI.q, avail: UI.avail });
@@ -1863,8 +1895,73 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
 });
 
+/* ---------- suggestions des champs de saisie ----------
+   Les suggestions natives des <datalist> ignorent les accents selon les navigateurs (« pina » ne propose pas « Piña Colada »).
+   On garde les <datalist> comme source, mais on affiche nos propres suggestions, filtrées sans tenir compte des accents ni de la casse. */
+const AC = { inp: null, box: null, items: [], i: -1 };
+function acOptions(inp) {
+  const dl = document.getElementById(inp.dataset.acl);
+  return dl ? [...dl.options].map(o => o.value).filter(Boolean) : [];
+}
+function acClose() { if (AC.box) AC.box.remove(); AC.box = null; AC.items = []; AC.i = -1; if (AC.inp) AC.inp.setAttribute('aria-expanded', 'false'); }
+function acPlace() {
+  if (!AC.box || !AC.inp) return;
+  const r = AC.inp.getBoundingClientRect(), below = window.innerHeight - r.bottom;
+  Object.assign(AC.box.style, { left: r.left + 'px', width: Math.max(r.width, 200) + 'px' });
+  if (below < 220 && r.top > below) { AC.box.style.top = ''; AC.box.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+  else { AC.box.style.bottom = ''; AC.box.style.top = (r.bottom + 4) + 'px'; }
+}
+function acOpen(inp) {
+  const k = norm(inp.value);
+  const all = acOptions(inp);
+  if (!k) { acClose(); return; }
+  const words = k.split(/\s+/);
+  const hit = all.filter(v => { const n = norm(v); return words.every(w => n.includes(w)); });
+  const rank = v => { const n = norm(v); return n === k ? 0 : n.startsWith(k) ? 1 : n.split(/[^a-z0-9]+/).some(w => w.startsWith(words[0])) ? 2 : 3; };
+  const list = hit.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'fr')).slice(0, 8);
+  if (!list.length || (list.length === 1 && norm(list[0]) === k && list[0] === inp.value)) { acClose(); return; }
+  AC.inp = inp; AC.items = list; AC.i = -1;
+  if (!AC.box) { AC.box = document.createElement('ul'); AC.box.className = 'ac-box'; AC.box.id = 'ac-box'; AC.box.setAttribute('role', 'listbox'); document.body.appendChild(AC.box); }
+  AC.box.innerHTML = list.map((v, j) => `<li role="option" id="ac-${j}" data-j="${j}">${esc(v)}</li>`).join('');
+  inp.setAttribute('aria-expanded', 'true'); inp.setAttribute('aria-controls', 'ac-box');
+  acPlace();
+}
+function acMark() { if (!AC.box) return; [...AC.box.children].forEach((li, j) => li.classList.toggle('on', j === AC.i)); if (AC.inp) AC.inp.setAttribute('aria-activedescendant', AC.i >= 0 ? 'ac-' + AC.i : ''); }
+function acPick(j) {
+  const inp = AC.inp, v = AC.items[j]; if (!inp || v == null) return;
+  inp.value = v; acClose();
+  inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true }));
+  inp.focus();
+}
+// Un champ relié à une <datalist> passe sur nos suggestions au premier focus.
+document.addEventListener('focusin', e => {
+  const t = e.target;
+  if (t && t.tagName === 'INPUT' && t.hasAttribute('list')) { t.dataset.acl = t.getAttribute('list'); t.removeAttribute('list'); t.setAttribute('role', 'combobox'); t.setAttribute('aria-autocomplete', 'list'); t.setAttribute('autocomplete', 'off'); }
+}, true);
+document.addEventListener('input', e => { const t = e.target; if (t && t.dataset && t.dataset.acl && e.isTrusted) acOpen(t); }, true);
+document.addEventListener('keydown', e => {
+  if (!AC.box || e.target !== AC.inp) return;
+  const n = AC.items.length;
+  if (e.key === 'ArrowDown') { e.preventDefault(); AC.i = (AC.i + 1) % n; acMark(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); AC.i = (AC.i - 1 + n) % n; acMark(); }
+  else if (e.key === 'Enter' && AC.i >= 0) { e.preventDefault(); e.stopImmediatePropagation(); acPick(AC.i); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); acClose(); }
+  else if (e.key === 'Tab' && n && norm(AC.inp.value)) { if (AC.i < 0 && n === 1) acPick(0); else acClose(); }
+}, true);
+document.addEventListener('pointerdown', e => {
+  if (!AC.box) return;
+  const li = e.target.closest && e.target.closest('.ac-box li');
+  if (li) { e.preventDefault(); acPick(+li.dataset.j); return; }
+  if (e.target !== AC.inp) acClose();
+}, true);
+document.addEventListener('focusout', e => { if (e.target === AC.inp) setTimeout(() => { if (document.activeElement !== AC.inp) acClose(); }, 0); }, true);
+window.addEventListener('resize', acPlace);
+document.addEventListener('scroll', () => { if (AC.box) acPlace(); }, true);
+
+function syncTopbarH() { const t = document.querySelector('.topbar'); if (t) document.documentElement.style.setProperty('--topbar-h', t.offsetHeight + 'px'); }
+window.addEventListener('resize', syncTopbarH);
 new MutationObserver(enhanceSelects).observe(document.body, { childList: true, subtree: true });
 (async () => {
-  S = await load(); render(); enhanceSelects(); replaceNav();
+  S = await load(); render(); enhanceSelects(); replaceNav(); syncTopbarH();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { });
 })();

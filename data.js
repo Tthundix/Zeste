@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 23;
+const DATA_VERSION = 25;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -28,6 +28,7 @@ const INGREDIENTS = [
   ['calvados', 'Calvados', 'Eau-de-vie de pomme', 'Spiritueux', 'Brandy & cognac', 40],
   ['pisco', 'Pisco', 'Pisco', 'Spiritueux', 'Brandy & cognac', 40],
   ['grappa', 'Grappa', 'Grappa', 'Spiritueux', 'Brandy & cognac', 40],
+  ['kirsch', 'Kirsch', 'Kirsch', 'Spiritueux', 'Brandy & cognac', 40],
   ['gin', 'Gin London dry', 'Gin', 'Spiritueux', 'Gin', 40],
   ['gin-old-tom', 'Gin Old Tom', 'Gin', 'Spiritueux', 'Gin', 40],
   ['gin-contemporain', 'Gin contemporain', 'Gin', 'Spiritueux', 'Gin', 40],
@@ -142,6 +143,7 @@ const INGREDIENTS = [
   ['cranberry', 'Jus de cranberry', 'Cranberry', 'Jus & purées', '', 0],
   ['tomate', 'Jus de tomate', 'Tomate', 'Jus & purées', '', 0],
   ['pomme', 'Jus de pomme', 'Pomme', 'Jus & purées', '', 0],
+  ['jus-de-raisin', 'Jus de raisin', 'Raisin', 'Jus & purées', '', 0],
   ['pomme-fruit', 'Pommes', 'Pomme', 'Fruits & légumes', '', 0],
   ['grenade', 'Jus de grenade', 'Grenade', 'Jus & purées', '', 0],
   ['jus-canne', 'Jus de canne à sucre', 'Jus de canne', 'Jus & purées', '', 0],
@@ -1104,8 +1106,16 @@ RECIPES.push(
       ['Congeler les pommes en morceaux quelques heures.', 'Blender tous les ingrédients hormis l’eau gazeuse avec des glaçons.', 'Si le mixage bloque, rajouter un peu d’eau gazeuse.', 'Servir dans un verre frais avec une paille large ou une cuillère.'],
       'Si vous n’êtes pas amateur d’amaretto ou n’en possédez pas, seulement du pastis fonctionne aussi.'),
     { origin: 'Original', by: 'other', author: 'Zeste', subtitle: 'Pastis, pomme & amande' }
+  ),
+  Object.assign(
+    R('red-negronito', 'Red Negronito', 'V', 'Old fashioned', 'zest-orange', '', '', '#E2232E', '30302', 'Apéritif,Floral',
+      [['pastis', 20], ['amaretto', 30], ['limoncello', 20], ['tonic', 10, 'ml', { tip: 'Tonic méditerranéen' }], ['jus-de-raisin', 10], ['angostura', 2, 'trait', 'o']],
+      ['Mélanger le pastis, l’amaretto, le limoncello et le bitter sur glace.', 'Servir dans un verre old fashioned sur glace.', 'Ajouter un peu de jus de raisin pour adoucir et du tonic pour accentuer le profil.', 'Exprimer un zeste d’orange.']),
+    { origin: 'Original', by: 'other', author: 'Zeste', subtitle: 'Pastis, amaretto & limoncello' }
   )
 );
+/* Quantité « de 10 à 20 ml » pour le tonic du Red Negronito. */
+RECIPES.find(r => r.id === 'red-negronito').ings[3].qty2 = 20;
 
 /* Retouches de recettes du catalogue (appliquées après leur définition). */
 const RECIPE_EDITS = {
@@ -1179,35 +1189,103 @@ const RECIPE_EDITS = {
   'berry-blast': {
     flavor: {"su": 4, "ac": 2, "am": 0, "as": 2, "fo": 0},
     steps: ["Écraser les framboises au fond du shaker avec le jus de citron.", "Ajouter le reste des ingrédients et shaker avec des glaçons.", "Filtrer dans un verre rempli de glace et décorer."]
+  },
+  'bramble': {
+    flavor: {"su": 3, "ac": 2, "am": 0, "as": 1, "fo": 2},
+    note: "Pour plus de fruits rouges, remplacer le sirop de sucre par du sirop de fraise par exemple.",
+    source: "Dick Bradsell, Fred's Club (Soho, London), 1984"
+  },
+  'boulevardier': {
+    note: "Se sert aussi sur glace dans un Old Fashioned comme un Negroni.",
+    source: "Erskine Gwynne, Barflies and Cocktails (1927)"
+  },
+  'brandy-crusta': {
+    flavor: {"su": 2, "ac": 1, "am": 1, "as": 1, "fo": 4},
+    steps: ["Givrer le bord d’un petit verre à pied avec du sucre, puis y placer un long zeste de citron.", "Remuer tous les ingrédients avec des glaçons dans un verre à mélange.", "Filtrer dans le verre préparé."],
+    note: "Idéalement, il est préférable de préparer à l'avance le verre et de le laisser reposer quelques heures afin que le sucre cristallise avec le zeste afin de réellement former une extension étanche au verre. Le passer ensuite un peu au frais avant de servir.\nPour bien réaliser le tour en zeste de citron : trouvez un citron faisant la bonne circonférence, puis découpez une rondelle de quelques cm avant de détacher la pulpe du bord et de déposer la peau dans le verre.",
+    source: "Joseph Santini, Jewel of the South (New Orleans), 1850s",
+    easy: false
+  },
+  'dry-martini': {
+    name: "(Dry) Martini"
+  },
+  'black-russian': {
+    source: "Gustave Tops, Hotel Metropole (Brussels, Belgium), 1949"
+  },
+  'bloody-mary': {
+    source: "Fernand Petiot, New York Bar (Paris), 1921"
+  },
+  'arnold-palmer': {
+    ings: [{"id": "the-noir", "qty": 120, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "limonade", "qty": 120, "unit": "ml", "sub": false, "opt": false, "alts": [], "tip": "Gazeuse"}],
+    steps: ["Infuser un thé noir et le laisser refroidir.", "Verser dans un verre rempli de glaçons la limonade puis le thé."],
+    note: "Nommé d’après le golfeur Arnold Palmer, qui le commandait avec 75 % de thé plutôt que les 50 % de la version populaire."
+  },
+  'agua-jamaica': {
+    source: "",
+    url: ""
+  },
+  'bobby-burns': {
+    flavor: {"su": 1, "ac": 0, "am": 2, "as": 1, "fo": 5},
+    ings: [{"id": "scotch", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": ["whiskey-irlandais"]}, {"id": "vermouth-rouge", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "benedictine", "qty": 1, "unit": "c. de bar", "sub": false, "opt": false, "alts": []}],
+    note: "La version de base est l'original, le \"Baby Burns\", tandis que la version au whiskey irlandais est historiquement le \"Robert Burns\", issu du Jack's Manual de 1908.",
+    source: "Fancy Drinks, publié par Bishop & Babcock sous le nom \"Baby Burns\", 1900",
+    subtitle: "Baby Burns, Robert Burns"
+  },
+  'blood-and-sand': {
+    flavor: {"su": 3, "ac": 0, "am": 1, "as": 0, "fo": 3},
+    note: "Nommé d’après le film de 1922 avec Rudolph Valentino.\nAjouter un peu de jus de citron si le résultat est trop sucré.",
+    source: "Savoy Cocktail Book, 1930"
+  },
+  'blue-lagoon': {
+    origin: "Classique",
+    by: "",
+    author: "",
+    garn: "wheel-lime",
+    note: "Si le résultat est trop sucré, ajouter un peu de jus de citron vert.\nVous pouvez utiliser ou non de la limonade gazeuse à votre convenance.\nPour plus de profondeur et toujours une belle couleur, vous pouvez ajouter quelques traits de liqueur de fruits rouges.",
+    source: "Andy MacElhone, Harry’s New York Bar (Paris), 1960s"
+  },
+  'blue-hawaiian': {
+    origin: "Classique",
+    by: "",
+    author: "",
+    method: "Shaker",
+    ings: [{"id": "rhum-blanc", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "curacao-bleu", "qty": 40, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "creme-coco", "qty": 22.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ananas", "qty": 90, "unit": "ml", "sub": false, "opt": false, "alts": [], "tip": "Fraichement pressé"}, {"id": "citron-vert", "qty": 7.5, "unit": "ml", "sub": false, "opt": false, "alts": [], "qty2": 15}],
+    steps: ["Shaker tous les ingrédients avec de la glace.", "Verser dans un grand verre avec de la glace pilée et décorer d’ananas et d’une cerise."],
+    note: "Vous pouvez en faire une version glacée en mixant tous les ingrédients avec de la glace au lieu de shaker.\nIl existe de nombreuses variantes, utilisant par exemple de la liqueur de noix de coco (John deBary) ou un mélange Rhum/Vodka (Blue Hawaii et Erick Castro).",
+    source: "Harry Yee, Hilton Hawaiian Village (Honolulu), 1957"
+  },
+  'breakfast-martini': {
+    flavor: {"su": 2, "ac": 3, "am": 1, "as": 1, "fo": 4}
+  },
+  'brown-derby': {
+    flavor: {"su": 3, "ac": 3, "am": 2, "as": 1, "fo": 3}
   }
 };
 Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
+/* Le kirsch, sec et marqué par le noyau, est le meilleur remplaçant du marasquin (avec un trait de sirop pour le sucre). */
+RECIPES.forEach(r => r.ings.forEach(i => { if (i.id === 'marasquin' && !i.alts.includes('kirsch')) i.alts = [...i.alts, 'kirsch']; }));
 
-/* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
+/* Photos des recettes : fichiers du dossier photos/ (JPEG, 800 px de large).
+   Format « en croix » : les 600 px du haut forment le cadrage paysage (4:3) ; la colonne centrale (x de 100 à 700),
+   sur toute la hauteur (jusqu'à 800 px), forme le cadrage portrait (3:4). Les coins du bas, hors des deux cadrages, sont unis.
+   Une photo 800 × 600 classique reste valable. L'affichage choisit le cadrage selon la forme du cadre (voir app.css).
    Une recette sans entrée garde l'illustration du verre. */
 const PHOTOS = {
-  'bamboo': 'photos/bamboo.jpg',
   'bandung': 'photos/bandung.jpg',
   'barracuda': 'photos/barracuda.jpg',
-  'batanga': 'photos/batanga.jpg',
   'between-the-sheets': 'photos/between-the-sheets.jpg',
   'bijou': 'photos/bijou.jpg',
-  'bitter-giuseppe': 'photos/bitter-giuseppe.jpg',
   'calisson': 'photos/calisson.jpg',
   'la-ruche': 'photos/la-ruche.jpg',
   'le-verger': 'photos/le-verger.jpg',
   'mauresque-pomme': 'photos/mauresque-pomme.jpg',
   'adonis': 'photos/adonis.jpg',
-  'agua-jamaica': 'photos/agua-jamaica.jpg',
-  'agua-limon-chia': 'photos/agua-limon-chia.jpg',
   'agua-pepino': 'photos/agua-pepino.jpg',
   'agua-pina': 'photos/agua-pina.jpg',
   'agua-sandia': 'photos/agua-sandia.jpg',
-  'agua-tamarindo': 'photos/agua-tamarindo.jpg',
   'aguapanela': 'photos/aguapanela.jpg',
   'air-mail': 'photos/air-mail.jpg',
   'alexander': 'photos/alexander.jpg',
-  'algonquin': 'photos/algonquin.jpg',
   'amaretto-sour': 'photos/amaretto-sour.jpg',
   'americano': 'photos/americano.jpg',
   'angel-face': 'photos/angel-face.jpg',
@@ -1219,6 +1297,13 @@ const PHOTOS = {
   'bellini': 'photos/bellini.jpg',
   'black-russian': 'photos/black-russian.jpg',
   'bloody-mary': 'photos/bloody-mary.jpg',
+  'black-manhattan': 'photos/black-manhattan.jpg',
+  'blue-hawaiian': 'photos/blue-hawaiian.jpg',
+  'blue-lagoon': 'photos/blue-lagoon.jpg',
+  'boulevardier': 'photos/boulevardier.jpg',
+  'brandy-crusta': 'photos/brandy-crusta.jpg',
+  'breakfast-martini': 'photos/breakfast-martini.jpg',
+  'brown-derby': 'photos/brown-derby.jpg',
   'bramble': 'photos/bramble.jpg',
   'caipirinha': 'photos/caipirinha.jpg',
   'clover-club': 'photos/clover-club.jpg',
@@ -1257,15 +1342,37 @@ RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 /* Crédits des photos sous licence libre (CC BY, CC BY-SA…), à renseigner pour toute photo qui n'est pas de Zeste :
    { 'id-recette': { by: 'Auteur', lic: 'CC BY-SA 4.0', url: 'https://…page du fichier…' } }. Le crédit s'affiche sous la photo. */
 const PHOTO_CREDITS = {
-  'adonis': { by: 'Cocktailmarler' },
-  'agua-pepino': { by: 'Piloncillo y Vainilla', lic: 'Tous droits réservés', url: 'https://piloncilloyvainilla.com/' },
-  'angel-face': { by: 'Tyler Zieliniski' },
-  'aviation': { by: 'Ahtziri Lagarde' },
-  'ayran': { by: 'Ika Rahma', lic: 'iStock (Getty Images)', url: 'https://www.istockphoto.com/photo/license-gm1646322276-' },
-  'bees-knees': { by: 'Daniel Neuhaus' },
-  'black-russian': { by: 'Mae Mu' },
-  'bloody-mary': { by: 'Margaret Jaszowska' },
-  'bramble': { by: 'David Foodphototasty' },
+  'adonis': { by: 'Cocktailmarler', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Adonis_Cocktail.JPG' },
+  'agua-pepino': { by: 'T.Tseng', lic: 'CC BY 2.0', url: 'https://www.flickr.com/photos/68147320@N02/30255982132/' },
+  'agua-pina': { by: 'Whitney', lic: 'CC BY 2.0', url: 'https://flic.kr/p/8nwAXr' },
+  'aguapanela': { by: 'Aleat88', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Agua_dulce_con_lim%C3%B3n.png' },
+  'agua-sandia': { by: 'Joy', lic: 'CC BY 2.0', url: 'https://the-cooking-of-joy.blogspot.com/2014/07/watermelon-agua-fresca-and-popsicles.html' },
+  'air-mail': { by: 'Matthias Friedlein', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Air_Mail_Cocktail.png' },
+  'alexander': { by: 'Jason Lam', lic: 'CC BY-SA 2.0', url: 'https://www.mightysweet.com/2008/10/17/take-on-me/' },
+  'amaretto-sour': { by: 'Poul Hoang', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gros-plan-dun-verre-sur-une-table-1Q1XtVgzo0I' },
+  'americano': { by: 'popvoid', lic: 'CC BY 2.0', url: 'https://flic.kr/p/2kZyvmo' },
+  'angel-face': { by: 'Bruce The Deus', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Angel_Face_cocktail_-_martini_glass_(italy,_2023).png' },
+  'spritz': { by: 'Viacheslav Shatunov', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-rafraichissant-avec-des-fruits-et-de-la-glace-hu69KCZgBiw' },
+  'apfelschorle': { by: 'Richard Wang', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-pomme-et-un-verre-de-liquide-sur-une-table-k7yKyGgGSsw' },
+  'arnold-palmer': { by: 'Misunderstood Whiskey', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-du-jus-dorange-zW5xki2fvcw' },
+  'aviation': { by: 'Ahtziri Lagarde', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-avec-une-paille-et-un-verre-avec-de-la-creme-glacee-dedans-t-sVvlwHUh0' },
+  'ayran': { by: 'Tomislav Medak', lic: 'CC BY 2.0', url: 'https://flic.kr/p/8AAP1U' },
+  'bandung': { by: 'Kyle Lam', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Bandung_Drinks.jpg' },
+  'barracuda': { by: 'Pippo Tocci', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Barracuda_Sparkling_Cocktail.png' },
+  'bees-knees': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://bevvy.co/cocktail/bees-knees/visy' },
+  'bellini': { by: 'Bruce the Deus', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Bellini_cocktail_in_a_flute-glass.png' },
+  'between-the-sheets': { by: 'Zach', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Between_The_Sheets_Cocktail.jpg' },
+  'bijou': { by: 'Edsel Little', lic: 'CC BY-SA 2.0', url: 'https://flic.kr/p/BodetG' },
+  'black-manhattan': { by: 'Emily Andreeva', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-vin-transparent-avec-liquide-brun-sur-la-table-BuuQJ3QxZ_A' },
+  'black-russian': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:Black_Russian.jpg' },
+  'bloody-mary': { by: 'Adrian Infernus', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-rouge-surmontee-dune-feuille-verte-r_DjmPeiXo8' },
+  'blue-hawaiian': { by: 'Mohrez Labaf', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gobelet-en-verre-transparent-sur-surface-noire-iyY_HcxDJa0' },
+  'blue-lagoon': { by: 'Oliver Esquivel', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-bleue-vibrante-avec-un-quartier-de-citron-vert-frais-H0MaHemMxdU' },
+  'boulevardier': { by: 'Edsel Little', lic: 'CC BY-SA 2.0', url: 'https://flic.kr/p/qCrpJ7' },
+  'bramble': { by: 'Erich Wagner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Bramble_Cocktail.jpg' },
+  'brandy-crusta': { by: 'Ralf Roletschek', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:15-09-26-RalfR-WLC-0306.jpg' },
+  'breakfast-martini': { by: 'popvoid', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Breakfast_Martini.jpg' },
+  'brown-derby': { by: 'Steven Guzzardi', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/rTUVeP' },
   'caipirinha': { by: 'Leighann Blackwood' },
   'clover-club': { by: 'Ferals Studio' },
   'daiquiri': { by: 'Marta Smith' },
@@ -1304,8 +1411,37 @@ const PUBLIC_RELEASE = false;
    Une photo absente de cette liste est non vérifiée : elle n'apparaît pas en version publique.
    Ne marquer 'ok' qu'après avoir vérifié la licence sur la page source de l'image. */
 const PHOTO_STATUS = {
-  'agua-pepino': 'test',  // Tous droits réservés
-  'ayran': 'test'         // iStock (Getty Images), photo sous licence payante
+  'adonis': 'ok',
+  'agua-pepino': 'ok',
+  'agua-pina': 'ok',
+  'agua-sandia': 'ok',
+  'aguapanela': 'ok',
+  'air-mail': 'ok',
+  'alexander': 'ok',
+  'amaretto-sour': 'ok',
+  'americano': 'ok',
+  'angel-face': 'ok',
+  'spritz': 'ok',
+  'apfelschorle': 'ok',
+  'arnold-palmer': 'ok',
+  'aviation': 'ok',
+  'ayran': 'ok',
+  'bandung': 'ok',
+  'barracuda': 'ok',
+  'bees-knees': 'ok',
+  'bellini': 'ok',
+  'between-the-sheets': 'ok',
+  'bijou': 'ok',
+  'black-manhattan': 'ok',
+  'black-russian': 'ok',
+  'bloody-mary': 'ok',
+  'blue-hawaiian': 'ok',
+  'blue-lagoon': 'ok',
+  'boulevardier': 'ok',
+  'bramble': 'ok',
+  'brandy-crusta': 'ok',
+  'breakfast-martini': 'ok',
+  'brown-derby': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
@@ -1313,6 +1449,8 @@ if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== '
 /* Variantes : { id de la variante: id de la recette de base }. Seuls les cas évidents sont liés.
    Le lien est un champ de la recette (`parent`), modifiable dans le formulaire comme les autres. */
 const PARENTS = {
+  'red-negronito': 'negroni',
+  'espresso-martini': 'dry-martini', 'french-martini': 'dry-martini', 'lemon-drop': 'dry-martini', 'blue-hawaiian': 'pina-colada', 'porn-star-martini': 'dry-martini', 'breakfast-martini': 'dry-martini',
   'rum-old-fashioned': 'old-fashioned', 'oaxaca-old-fashioned': 'old-fashioned',
   'tommys-margarita': 'margarita',
   'strawberry-daiquiri': 'daiquiri', 'hemingway-special': 'daiquiri',
@@ -1426,8 +1564,8 @@ const COLLECTIONS = [
   { id: 'cocktails-zeste', group: 'Sélections Zeste', name: 'Cocktails Zeste', curator: 'Sélection Zeste', desc: 'Les créations originales de Zeste, imaginées et testées pour l’appli.', filter: isZeste },
   { id: 'anisee', group: 'Sélections Zeste', name: 'La collection anisée', curator: 'Sélection Zeste', desc: 'Des créations originales à base de pastis : herbes, miel, pomme et glace pilée.',
     blocks: [
-      { type: 'text', title: 'Le pastis autrement', text: 'Le pastis ne se limite pas au verre d’eau fraîche. Son anis et sa réglisse s’accordent avec le miel, les fruits blancs et l’amertume d’un bitter. Ces quatre recettes sont des créations Zeste.\n\nLes pastis diffèrent par leur dosage de réglisse et d’herbes : n’hésitez pas à comparer plusieurs marques.' },
-      { type: 'recipes', title: 'Les créations', cols: 3, ids: ['la-ruche', 'le-verger', 'mauresque-pomme', 'calisson'] },
+      { type: 'text', title: 'Le pastis autrement', text: 'Le pastis ne se limite pas au verre d’eau fraîche. Son anis et sa réglisse s’accordent avec le miel, les fruits blancs et l’amertume d’un bitter. Ces recettes sont des créations Zeste.\n\nLes pastis diffèrent par leur dosage de réglisse et d’herbes : n’hésitez pas à comparer plusieurs marques.' },
+      { type: 'recipes', title: 'Les créations', cols: 3, ids: ['la-ruche', 'le-verger', 'mauresque-pomme', 'calisson', 'red-negronito'] },
       { type: 'tip', text: 'Le pastis se marie très bien avec le froid : servir bien glacé, avec beaucoup de glaçons, et ne pas hésiter à ajouter quelques traits de bitter.' }
     ] },
 ];
@@ -1453,10 +1591,10 @@ const PREPS = [
     [['sucre-blanc', 400, 'g'], ['eau', 200, 'ml']],
     ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le sucre en une fois et remuer jusqu\'à dissolution complète (cela peut prendre quelques minutes).', 'Laisser refroidir, puis mettre en bouteille.'],
     'Au réfrigérateur : environ 1 mois, souvent plus car il est très concentré.', 'Deux poids de sucre pour un volume d\'eau : plus sucré et plus onctueux que le 1:1. Pour remplacer 1 mesure de sirop 1:1, en utiliser environ la moitié.', 'Formule classique de bar'),
-  P('prep-sirop-miel', 'Sirop de miel', 'sirop-miel', 'Sirops & cordials', 200,
-    [['miel', 150, 'g'], ['eau', 100, 'ml']],
+  P('prep-sirop-miel', 'Sirop de miel', 'sirop-miel', 'Sirops & cordials', 400,
+    [['miel', 100, 'ml'], ['eau', 300, 'ml']],
     ["Chauffer l'eau sans la porter à ébullition.", 'Hors du feu, ajouter le miel et remuer jusqu\'à obtenir un liquide homogène.', 'Laisser refroidir, puis mettre en bouteille.'],
-    'Au réfrigérateur : environ 1 mois.', 'Le miel seul est trop épais pour se mélanger à froid dans un shaker : le diluer le rend facile à doser.', 'Formule classique de bar'),
+    'Au réfrigérateur : environ 1 mois.', "Le miel seul est trop difficile à doser. De plus, il cristallise au contact du froid et se figerait donc dans votre shaker ou verre.", 'Formule classique de bar'),
   P('prep-sirop-rose', 'Sirop de rose', 'sirop-rose', 'Sirops & cordials', 1000,
     [['sucre-blanc', 600, 'g'], ['eau', 600, 'ml'], ['roses', 20, ''], ['citron', 1, 'c. à soupe']],
     ['Ajouter les pétales de rose, séparés de leurs boutons, à l’eau dans une casserole.', 'Faire chauffer l’eau autour de 30 °C. L’eau doit être tiède au toucher, sans bulle au fond.', 'Ajouter le sucre une fois la température atteinte en retirant du feu.', 'Ajouter le jus de citron afin de favoriser la conservation.', 'Laisser reposer au moins toute une nuit à couvert.', 'Filtrer dans un contenant hermétique.'],
@@ -1500,5 +1638,9 @@ const PREPS = [
   P('prep-vodka-citron', 'Vodka infusée au citron', 'vodka-citron', 'Spiritueux infusés', 700,
     [['vodka', 700, 'ml'], ['citron-entier', 3, 'pièce']],
     ['Prélever les zestes de citrons non traités, sans la partie blanche.', 'Les plonger dans la vodka et laisser infuser 3 à 5 jours à l\'abri de la lumière.', 'Filtrer et remettre en bouteille.'],
-    'Plusieurs mois, à l\'abri de la lumière.', 'Les zestes laissés trop longtemps rendent l\'amertume : goûter à partir du troisième jour.', 'Formule classique de bar')
+    'Plusieurs mois, à l\'abri de la lumière.', 'Les zestes laissés trop longtemps rendent l\'amertume : goûter à partir du troisième jour.', 'Formule classique de bar'),
+  {"id": "prep-creme-coco", "name": "Crème de coco sucrée", "kind": "Autres", "color": "#E8F1F2", "makes": "creme-coco", "batch": {"ml": 1000}, "ings": [{"id": "lait-coco", "qty": 530, "unit": "ml", "sub": false, "opt": false, "alts": [], "tip": "Entier (>15 % MG)"}, {"id": "sucre-blanc", "qty": 530, "unit": "g", "sub": false, "opt": false, "alts": []}, {"id": "sel", "qty": 1, "unit": "pincée", "sub": false, "opt": false, "alts": [], "qty2": 2}], "steps": ["Combiner les ingrédients dans une poêle à feu moyen jusqu'à dissolution du sucre."], "keep": "Au réfrigérateur : 1 mois", "note": "", "source": "Zeste", "src": "builtin"},
+  {"id": "prep-limonade", "name": "Limonade", "kind": "Sirops & cordials", "color": "#ffeb8a", "makes": "limonade", "batch": {"ml": 600}, "ings": [{"id": "eau", "qty": 400, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 100, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron", "qty": 100, "unit": "ml", "sub": false, "opt": false, "alts": []}], "steps": ["Mélanger tous les ingrédients entre eux."], "keep": "", "note": "Pour une version gazeuse, remplacer la moitié de l'eau plate par de l'eau gazeuse et mélanger doucement.", "source": "Zeste", "src": "builtin"}
 ];
+/* Couleurs de préparations choisies dans l'appli. */
+[['prep-sirop-miel', '#D98A2B'], ['prep-puree-peche', '#f1d6ac']].forEach(([id, c]) => { const x = PREPS.find(p => p.id === id); if (x) x.color = c; });
