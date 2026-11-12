@@ -37,13 +37,13 @@ Les appareils qui ont déjà l'appli affichent alors « Une nouvelle version de 
 
 Fichiers JPEG de 800 px de large dans `photos/`, nommés d'après l'id de la recette (`photos/french-75.jpg`), déclarés dans `PHOTOS` (`data.js`).
 
-Format « en croix », pour un seul fichier par recette quel que soit l'affichage :
+Format « en croix », centré sur le verre, pour un seul fichier par recette quel que soit l'affichage :
 
-- les **600 px du haut**, sur toute la largeur : cadrage paysage (4:3), utilisé par le catalogue et la fiche recette ;
-- la **colonne centrale** (x de 100 à 700), sur toute la hauteur (600 à 800 px) : cadrage portrait (3:4), utilisé par les cartes de l'accueil ; il montre le bas du verre que le paysage coupe ;
-- les **deux coins du bas** ne servent à aucun cadrage : couleur unie, qui ne pèse presque rien.
+- la **bande centrale de 600 px de haut**, sur toute la largeur : cadrage paysage (4:3), utilisé par le catalogue et la fiche recette ;
+- la **colonne centrale**, large des 3/4 de la hauteur de l'image, sur toute la hauteur (600 à 1000 px) : cadrage portrait (3:4), utilisé par les cartes de l'accueil ;
+- les **quatre coins** ne servent à aucun cadrage : couleur unie, qui ne pèse presque rien.
 
-Le haut du verre doit toujours être dans les 600 px du haut : les cadres sont ancrés en haut et ne coupent jamais le haut de l'image. Une photo 800 × 600 classique fonctionne aussi (le portrait prend alors la bande centrale).
+Les deux cadrages ont le même centre, placé sur le verre : chaque cadre de l'appli (4:3, 16:9, 3:4, carré) reste centré sur lui. Une photo 800 × 600 classique fonctionne aussi.
 
 ## Photos et licences
 
