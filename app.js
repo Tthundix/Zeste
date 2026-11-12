@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.38.1';
+const APP_VERSION = '0.39.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -287,6 +287,8 @@ function garnIcon(key) {
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
 const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" data-rid="${esc(r.id)}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+/* Proportions réelles de chaque photo affichée (voir « Photos » dans app.css) : sert au cadrage paysage / portrait des photos en croix. */
+document.addEventListener('load', e => { const i = e.target; if (i && i.tagName === 'IMG' && i.naturalHeight) i.style.setProperty('--r', (i.naturalWidth / i.naturalHeight).toFixed(4)); }, true);
 /* Photo introuvable (fichier retiré de la version publique, ou hors ligne sans que la photo ait été mise en cache) : retour à l'illustration du verre. */
 document.addEventListener('error', e => {
   const i = e.target; if (!i || i.tagName !== 'IMG' || !i.dataset || !i.dataset.rid) return;
@@ -1478,7 +1480,7 @@ function openCrop(src) {
   const img = new Image();
   img.onload = () => {
     CROP.img = img; CROP.zoom = 1; $('#crop-zoom').value = 1; $('#crop-img').src = src; $('#crop').hidden = false; lockScroll();
-    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
+    requestAnimationFrame(() => { const f = $('#crop-frame'); CROP.W = f.clientWidth; CROP.H = f.clientHeight; CROP.s0 = Math.max(CROP.W / img.naturalWidth, CROP.H / img.naturalHeight); CROP.s = CROP.s0; CROP.x = (CROP.W - img.naturalWidth * CROP.s) / 2; CROP.y = /^photos\//.test(src) ? 0 : (CROP.H - img.naturalHeight * CROP.s) / 2; drawCrop(); });
   };
   img.onerror = () => toast('Image illisible. Formats conseillés : JPEG ou PNG.');
   img.src = src;

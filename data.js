@@ -1265,7 +1265,10 @@ Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === i
 /* Le kirsch, sec et marqué par le noyau, est le meilleur remplaçant du marasquin (avec un trait de sirop pour le sucre). */
 RECIPES.forEach(r => r.ings.forEach(i => { if (i.id === 'marasquin' && !i.alts.includes('kirsch')) i.alts = [...i.alts, 'kirsch']; }));
 
-/* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
+/* Photos des recettes : fichiers du dossier photos/ (JPEG, 800 px de large).
+   Format « en croix » : les 600 px du haut forment le cadrage paysage (4:3) ; la colonne centrale (x de 100 à 700),
+   sur toute la hauteur (jusqu'à 800 px), forme le cadrage portrait (3:4). Les coins du bas, hors des deux cadrages, sont unis.
+   Une photo 800 × 600 classique reste valable. L'affichage choisit le cadrage selon la forme du cadre (voir app.css).
    Une recette sans entrée garde l'illustration du verre. */
 const PHOTOS = {
   'bandung': 'photos/bandung.jpg',

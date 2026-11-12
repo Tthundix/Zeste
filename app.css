@@ -254,7 +254,14 @@ input[type=radio]{accent-color:var(--accent)}
 .card:hover{border-color:var(--muted);transform:translateY(-2px)}
 .cv{position:relative;overflow:hidden;aspect-ratio:4/3;max-width:100%;background:var(--surface-2);background:color-mix(in srgb,var(--c) 18%,var(--surface-2));display:grid;place-items:center;color:var(--fg)}
 .cv .glass{height:84%;width:auto}
-.cv img,.dhero img,.photo-prev img,.lthumb img,.mosaic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* Photos : celles du catalogue sont « en croix » (800 px de large, 600 à 800 de haut) : les 600 px du haut forment le cadrage paysage,
+   la colonne centrale (3/4 de la largeur) le cadrage portrait ; les coins du bas ne servent à rien. --r = largeur / hauteur de l'image,
+   renseigné au chargement. On calcule la plus petite taille qui couvre le cadre sans sortir de l'une des deux zones :
+   ancrée en haut, la photo ne coupe jamais le haut du verre. Une photo 4:3 (prise dans l'appli) s'affiche comme un « cover » ancré en haut. */
+.cv,.dhero,.photo-prev,.lthumb,.mosaic>span,.moment-v{container-type:size}
+.cv img,.dhero img,.photo-prev img,.lthumb img,.mosaic img,.moment-v img{position:absolute;inset:auto;top:0;left:50%;transform:translateX(-50%);max-width:none;height:auto;object-fit:fill;display:block;
+  width:min(max(100cqw,133.334cqh),max(calc(133.334cqw * var(--r,1.3334)),calc(100cqh * var(--r,1.3334))))}
+@supports not (width:1cqw){.cv img,.dhero img,.photo-prev img,.lthumb img,.mosaic img,.moment-v img{inset:0;left:0;transform:none;width:100%;height:100%;object-fit:cover;object-position:50% 0}}
 .pill{position:absolute;top:8px;left:8px;font:600 11px var(--font-body);padding:3px 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
 .pill.ok{background:var(--ok);border-color:var(--ok);color:var(--surface)}
 .pill.sub{color:var(--ok);border-color:var(--ok)}
@@ -559,7 +566,7 @@ input[type=radio]{accent-color:var(--accent)}
 .moment{display:grid;grid-template-columns:1fr;gap:0;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
 .moment-v{appearance:none;border:0;padding:0;cursor:pointer;position:relative;overflow:hidden;aspect-ratio:16/10;display:grid;place-items:center;background:var(--surface-2);background:color-mix(in srgb,var(--c) 24%,var(--surface-2));color:var(--fg)}
 .moment-v .glass{height:84%;width:auto}
-.moment-v img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
 .moment-t{display:flex;flex-direction:column;gap:10px;padding:18px 18px 20px;min-width:0}
 .moment-t .eyebrow{color:var(--accent)}
 .moment-t h1{font-family:var(--font-display);font-weight:800;font-size:clamp(44px,12vw,76px);line-height:.9;text-transform:uppercase;margin:0;text-wrap:balance}
