@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 24;
+const DATA_VERSION = 25;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -28,6 +28,7 @@ const INGREDIENTS = [
   ['calvados', 'Calvados', 'Eau-de-vie de pomme', 'Spiritueux', 'Brandy & cognac', 40],
   ['pisco', 'Pisco', 'Pisco', 'Spiritueux', 'Brandy & cognac', 40],
   ['grappa', 'Grappa', 'Grappa', 'Spiritueux', 'Brandy & cognac', 40],
+  ['kirsch', 'Kirsch', 'Kirsch', 'Spiritueux', 'Brandy & cognac', 40],
   ['gin', 'Gin London dry', 'Gin', 'Spiritueux', 'Gin', 40],
   ['gin-old-tom', 'Gin Old Tom', 'Gin', 'Spiritueux', 'Gin', 40],
   ['gin-contemporain', 'Gin contemporain', 'Gin', 'Spiritueux', 'Gin', 40],
@@ -1261,6 +1262,8 @@ const RECIPE_EDITS = {
   }
 };
 Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
+/* Le kirsch, sec et marqué par le noyau, est le meilleur remplaçant du marasquin (avec un trait de sirop pour le sucre). */
+RECIPES.forEach(r => r.ings.forEach(i => { if (i.id === 'marasquin' && !i.alts.includes('kirsch')) i.alts = [...i.alts, 'kirsch']; }));
 
 /* Photos des recettes : fichiers du dossier photos/ (4:3, 800 × 600, JPEG).
    Une recette sans entrée garde l'illustration du verre. */
@@ -1275,6 +1278,7 @@ const PHOTOS = {
   'mauresque-pomme': 'photos/mauresque-pomme.jpg',
   'adonis': 'photos/adonis.jpg',
   'agua-pepino': 'photos/agua-pepino.jpg',
+  'agua-pina': 'photos/agua-pina.jpg',
   'agua-sandia': 'photos/agua-sandia.jpg',
   'aguapanela': 'photos/aguapanela.jpg',
   'air-mail': 'photos/air-mail.jpg',
@@ -1337,8 +1341,8 @@ RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 const PHOTO_CREDITS = {
   'adonis': { by: 'Cocktailmarler', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Adonis_Cocktail.JPG' },
   'agua-pepino': { by: 'T.Tseng', lic: 'CC BY 2.0', url: 'https://www.flickr.com/photos/68147320@N02/30255982132/' },
+  'agua-pina': { by: 'Whitney', lic: 'CC BY 2.0', url: 'https://flic.kr/p/8nwAXr' },
   'agua-sandia': { by: 'Joy', lic: 'CC BY 2.0', url: 'https://the-cooking-of-joy.blogspot.com/2014/07/watermelon-agua-fresca-and-popsicles.html' },
-  'aguapanela': { by: 'Mappa Stellae', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Aguapanela_variante_fr%C3%ADa_con_lim%C3%B3n_verde.jpg' },
   'air-mail': { by: 'Matthias Friedlein', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Air_Mail_Cocktail.png' },
   'alexander': { by: 'Jason Lam', lic: 'CC BY-SA 2.0', url: 'https://www.mightysweet.com/2008/10/17/take-on-me/' },
   'amaretto-sour': { by: 'Poul Hoang', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gros-plan-dun-verre-sur-une-table-1Q1XtVgzo0I' },
@@ -1405,8 +1409,8 @@ const PUBLIC_RELEASE = false;
 const PHOTO_STATUS = {
   'adonis': 'ok',
   'agua-pepino': 'ok',
+  'agua-pina': 'ok',
   'agua-sandia': 'ok',
-  'aguapanela': 'ok',
   'air-mail': 'ok',
   'alexander': 'ok',
   'amaretto-sour': 'ok',
@@ -1432,7 +1436,7 @@ const PHOTO_STATUS = {
   'bramble': 'ok',
   'brandy-crusta': 'ok',
   'breakfast-martini': 'ok',
-  'brown-derby': 'test'  // CC BY-ND 2.0 : pas de modification permise, or la photo est recadrée
+  'brown-derby': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
