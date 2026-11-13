@@ -43,7 +43,7 @@ Format « en croix », centré sur le verre, pour un seul fichier par recette qu
 - la **colonne centrale**, large des 3/4 de la hauteur de l'image, sur toute la hauteur (600 à 1000 px) : cadrage portrait (3:4), utilisé par les cartes de l'accueil ;
 - les **quatre coins** ne servent à aucun cadrage : couleur unie, qui ne pèse presque rien.
 
-Les deux cadrages ont le même centre, placé sur le verre : chaque cadre de l'appli (4:3, 16:9, 3:4, carré) reste centré sur lui. Une photo 800 × 600 classique fonctionne aussi.
+Les deux cadrages ont le même centre, placé sur le verre : chaque cadre de l'appli (4:3, 16:9, 3:4, carré) reste centré sur lui. Quand le verre est plus haut que la bande paysage, c'est le haut du verre (bord et garniture) qui est gardé : la bande paysage commence juste au-dessus, et seul le pied peut être coupé. Une photo 800 × 600 classique fonctionne aussi.
 
 ## Photos et licences
 
