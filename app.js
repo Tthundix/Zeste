@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.40.2';
+const APP_VERSION = '0.40.3';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -286,9 +286,18 @@ function garnIcon(key) {
   const G = { rim: [26, 28, 38], lt: 27 };
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
-const visual = r => okPhoto(r.photo) ? `<img src="${r.photo}" data-rid="${esc(r.id)}" alt="" loading="lazy" decoding="async">` : glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+/* Proportions des photos du catalogue déjà chargées : une vue reconstruite (retour en arrière…) les reçoit dès le départ,
+   sinon l'image s'afficherait un instant avec le cadrage par défaut avant son évènement « load ». */
+const PHOTO_R = new Map();
+const visual = r => { if (!okPhoto(r.photo)) return glassSVG(r.glass, okColor(r.color), r.garn, r.rim);
+  const k = PHOTO_R.get(r.photo);
+  return `<img src="${r.photo}" data-rid="${esc(r.id)}" alt="" loading="lazy" decoding="async"${k ? ` style="--r:${k}"` : ''}>`; };
 /* Proportions réelles de chaque photo affichée (voir « Photos » dans app.css) : sert au cadrage paysage / portrait des photos en croix. */
-document.addEventListener('load', e => { const i = e.target; if (i && i.tagName === 'IMG' && i.naturalHeight) i.style.setProperty('--r', (i.naturalWidth / i.naturalHeight).toFixed(4)); }, true);
+document.addEventListener('load', e => {
+  const i = e.target; if (!i || i.tagName !== 'IMG' || !i.naturalHeight) return;
+  const k = (i.naturalWidth / i.naturalHeight).toFixed(4); i.style.setProperty('--r', k);
+  const src = i.getAttribute('src'); if (src && src.startsWith('photos/')) PHOTO_R.set(src, k);
+}, true);
 /* Photo introuvable (fichier retiré de la version publique, ou hors ligne sans que la photo ait été mise en cache) : retour à l'illustration du verre. */
 document.addEventListener('error', e => {
   const i = e.target; if (!i || i.tagName !== 'IMG' || !i.dataset || !i.dataset.rid) return;
