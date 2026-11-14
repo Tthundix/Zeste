@@ -169,6 +169,10 @@ input[type=radio]{accent-color:var(--accent)}
 .seg button{flex:1;border:0;background:transparent;color:var(--muted);font:600 13px var(--font-body);padding:8px 6px;border-radius:8px;cursor:pointer;min-width:0}
 .seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .seg .n{font-family:var(--font-mono);font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:1px 7px;border-radius:99px;margin-left:6px}
+/* Onglets du catalogue : chaque onglet prend la largeur de son texte et tient sur une ligne, même sur un petit écran. */
+.seg-avail button{flex:1 1 auto;white-space:nowrap;padding-inline:4px}
+.seg-avail .n{margin-left:5px;padding-inline:6px}
+@media (max-width:359px){.seg-avail button{font-size:12px;padding-inline:2px}.seg-avail .n{margin-left:3px;padding-inline:4px}}
 .seg.mini{flex:0 0 auto}
 .seg.mini button{padding:4px 10px;font-family:var(--font-mono);font-weight:500}
 .seg.tabs{max-width:420px}
