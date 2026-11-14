@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.41.0';
+const APP_VERSION = '0.41.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -490,7 +490,7 @@ function renderCatalogue(m) {
     </aside>
     <div class="cat-main">
       <div class="cat-search"><label class="search" for="cf-q">${SEARCH_ICON}<input id="cf-q" type="search" placeholder="Nom, ingrédient, tag, barman…" value="${esc(UI.q)}" autocomplete="off"></label></div>
-      <div class="seg" role="group" aria-label="Disponibilité">${[['all', 'Tous', all.length], ['ok', 'Réalisables', nOk], ['one', 'Manque 1', nOne]].map(([v, l, n]) => `<button data-act="avail" data-v="${v}" class="${UI.avail === v ? 'on' : ''}" aria-pressed="${UI.avail === v}">${l}<span class="n">${n}</span></button>`).join('')}</div>
+      <div class="seg seg-avail" role="group" aria-label="Disponibilité">${[['all', 'Tous', all.length], ['ok', 'Réalisables', nOk], ['one', 'Manque 1', nOne]].map(([v, l, n]) => `<button data-act="avail" data-v="${v}" class="${UI.avail === v ? 'on' : ''}" aria-pressed="${UI.avail === v}">${l}<span class="n">${n}</span></button>`).join('')}</div>
       <div class="ctl-row">
         <button class="btn small btn-filters" data-act="toggle-filters" aria-expanded="${UI.filtersOpen}">Filtres<span id="nf-badge">${nf ? ` · ${nf}` : ''}</span></button>
         <label class="sort" for="cf-sort">Trier par <select id="cf-sort">${opts([['name', 'Nom'], ['rating', 'Ma note'], ['ready', 'Le plus faisable'], ['recent', 'Ajout récent']], UI.sort)}</select></label>
