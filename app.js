@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.40.4';
+const APP_VERSION = '0.41.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -434,7 +434,7 @@ function noteHint(n) { const d = n && n.at && n.text ? ' · Modifié le ' + new 
 function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function flushNote() { if (noteT) { clearTimeout(noteT); noteT = null; save(); } }
 function lockScroll() { document.body.classList.add('locked'); }
-function unlockScroll() { if (!sheetState && $('#crop').hidden && $('#pick').hidden) document.body.classList.remove('locked'); }
+function unlockScroll() { if (!sheetState && $('#crop').hidden && $('#pick').hidden && $('#share').hidden) document.body.classList.remove('locked'); }
 
 /* ---------- vues ---------- */
 /* Mention de santé publique et accès aux crédits, en bas de chaque écran. */
@@ -1123,6 +1123,7 @@ window.addEventListener('popstate', e => {
   if (st.filt) { applyFilt(st.filt); if (st.filtFirst) UI.filtBase = null; }
   if (!$('#pick').hidden) closePick();
   if (!$('#crop').hidden) closeCrop();
+  if (!$('#share').hidden) closeShare();
   restoring = true;
   try {
     UI.view = st.view || 'home';
@@ -1285,7 +1286,7 @@ function openDetail(id, keep, back) {
     return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
-  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="share" data-id="${esc(r.id)}" aria-label="Partager" title="Partager">${SHARE_ICON}</button><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
   <div class="sheet-body"><article class="inner wide detail" style="--c:${okColor(r.color)}">
     <div class="d-left cols dz">
       <div class="d-hero dhero o1">${visual(r)}</div>${creditHTML(r)}
@@ -1314,6 +1315,167 @@ function openDetail(id, keep, back) {
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
   if (UI.newList === id) { const nl = $('#nl-detail'); if (nl) nl.focus({ preventScroll: true }); }
   if (!keep) pushNav();
+}
+
+/* ---------- partage : lien et fiche image ----------
+   Tout ce qui concerne le format des liens tient dans shareLink (fabrication) et linkedId (lecture) : l'adresse du site n'est
+   écrite nulle part, elle vient de la page en cours. Seules les recettes du catalogue ont un lien : une recette personnelle
+   n'existe que sur l'appareil de son auteur (ce sera possible avec les comptes). */
+const isShared = r => BUILTIN.has(r.id);
+const shareLink = r => location.origin + location.pathname + '#/recette/' + encodeURIComponent(r.id);
+function linkedId() {
+  const m = /^#\/recette\/([^/?&#]+)/.exec(location.hash); if (!m) return null;
+  try { return decodeURIComponent(m[1]); } catch (e) { return ''; }
+}
+/* Ouvre la recette désignée par l'adresse, au démarrage ou quand un lien arrive dans l'appli déjà ouverte.
+   Le « # » est retiré aussitôt : l'adresse reste celle de l'appli et le retour ramène à l'accueil. */
+function openLinked() {
+  const id = linkedId(); if (id == null) return;
+  history.replaceState(history.state && history.state.z ? history.state : navState(), '', location.pathname + location.search);
+  const r = S.recipes.find(x => x.id === id);
+  if (!r) { toast('Lien non reconnu : cette recette ne fait pas partie du catalogue.'); return; }
+  if (sheetState && ['form', 'colled', 'pform'].includes(sheetState.type)) { toast(`Formulaire en cours : « ${r.name} » n'a pas été ouvert.`); return; }
+  if (!$('#share').hidden) closeShare();
+  if (!$('#pick').hidden) closePick();
+  if (sheetState && sheetState.type === 'detail' && sheetState.id === id) return;
+  openDetail(id);
+}
+window.addEventListener('hashchange', openLinked);
+
+/* Fiche image : 1080 × 1920 (9:16, le format des stories), toujours en thème clair.
+   Les 230 px du haut et les 340 px du bas restent sans contenu important : les applis de stories y placent leurs boutons. */
+const CARD = { W: 1080, H: 1920, M: 84, top: 230, bottom: 1580, bg: '#F4F2F3', s2: '#ECE7EA', fg: '#1C171A', muted: '#6A5F66', line: '#DDD5DA' };
+function mixHex(a, b, t) {
+  const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), x = p(a), y = p(b);
+  return '#' + x.map((v, i) => Math.round(v * t + y[i] * (1 - t)).toString(16).padStart(2, '0')).join('');
+}
+function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function fitText(ctx, t, max) { if (ctx.measureText(t).width <= max) return t; while (t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1).trimEnd(); return t + '…'; }
+function wrapText(ctx, t, max) {
+  const out = []; let cur = '';
+  t.split(/\s+/).forEach(w => { const n = cur ? cur + ' ' + w : w; if (cur && ctx.measureText(n).width > max) { out.push(cur); cur = w; } else cur = n; });
+  if (cur) out.push(cur); return out;
+}
+async function drawCard(r) {
+  const { W, H, M, fg, muted } = CARD, cw = W - 2 * M, col = okColor(r.color);
+  const css = getComputedStyle(document.documentElement), fam = k => css.getPropertyValue(k).trim() || 'sans-serif';
+  const FD = fam('--font-display'), FB = fam('--font-body'), FM = fam('--font-mono');
+  await Promise.all([`800 100px ${FD}`, `500 30px ${FB}`, `600 30px ${FB}`, `500 30px ${FM}`].map(f => document.fonts.load(f, r.name + ' Zeste 0123').catch(() => { })));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'); ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = mixHex(col, CARD.bg, .14); ctx.fillRect(0, 0, W, H);
+  const accent = mixHex(col, fg, .58);
+
+  /* Textes mesurés d'abord : la photo prend la place qui reste. */
+  const name = r.name.toUpperCase(); let size = 136, lines;
+  for (; ; size -= 6) { ctx.font = `800 ${size}px ${FD}`; lines = wrapText(ctx, name, cw); if (lines.length <= 2 || size <= 88) break; }
+  lines = lines.slice(0, 3);
+  const c = r.photoCredit, photo = okPhoto(r.photo) ? await loadImg(r.photo).catch(() => null) : null, credit = photo && c && c.by ? `Photo : ${c.by}${c.lic ? ' · ' + c.lic : ''}` : '';
+  const abv = estAbv(r), cfg = servCfg(r);
+  const facts = [r.method, r.glass, cfg.vol ? 'Pour ' + fmtVol(cfg.base) : '', isNA(r) ? 'Sans alcool' : abv == null ? '' : `≈ ${abv} % vol.`].filter(Boolean).join('  ·  ');
+  const head = (credit ? 44 : 14) + 58 + lines.length * size * .94 + (r.subtitle ? 52 : 0) + 62 + 50;
+  const room = CARD.bottom - CARD.top;
+  /* Longue liste : lignes resserrées. La photo garde au moins un cadre 16:9 (le haut du verre n'est pas coupé), l'illustration peut être plus basse. */
+  let rows = r.ings.slice(), more = 0;
+  const minPh = photo ? 513 : 420, ROW = room - head - minPh >= rows.length * 60 ? 60 : 50;
+  const maxRows = Math.max(3, Math.floor((room - head - minPh) / ROW));
+  if (rows.length > maxRows) { more = rows.length - (maxRows - 1); rows = rows.slice(0, maxRows - 1); }
+  const ph = Math.round(Math.min(cw, room - head - (rows.length + (more ? 1 : 0)) * ROW));
+
+  /* Photo (même cadrage « en croix » que dans l'appli, voir « Photos » dans app.css) ou illustration du verre. */
+  let y = CARD.top;
+  ctx.save(); rrect(ctx, M, y, cw, ph, 36); ctx.clip();
+  ctx.fillStyle = mixHex(col, CARD.s2, .2); ctx.fillRect(M, y, cw, ph);
+  if (photo) {
+    const k = photo.naturalWidth / photo.naturalHeight, dw = Math.min(Math.max(cw, ph * 4 / 3), Math.max(cw * 4 / 3 * k, ph * k)), dh = dw / k;
+    ctx.drawImage(photo, M + (cw - dw) / 2, y + (ph - dh) / 2, dw, dh);
+  } else {
+    const svg = glassSVG(r.glass, col, r.garn, r.rim).replace('<svg class="glass"', `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="940" style="color:${fg}"`);
+    const g = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)).catch(() => null);
+    if (g) { const gh = ph * .84, gw = gh * 72 / 94; ctx.drawImage(g, M + (cw - gw) / 2, y + (ph - gh) / 2, gw, gh); }
+  }
+  ctx.restore();
+  y += ph;
+  if (credit) { ctx.font = `400 22px ${FB}`; ctx.fillStyle = muted; ctx.fillText(fitText(ctx, credit, cw), M, y + 34); y += 44; } else y += 14;
+
+  ctx.font = `600 27px ${FB}`; ctx.fillStyle = accent; ctx.fillText(fitText(ctx, origLabel(r).toUpperCase(), cw), M, y + 42); y += 58;
+  ctx.font = `800 ${size}px ${FD}`; ctx.fillStyle = fg;
+  lines.forEach((l, i) => { ctx.fillText(i === 2 ? fitText(ctx, l, cw) : l, M - 3, y + size * .82); y += size * .94; });
+  if (r.subtitle) { ctx.font = `italic 400 33px ${FB}`; ctx.fillStyle = muted; ctx.fillText(fitText(ctx, r.subtitle, cw), M, y + 38); y += 52; }
+  ctx.font = `500 30px ${FB}`; ctx.fillStyle = muted; ctx.fillText(fitText(ctx, facts, cw), M, y + 40); y += 62;
+  ctx.fillStyle = mixHex(col, CARD.line, .3); ctx.fillRect(M, y, cw, 2); y += 44; y += 6;
+
+  /* Ingrédients : quantités de la recette de base, dans l'unité choisie. */
+  const qty = rows.map(row => fmtQty(row, 1));
+  ctx.font = `500 30px ${FM}`; const qw = Math.min(300, Math.max(...qty.map(q => ctx.measureText(q).width), 0)) + 34;
+  rows.forEach((row, i) => {
+    const by = y;
+    ctx.font = `500 30px ${FM}`; ctx.fillStyle = accent; ctx.fillText(fitText(ctx, qty[i], 300), M, by);
+    ctx.font = `500 ${ROW < 60 ? 33 : 36}px ${FB}`; ctx.fillStyle = fg; const nm = fitText(ctx, ingName(row.id), cw - qw - (row.opt ? 190 : 0)); ctx.fillText(nm, M + qw, by);
+    if (row.opt) { const w = ctx.measureText(nm).width; ctx.font = `400 27px ${FB}`; ctx.fillStyle = muted; ctx.fillText('facultatif', M + qw + w + 16, by); }
+    y += ROW;
+  });
+  if (more) { ctx.font = `500 30px ${FB}`; ctx.fillStyle = muted; ctx.fillText(`+ ${more} ${more > 1 ? 'autres ingrédients' : 'autre ingrédient'}`, M + qw, y); }
+
+  /* Pied : marque, adresse du site, mention légale pour les recettes avec alcool. */
+  const fy = CARD.bottom + 62;
+  ctx.save(); ctx.translate(M, fy - 37); ctx.scale(1.9, 1.9); ctx.strokeStyle = fg; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.stroke(new Path2D('M3 5h18L12 15z')); ctx.stroke(new Path2D('M12 15v6M8 21h8')); ctx.restore();
+  ctx.font = `800 46px ${FD}`; ctx.fillStyle = fg; ctx.fillText('ZESTE', M + 56, fy);
+  const site = (location.host + location.pathname).replace(/(index\.html)?$/, '').replace(/\/$/, '');
+  ctx.font = `500 26px ${FB}`; ctx.fillStyle = muted; ctx.textAlign = 'right'; ctx.fillText(fitText(ctx, site, cw - 260), W - M, fy - 3); ctx.textAlign = 'left';
+  if (!isNA(r)) { ctx.font = `400 21px ${FB}`; ctx.fillStyle = muted; ctx.fillText("L'abus d'alcool est dangereux pour la santé. À consommer avec modération.", M, fy + 48); }
+  return cv;
+}
+
+/* Fenêtre de partage. L'image est fabriquée dès l'ouverture : le partage doit partir directement du geste (clic) sur le bouton,
+   sans attente entre les deux, sinon le téléphone le refuse. */
+const SHARE = { id: null, file: null, url: '' };
+const SHARE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg>';
+const canShareFile = f => { try { return !!(f && navigator.canShare && navigator.canShare({ files: [f] })); } catch (e) { return false; } };
+async function openShare(id) {
+  const r = S.recipes.find(x => x.id === id), p = $('#share'); if (!r) return;
+  closeShare(); SHARE.id = id;
+  const link = isShared(r);
+  p.querySelector('.share-in').innerHTML = `<p class="crop-t" id="share-t">Partager « ${esc(r.name)} »</p>
+  <div class="share-prev" id="share-prev"><span class="hint">Préparation de la fiche…</span></div>
+  <div class="share-btns"><button class="btn primary" data-act="share-img" disabled>Partager la fiche</button>
+  ${link ? `${navigator.share ? '<button class="btn" data-act="share-link">Partager le lien</button>' : ''}<button class="btn" data-act="share-copy">Copier le lien</button>` : ''}
+  <button class="btn ghost" data-act="share-close">Fermer</button></div>
+  ${link ? '' : '<p class="hint">Recette personnelle : elle n\'existe que sur cet appareil, le partage se fait donc par la fiche image. Le lien arrivera avec les comptes.</p>'}`;
+  p.hidden = false; lockScroll();
+  const btn = p.querySelector('[data-act="share-img"]'); btn.focus({ preventScroll: true });
+  try {
+    const cv = await drawCard(r), blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', .92));
+    if (SHARE.id !== id || p.hidden) return;
+    if (!blob) throw new Error('image');
+    SHARE.file = new File([blob], `zeste-${makeId(r.name, [])}.jpg`, { type: 'image/jpeg' }); SHARE.url = URL.createObjectURL(blob);
+    $('#share-prev').innerHTML = `<img src="${SHARE.url}" alt="Fiche de la recette ${esc(r.name)}">`;
+    if (!canShareFile(SHARE.file)) btn.textContent = 'Télécharger la fiche';
+    btn.disabled = false;
+  } catch (e) {
+    if (SHARE.id !== id) return;
+    $('#share-prev').innerHTML = '<span class="hint">La fiche n\'a pas pu être préparée.</span>';
+  }
+}
+function closeShare() { const p = $('#share'); if (SHARE.url) URL.revokeObjectURL(SHARE.url); SHARE.id = null; SHARE.file = null; SHARE.url = ''; if (p.hidden) return; p.hidden = true; p.querySelector('.share-in').innerHTML = ''; unlockScroll(); }
+function saveShareImg() { const a = document.createElement('a'); a.href = SHARE.url; a.download = SHARE.file.name; document.body.appendChild(a); a.click(); a.remove(); toast('Fiche téléchargée'); }
+function shareImg() {
+  const f = SHARE.file; if (!f) return;
+  if (!canShareFile(f)) { saveShareImg(); return; }
+  /* L'image part seule : accompagnée d'un texte ou d'un lien, certaines applis (sur iPhone surtout) ne gardent que le texte. */
+  navigator.share({ files: [f] }).catch(e => { if (e && e.name !== 'AbortError') saveShareImg(); });
+}
+function shareUrl() {
+  const r = S.recipes.find(x => x.id === SHARE.id); if (!r) return;
+  navigator.share({ title: r.name + ' · Zeste', text: `${r.name}, une recette de cocktail sur Zeste`, url: shareLink(r) }).catch(e => { if (e && e.name !== 'AbortError') copyShareUrl(); });
+}
+async function copyShareUrl() {
+  const r = S.recipes.find(x => x.id === SHARE.id); if (!r) return; const url = shareLink(r);
+  try { await navigator.clipboard.writeText(url); }
+  catch (e) { const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (x) { } t.remove(); if (!ok) { toast('Copie impossible sur cet appareil'); return; } }
+  toast('Lien copié');
 }
 
 /* ---------- formulaire ---------- */
@@ -1647,6 +1809,7 @@ function newListFromRecipe(id) {
 /* ---------- événements ---------- */
 document.addEventListener('click', async e => {
   if (e.target.id === 'pick') { closePick(); return; }
+  if (e.target.id === 'share') { closeShare(); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
   if (!['del', 'del-list', 'import', 'reset', 'coll-del', 'prep-del', 'shop-clear'].includes(a)) UI.confirm = null;
@@ -1759,6 +1922,11 @@ document.addEventListener('click', async e => {
     case 'photo-del': sheetState.photo = ''; $('#rf-photo').value = ''; updatePrev(); break;
     case 'crop-ok': finishCrop(); break;
     case 'crop-cancel': closeCrop(); break;
+    case 'share': openShare(id); break;
+    case 'share-img': shareImg(); break;
+    case 'share-link': shareUrl(); break;
+    case 'share-copy': copyShareUrl(); break;
+    case 'share-close': closeShare(); break;
     case 'csel': openPick(b); break;
     case 'pick-opt': { const cb = PICK.b; if (!cb) { closePick(); break; } const sel = cb.previousElementSibling; sel.selectedIndex = +b.dataset.i; closePick(); syncCsel(cb); sel.dispatchEvent(new Event('change', { bubbles: true })); break; }
     case 'swatch': setColor(b.dataset.v, true); break;
@@ -1904,7 +2072,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); UI.newList = null; openDetail(sheetState.id, true); return; }
   }
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('ed-add-i')) { e.preventDefault(); edAddRecipe(+e.target.dataset.bk); return; }
-  if (e.key === 'Escape') { if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
+  if (e.key === 'Escape') { if (!$('#share').hidden) closeShare(); else if (!$('#pick').hidden) closePick(); else if (!$('#crop').hidden) closeCrop(); else if (sheetState) closeSheet(); }
 });
 
 /* ---------- suggestions des champs de saisie ----------
@@ -1974,6 +2142,6 @@ function syncTopbarH() { const t = document.querySelector('.topbar'); if (t) doc
 window.addEventListener('resize', syncTopbarH);
 new MutationObserver(enhanceSelects).observe(document.body, { childList: true, subtree: true });
 (async () => {
-  S = await load(); render(); enhanceSelects(); replaceNav(); syncTopbarH();
+  S = await load(); render(); enhanceSelects(); replaceNav(); syncTopbarH(); openLinked();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { });
 })();
