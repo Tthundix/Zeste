@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.40.3';
+const APP_VERSION = '0.40.4';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -561,7 +561,7 @@ const fmtHour = d => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2
 /* L'heure affichée suit l'horloge ; au changement de moment de la journée, l'accueil se recompose. */
 function tickClock() {
   if (UI.view !== 'home' || document.visibilityState !== 'visible') return;
-  const now = new Date(), key = moment(now.getHours()).key + (now.getHours() < 6 && !UI.lateOk ? '-late' : '');
+  const now = new Date(), key = moment(hourOf(now)).key + (now.getHours() < 6 && !UI.lateOk ? '-late' : '');
   if (key !== UI.homeKey && !sheetState) { render(); return; }
   document.querySelectorAll('.now-h').forEach(el => el.textContent = fmtHour(now));
 }
@@ -571,11 +571,14 @@ const SPIRITS = ['Gin', 'Rhum & cachaça', 'Whisky', 'Tequila & mezcal', 'Vodka'
 const SPIRIT_LABEL = { 'Gin': 'Gin', 'Rhum & cachaça': 'Rhum', 'Whisky': 'Whisky', 'Tequila & mezcal': 'Tequila', 'Vodka': 'Vodka', 'Brandy & cognac': 'Cognac' };
 function daySeed(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 function shuffled(arr, seed) { const a = [...arr]; let x = seed || 1; for (let i = a.length - 1; i > 0; i--) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* Heure décimale (11 h 30 = 11.5) : le créneau du midi commence à la demie. */
+const hourOf = d => d.getHours() + d.getMinutes() / 60;
 function moment(h) {
   const hasTag = (r, t) => t.some(x => r.tags.includes(x));
   const light = r => r.flavor.fo == null || r.flavor.fo <= 2;
-  if (h >= 6 && h < 11) return { key: 'matin', title: 'Ce matin', lead: 'Des recettes de brunch, légères et fruitées.', pick: r => hasTag(r, ['Brunch']) || (hasTag(r, ['Fruité']) && light(r)) };
-  if (h >= 11 && h < 17) return { key: 'aprem', title: 'Cet après-midi', lead: 'Des verres frais et peu alcoolisés pour la journée.', pick: r => hasTag(r, ['Rafraîchissant', 'Estival', 'Pétillant']) && light(r) };
+  if (h >= 6 && h < 11.5) return { key: 'matin', title: 'Ce matin', lead: 'Des recettes de brunch, légères et fruitées.', pick: r => hasTag(r, ['Brunch']) || (hasTag(r, ['Fruité']) && light(r)) };
+  if (h >= 11.5 && h < 14) return { key: 'midi', title: 'Ce midi', lead: 'Des verres légers pour ouvrir l’appétit avant le déjeuner.', pick: r => hasTag(r, ['Apéritif', 'Brunch', 'Pétillant']) && light(r) };
+  if (h >= 14 && h < 17) return { key: 'aprem', title: 'Cet après-midi', lead: 'Des verres frais et peu alcoolisés pour la journée.', pick: r => hasTag(r, ['Rafraîchissant', 'Estival', 'Pétillant']) && light(r) };
   if (h >= 17 && h < 21) return { key: 'apero', title: 'L’heure de l’apéro', lead: 'Amers, bulles et spritz pour ouvrir l’appétit.', pick: r => hasTag(r, ['Apéritif']) };
   if (h >= 21 && h < 24) return { key: 'soiree', title: 'Ce soir', lead: 'Des classiques pour la soirée et la fin de repas.', pick: r => hasTag(r, ['Festif', 'Digestif', 'Tiki', 'Fin de soirée']) };
   return { key: 'nuit', title: 'Fin de soirée', lead: 'À cette heure, plutôt sans alcool.', pick: r => isNA(r) };
@@ -585,7 +588,7 @@ function hcard(r, sub) {
 }
 const hrow = (title, items, more) => items.length ? `<section class="hsec"><div class="shead"><h2>${title}</h2>${more || ''}</div><div class="hrow" data-row="${esc(title)}">${items.join('')}</div></section>` : '';
 function renderHome(m) {
-  const now = new Date(), h = now.getHours(), M = moment(h), own = ownedSet(), seed = daySeed(now.toDateString() + M.key);
+  const now = new Date(), h = now.getHours(), M = moment(hourOf(now)), own = ownedSet(), seed = daySeed(now.toDateString() + M.key);
   const an = new Map(S.recipes.map(r => [r.id, analyze(r, own)]));
   const ok = r => !an.get(r.id).miss.length;
   const pool = S.recipes.filter(M.pick);
@@ -611,7 +614,7 @@ function renderHome(m) {
     <div class="moment-t" data-act="open" data-id="${esc(feat.id)}"><p class="eyebrow">${esc(M.title)} · <span class="now-h">${esc(hour)}</span></p><h1>${esc(feat.name)}</h1><p class="lead">${esc(M.lead)}</p>
       <p class="hint">${esc(feat.method)} · ${esc(feat.glass)}${abv != null ? ` · ≈ ${abv} % vol.` : ''} · ${ok(feat) ? 'réalisable avec le bar' : 'manquant : ' + esc(an.get(feat.id).miss.map(ingName).join(', '))}</p></div>
   </section>` : ''}
-  ${hrow(`Aussi pour ${M.key === 'apero' ? 'l’apéro' : M.key === 'matin' ? 'ce matin' : M.key === 'aprem' ? 'cet après-midi' : M.key === 'soiree' ? 'ce soir' : 'la fin de soirée'}`, picks.slice(1, 13).map(r => hcard(r, ok(r) ? 'Réalisable' : 'Manque ' + an.get(r.id).miss.length)))}
+  ${hrow(`Aussi pour ${M.key === 'apero' ? 'l’apéro' : M.key === 'matin' ? 'ce matin' : M.key === 'midi' ? 'ce midi' : M.key === 'aprem' ? 'cet après-midi' : M.key === 'soiree' ? 'ce soir' : 'la fin de soirée'}`, picks.slice(1, 13).map(r => hcard(r, ok(r) ? 'Réalisable' : 'Manque ' + an.get(r.id).miss.length)))}
   ${hrow('Réalisables avec le bar', ready.slice(0, 14).map(r => hcard(r, S.ratings[r.id] ? fmtRating(S.ratings[r.id]) + ' ★' : r.method)), `<button class="btn small ghost" data-act="go-cat" data-v="ok">Tout voir</button>`)}
   ${hrow('À un ingrédient près', near.slice(0, 14).map(r => hcard(r, 'Manque : ' + ingName(an.get(r.id).miss[0]))), `<button class="btn small ghost" data-act="go-cat" data-v="one">Tout voir</button>`)}
   ${hrow('Sans alcool', naList.slice(0, 14).map(r => hcard(r, r.source || r.author || r.method)), `<button class="btn small ghost" data-act="go-na">Tout voir</button>`)}
