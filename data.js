@@ -1373,6 +1373,10 @@ const PHOTO_CREDITS = {
   'brandy-crusta': { by: 'Ralf Roletschek', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:15-09-26-RalfR-WLC-0306.jpg' },
   'breakfast-martini': { by: 'popvoid', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Breakfast_Martini.jpg' },
   'brown-derby': { by: 'Steven Guzzardi', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/rTUVeP' },
+  'ca-phe-sua-da': { by: 'Demi DeHerrera', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/tasse-en-verre-remplie-de-glace-latte-sur-la-table-L-sm1B4L1Ns'},
+  'dalgona': { by: 'Wikieditkid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Homemade_Dalgona_Coffee.jpg'},
+  'cafe-de-olla': { by: 'ProtoplasmaKid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Caf%C3%A9_de_olla_.jpg'},
+  
   'caipirinha': { by: 'Leighann Blackwood' },
   'clover-club': { by: 'Ferals Studio' },
   'daiquiri': { by: 'Marta Smith' },
