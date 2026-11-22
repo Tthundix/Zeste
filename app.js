@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.41.0';
+const APP_VERSION = '0.42.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -88,6 +88,14 @@ function upgrade(d) {
     d.v = 2; d.dataVersion = 0;
   }
   if (d.dataVersion !== DATA_VERSION) {
+    // Recettes modifiées puis reprises dans le catalogue : elles reprennent la version du catalogue (voir SYNCED_EDITS dans data.js).
+    const keepPhoto = {};
+    Object.keys(SYNCED_EDITS).filter(v => +v > (d.dataVersion || 0) && +v <= DATA_VERSION).forEach(v => SYNCED_EDITS[v].forEach(id => {
+      const r = d.recipes.find(x => x.id === id && x.src === 'builtin');
+      if (!r || !r.edited) return;
+      if (typeof r.photo === 'string' && r.photo.startsWith('data:')) keepPhoto[id] = r.photo;
+      r.edited = false;
+    }));
     const base = builtinIngs();
     Object.keys(d.ings).forEach(id => {
       if (base[id]) return;
@@ -126,6 +134,7 @@ function upgrade(d) {
       if (cur && b.parent && cur.src === 'builtin' && !Object.prototype.hasOwnProperty.call(cur, 'parent')) cur.parent = b.parent;
     });
     d.recipes = d.recipes.filter(r => !(RETIRED_IDS.includes(r.id) && r.src === 'builtin' && !r.edited));
+    Object.keys(keepPhoto).forEach(id => { const r = d.recipes.find(x => x.id === id); if (r) { r.photo = keepPhoto[id]; r.edited = true; } });
     // Préparations maison de départ : ajoutées, ou mises à jour tant qu'elles n'ont pas été modifiées ; une préparation supprimée ne revient pas.
     PREPS.forEach(b => {
       const k = d.preps.findIndex(x => x.id === b.id);
@@ -139,6 +148,8 @@ function upgrade(d) {
     // Vocabulaire : « shaker » plutôt que « secouer », y compris dans les recettes de départ déjà modifiées par l'utilisateur.
     const shk = t => typeof t === 'string' ? t.replace(/\bSecouer\b/g, 'Shaker').replace(/\bsecouer\b/g, 'shaker').replace(/\bon secoue\b/g, 'on shake') : t;
     d.recipes.forEach(r => { if (r.src === 'builtin') { if (Array.isArray(r.steps)) r.steps = r.steps.map(shk); r.note = shk(r.note); } });
+    // Étape de garniture des recettes de départ : ajoutée aussi aux recettes modifiées dont les étapes n'en parlent pas.
+    d.recipes.forEach(r => { if (r.src === 'builtin') addGarnishStep(r); });
     d.dataVersion = DATA_VERSION;
   }
   /* Version publique : une recette de départ déjà enregistrée sur l'appareil ne garde pas une photo du dossier photos/ dont la licence n'est pas validée.
@@ -286,6 +297,13 @@ function garnIcon(key) {
   const G = { rim: [26, 28, 38], lt: 27 };
   return `<svg viewBox="26.5 13 21 23" aria-hidden="true"><line x1="27" y1="28" x2="43" y2="28" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".35"/>${garnSVG(key, G)}</svg>`;
 }
+/* Ligne d'ingrédient : étiquette « Facultatif » bien visible, et lien direct vers la préparation maison
+   (son nom n'est ajouté que s'il diffère de celui de l'ingrédient, souvent identique). */
+const OPT_TAG = '<span class="opt-tag">Facultatif</span>';
+const homeLink = (prepId, ingId) => {
+  const pn = prepName(prepId), same = norm(pn) === norm(ingName(ingId));
+  return `<button type="button" class="ing-link" data-act="open-prep" data-id="${esc(prepId)}">À faire maison${same ? '' : ' : ' + esc(pn)}</button>`;
+};
 /* Proportions des photos du catalogue déjà chargées : une vue reconstruite (retour en arrière…) les reçoit dès le départ,
    sinon l'image s'afficherait un instant avec le cadrage par défaut avant son évènement « load ». */
 const PHOTO_R = new Map();
@@ -763,11 +781,10 @@ function openPrep(id, keep) {
   const rowsHTML = p.ings.map((row, i) => {
     const s2 = a.rows[i], info = [], ing = S.ings[row.id];
     if (s2.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s2.by))}`);
-    if (s2.st === 'home') info.push(`À faire maison : ${esc(prepName(s2.prep))}`);
-    if (row.opt) info.push('Facultatif');
+    if (s2.st === 'home') info.push(homeLink(s2.prep, row.id));
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(x => altTxt(x, k)).join(' ; '))}`);
-    return `<li><span class="dot ${s2.st === 'ok' ? '' : s2.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s2.st]}"></span><span class="q">${esc(fmtQty(row, k))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s2.st === 'ok' ? '' : s2.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s2.st]}"></span><span class="q">${esc(fmtQty(row, k))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.opt ? OPT_TAG : ''}${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   const mk = p.makes && S.ings[p.makes];
   sh.innerHTML = `
@@ -1279,11 +1296,10 @@ function openDetail(id, keep, back) {
   const rowsHTML = r.ings.map((row, i) => {
     const s = a.rows[i], info = [], ing = S.ings[row.id];
     if (s.st === 'sub') info.push(`Substitut disponible : ${esc(ingName(s.by))}`);
-    if (s.st === 'home') info.push(`À faire maison : <button type="button" class="ing-link" data-act="open-prep" data-id="${esc(s.prep)}">${esc(prepName(s.prep))}</button>`);
-    if (row.opt) info.push('Facultatif');
+    if (s.st === 'home') info.push(homeLink(s.prep, row.id));
     if (row.sub && ing) info.push(`Tout « ${esc(ing.cat)} » convient`);
     if (row.alts && row.alts.length) info.push(`Ou : ${esc(row.alts.map(a => altTxt(a, kServ)).join(' ; '))}`);
-    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
+    return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.opt ? OPT_TAG : ''}${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
   <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="share" data-id="${esc(r.id)}" aria-label="Partager" title="Partager">${SHARE_ICON}</button><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>

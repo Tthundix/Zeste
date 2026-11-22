@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 25;
+const DATA_VERSION = 26;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -40,6 +40,7 @@ const INGREDIENTS = [
   ['rhum-agricole', 'Rhum agricole ambré', 'Rhum ambré', 'Spiritueux', 'Rhum & cachaça', 50],
   ['rhum-agricole-blanc', 'Rhum agricole blanc', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 50],
   ['rhum-brun', 'Rhum brun (Jamaïque)', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
+  ['rhum-noir', 'Rhum noir (blackstrap)', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-demerara', 'Rhum Demerara', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['cachaca', 'Cachaça', 'Cachaça', 'Spiritueux', 'Rhum & cachaça', 40],
   ['tequila', 'Tequila blanco', 'Tequila', 'Spiritueux', 'Tequila & mezcal', 40],
@@ -206,6 +207,7 @@ const INGREDIENTS = [
   ['aquafaba', 'Aquafaba (eau de pois chiches)', 'Aquafaba', 'Épicerie', '', 0],
   ['jaune-oeuf', "Jaune d'œuf", "Jaune d'œuf", 'Épicerie', '', 0],
   ['creme-liquide', 'Crème liquide', 'Crème', 'Épicerie', '', 0],
+  ['maizena', 'Maïzena (fécule de maïs)', 'Fécule', 'Épicerie', '', 0],
   ['lait', 'Lait', 'Lait', 'Épicerie', '', 0],
   ['lait-amande', "Lait d'amande", 'Lait végétal', 'Épicerie', '', 0],
   ['lait-coco', 'Lait de coco', 'Lait de coco', 'Épicerie', '', 0],
@@ -1117,46 +1119,55 @@ RECIPES.push(
 /* Quantité « de 10 à 20 ml » pour le tonic du Red Negronito. */
 RECIPES.find(r => r.id === 'red-negronito').ings[3].qty2 = 20;
 
+/* Corpse Reviver No.1 : ajouté depuis l'appli (sauvegarde du 22/11/2026). */
+RECIPES.push(Object.assign(
+  R('corpse-reviver-1', 'Corpse Reviver No.1', 'V', 'Coupe', 'zest-orange', '', '', '#872312', '20104', '',
+    [['cognac', 45], ['calvados', 22.5, 'ml', 's'], ['vermouth-rouge', 22.5], ['angostura', 1, 'trait']],
+    ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.', 'Exprimer un zeste d’orange au-dessus du verre, puis le déposer.'],
+    'Ce cocktail de la famille des Corpse Reviver est souvent associé à Frank Meier, bien qu’il ne l’ait jamais revendiqué. Il a néanmoins été popularisé par Harry Craddock dans The Savoy Cocktail Book (1930).'),
+  { source: 'Harry Craddock, The Savoy Cocktail Book (1930)' }
+));
+
 /* Retouches de recettes du catalogue (appliquées après leur définition). */
 const RECIPE_EDITS = {
   'alexander': {
     subtitle: "Brandy Alexander",
-    source: "Hugo Ensslin, Recipes for Mixed Drinks, 1915"
+    source: "Hugo Ensslin, Recipes for Mixed Drinks (1915)"
   },
   'aviation': {
-    source: "Aurait été crée par le chef barman de l'hôtel Wallick (NYC, US), 1916"
+    source: "Hugo Ensslin, Hôtel Wallick (New York), 1916"
   },
   'between-the-sheets': {
     flavor: {"su": 1, "ac": 1, "am": 0, "as": 0, "fo": 4},
-    source: "Harry MacElhone, Harry's New York Bar (Paris, France), 1930s"
+    source: "Harry MacElhone, Harry’s New York Bar (Paris), années 1930"
   },
   'bellini': {
     method: "Dans un pichet",
     garnish: "Quartier de pêche",
     steps: ["Verser la purée de pêche dans une carafe avec de la glace.", "Ajouter le Prosecco et remuer très doucement.", "Verser dans une flûte refroidie."],
     note: "Il est possible de remplacer une partie du Prosecco par du schnaps de pêche pour plus de profondeur et de force.\nVariantes : Puccini (jus de mandarine), Rossini (purée de fraise), Tintoretto (jus de grenade).",
-    source: "Giuseppe Cipriani, Harry's Bar (Venise, Italie), 1948"
+    source: "Giuseppe Cipriani, Harry’s Bar (Venise), 1948"
   },
   'barracuda': {
     glass: "Coupe",
     garn: "pineapple",
     tags: ["Pétillant", "Festif", "Fruité"],
     steps: ["Shaker tous les ingrédients sauf le Prosecco avec des glaçons.", "Filtrer dans un verre highball rempli de glace.", "Compléter avec le Prosecco."],
-    source: "Benito Cuppari, late 1950s on the Cristoforo Colombo cruise"
+    source: "Benito Cuppari, paquebot Cristoforo Colombo, fin des années 1950"
   },
   'bees-knees': {
     flavor: {"su": 3, "ac": 1, "am": 0, "as": 0, "fo": 3},
     steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans une coupe refroidie."],
-    note: "Cette recette était particulièrement utilisée durant la Prohibition afin de masquer l'arôme du gin de mauvaise qualité.\nCertaines variantes enlèvent le jus d'orange pour passer à une recette à 2 parts de gin, 1 de jus de citron et 3/4 de sirop de miel.",
-    source: "Frank Meier, Le Ritz (Paris, France), 1929"
+    note: "Cette recette était particulièrement utilisée durant la Prohibition afin de masquer l’arôme du gin de mauvaise qualité.\nCertaines variantes enlèvent le jus d’orange pour passer à une recette à 2 parts de gin, 1 de jus de citron et 3/4 de sirop de miel.",
+    source: "Frank Meier, Hôtel Ritz (Paris), 1929"
   },
   'bijou': {
     flavor: {"su": 3, "ac": 0, "am": 1, "as": 0, "fo": 5},
     note: "Pour diminuer la puissance du cocktail et la présence de la Chartreuse, des alternatives diminuent sa quantité pour plus de gin et/ou de vermouth.\nSi vous trouvez cette boisson trop sucrée, vous pouvez exprimer un zeste de citron dessus.",
-    author: "Harry Johnson's Bartender's Manual, 1900"
+    author: "Harry Johnson, Bartender’s Manual (1900)"
   },
   'adonis': {
-    source: "Waldorf-Astoria (NYC, US) nommé selon la comedie musicale éponyme, 1880s"
+    source: "Waldorf-Astoria (New York), années 1880 ; nommé d’après la comédie musicale éponyme"
   },
   'bamboo': {
     author: "Popularisé par Louis Eppinger, années 1880"
@@ -1164,27 +1175,27 @@ const RECIPE_EDITS = {
   'bitter-giuseppe': {
     color: "#631e18",
     ings: [{"id": "cynar", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "vermouth-rouge", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": [], "tip": "Carpano Antica"}, {"id": "citron", "qty": 7.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "orange-bitters", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}],
-    note: "On penche plutôt pour le Carpano Antica dans cette recette pour ses notes de vanille se mariant bien avec le bitter orange. Néanmoins, d'autres vermouths fonctionneront aussi."
+    note: "On penche plutôt pour le Carpano Antica dans cette recette pour ses notes de vanille se mariant bien avec le bitter orange. Néanmoins, d’autres vermouths fonctionneront aussi."
   },
   'batanga': {
     subtitle: "Charro Negro",
     garn: "",
     ings: [{"id": "tequila", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sel", "qty": 1, "unit": "pincée", "sub": false, "opt": false, "alts": []}, {"id": "cola", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
     steps: ["Givrer le bord du verre avec du sel.", "Mélanger le jus de citron vert et le sel dans le fond du verre jusqu'à dissolution.", "Remplir de glaçons et verser la tequila.", "Compléter avec le cola et remuer, traditionnellement avec le couteau qui a coupé le citron."],
-    note: "Il est préférable d'utiliser du jus de citron vert fraîchement obtenu pour son acidité."
+    note: "Il est préférable d’utiliser du jus de citron vert fraîchement obtenu pour son acidité."
   },
   'air-mail': {
-    source: "Whitfield, Here's How: Mixed Drinks, 1941"
+    source: "W. C. Whitfield, Here’s How: Mixed Drinks (1941)"
   },
   'bandung': {
     ings: [{"id": "sirop-rose", "qty": 75, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "lait", "qty": 225, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "eau", "qty": 0, "unit": "à compléter", "sub": false, "opt": true, "alts": []}],
-    steps: ["Ajouter le lait au sirop de rose jusqu'à obtenir la texture voulue.", "Ajouter de l'eau si nécessaire et des glaçons à votre convenance."]
+    steps: ["Ajouter le lait au sirop de rose jusqu'à obtenir la texture voulue.", "Ajouter de l’eau si nécessaire et des glaçons à votre convenance."]
   },
   'big-juicy': {
     flavor: {"su": 4, "ac": 3, "am": 0, "as": 3, "fo": 0},
     ings: [{"id": "cranberry", "qty": 75, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ananas", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 20, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre-riche", "qty": 10, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "grenadine", "qty": 10, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "eau-gazeuse", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
     note: "Pensez à varier la quantité des sirops selon que votre jus de cranberry soit sucré ou non. Ne pas hésiter à retirer du jus de citron vert si la recette vous paraît trop acidulée.",
-    author: "Jose « Juice » Miranda, WD-50 (NYC, US), 2006"
+    author: "Jose « Juice » Miranda, WD-50 (New York), 2006"
   },
   'berry-blast': {
     flavor: {"su": 4, "ac": 2, "am": 0, "as": 2, "fo": 0},
@@ -1193,7 +1204,7 @@ const RECIPE_EDITS = {
   'bramble': {
     flavor: {"su": 3, "ac": 2, "am": 0, "as": 1, "fo": 2},
     note: "Pour plus de fruits rouges, remplacer le sirop de sucre par du sirop de fraise par exemple.",
-    source: "Dick Bradsell, Fred's Club (Soho, London), 1984"
+    source: "Dick Bradsell, Fred’s Club (Londres), 1984"
   },
   'boulevardier': {
     note: "Se sert aussi sur glace dans un Old Fashioned comme un Negroni.",
@@ -1202,15 +1213,15 @@ const RECIPE_EDITS = {
   'brandy-crusta': {
     flavor: {"su": 2, "ac": 1, "am": 1, "as": 1, "fo": 4},
     steps: ["Givrer le bord d’un petit verre à pied avec du sucre, puis y placer un long zeste de citron.", "Remuer tous les ingrédients avec des glaçons dans un verre à mélange.", "Filtrer dans le verre préparé."],
-    note: "Idéalement, il est préférable de préparer à l'avance le verre et de le laisser reposer quelques heures afin que le sucre cristallise avec le zeste afin de réellement former une extension étanche au verre. Le passer ensuite un peu au frais avant de servir.\nPour bien réaliser le tour en zeste de citron : trouvez un citron faisant la bonne circonférence, puis découpez une rondelle de quelques cm avant de détacher la pulpe du bord et de déposer la peau dans le verre.",
-    source: "Joseph Santini, Jewel of the South (New Orleans), 1850s",
+    note: "Idéalement, il est préférable de préparer à l’avance le verre et de le laisser reposer quelques heures afin que le sucre cristallise avec le zeste afin de réellement former une extension étanche au verre. Le passer ensuite un peu au frais avant de servir.\nPour bien réaliser le tour en zeste de citron : trouvez un citron faisant la bonne circonférence, puis découpez une rondelle de quelques cm avant de détacher la pulpe du bord et de déposer la peau dans le verre.",
+    source: "Joseph Santini, Jewel of the South (La Nouvelle-Orléans), années 1850",
     easy: false
   },
   'dry-martini': {
     name: "(Dry) Martini"
   },
   'black-russian': {
-    source: "Gustave Tops, Hotel Metropole (Brussels, Belgium), 1949"
+    source: "Gustave Tops, Hôtel Metropole (Bruxelles), 1949"
   },
   'bloody-mary': {
     source: "Fernand Petiot, New York Bar (Paris), 1921"
@@ -1227,14 +1238,14 @@ const RECIPE_EDITS = {
   'bobby-burns': {
     flavor: {"su": 1, "ac": 0, "am": 2, "as": 1, "fo": 5},
     ings: [{"id": "scotch", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": ["whiskey-irlandais"]}, {"id": "vermouth-rouge", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "benedictine", "qty": 1, "unit": "c. de bar", "sub": false, "opt": false, "alts": []}],
-    note: "La version de base est l'original, le \"Baby Burns\", tandis que la version au whiskey irlandais est historiquement le \"Robert Burns\", issu du Jack's Manual de 1908.",
-    source: "Fancy Drinks, publié par Bishop & Babcock sous le nom \"Baby Burns\", 1900",
+    note: "La version de base est l’original, le \"Baby Burns\", tandis que la version au whiskey irlandais est historiquement le \"Robert Burns\", issu du Jack’s Manual de 1908.",
+    source: "Bishop & Babcock, Fancy Drinks (1900), sous le nom « Baby Burns »",
     subtitle: "Baby Burns, Robert Burns"
   },
   'blood-and-sand': {
     flavor: {"su": 3, "ac": 0, "am": 1, "as": 0, "fo": 3},
     note: "Nommé d’après le film de 1922 avec Rudolph Valentino.\nAjouter un peu de jus de citron si le résultat est trop sucré.",
-    source: "Savoy Cocktail Book, 1930"
+    source: "Harry Craddock, The Savoy Cocktail Book (1930)"
   },
   'blue-lagoon': {
     origin: "Classique",
@@ -1242,7 +1253,7 @@ const RECIPE_EDITS = {
     author: "",
     garn: "wheel-lime",
     note: "Si le résultat est trop sucré, ajouter un peu de jus de citron vert.\nVous pouvez utiliser ou non de la limonade gazeuse à votre convenance.\nPour plus de profondeur et toujours une belle couleur, vous pouvez ajouter quelques traits de liqueur de fruits rouges.",
-    source: "Andy MacElhone, Harry’s New York Bar (Paris), 1960s"
+    source: "Andy MacElhone, Harry’s New York Bar (Paris), années 1960"
   },
   'blue-hawaiian': {
     origin: "Classique",
@@ -1259,9 +1270,288 @@ const RECIPE_EDITS = {
   },
   'brown-derby': {
     flavor: {"su": 3, "ac": 3, "am": 2, "as": 1, "fo": 3}
+  },
+  'casino': {
+    glass: "Martini",
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans un verre martini refroidi.", "Décorer d’un zeste de citron et d’une cerise."],
+    source: "Jacob A. Didier, The Reminder, 3e éd. (1909)"
+  },
+  'clover-club': {
+    ings: [{"id": "gin", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-framboise", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": ["grenadine"]}, {"id": "citron", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "vermouth-sec", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "blanc-oeuf", "qty": 1, "unit": "", "sub": false, "opt": false, "alts": []}],
+    note: "Un gin au profil fruité, voire herbacé, fonctionne très bien ici.",
+    source: "Clover Club (Philadelphie), 1882"
+  },
+  'caipirinha': {
+    source: "Originaire de São Paulo (Brésil), 1918"
+  },
+  'champagne-cocktail': {
+    color: "#b46e18",
+    ings: [{"id": "champagne", "qty": 90, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "cognac", "qty": 10, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 2, "unit": "trait", "sub": false, "opt": false, "alts": []}, {"id": "grand-marnier", "qty": 2, "unit": "goutte", "sub": true, "opt": true, "alts": []}, {"id": "sucre-morceau", "qty": 1, "unit": "pièce", "sub": false, "opt": false, "alts": []}],
+    note: "La première version, sans cognac, figure dans Jerry Thomas, The Bon Vivant’s Companion (1862)."
+  },
+  'corpse-reviver-2': {
+    name: "Corpse Reviver No.2",
+    garn: "zest-lemon",
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans une coupe refroidie et exprimer un zeste de citron."],
+    source: "Harry Craddock, The Savoy Cocktail Book (1930)"
+  },
+  'cosmopolitan': {
+    source: "Toby Cecchini, The Odeon (New York), 1988"
+  },
+  'canchanchara': {
+    steps: ["Mélanger le miel, l’eau et le jus de citron vert, puis en enduire le fond et les parois du verre.", "Ajouter de la glace concassée, puis le rhum.", "Remuer de bas en haut."],
+    source: "Originaire de Cuba"
+  },
+  'campari-orange': {
+    name: "Garibaldi",
+    garn: "wedge-orange",
+    flavor: {"su": 3, "ac": 1, "am": 4, "as": 0, "fo": 2},
+    ings: [{"id": "campari", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "orange", "qty": 120, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Remplir un verre highball de glaçons.", "Verser le Campari et les trois quarts du jus d’orange.", "Remuer jusqu’à ce que le mélange soit bien froid.", "Faire mousser le reste du jus d’orange (au shaker ou au mixeur) et le verser sur le dessus.", "Décorer d’un quartier d’orange."],
+    subtitle: "Campari Orange"
+  },
+  'campari-spritz': {
+    ings: [{"id": "prosecco", "qty": 90, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "campari", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "eau-gazeuse", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
+    note: "Verser le prosecco en premier : ses bulles mélangent naturellement le cocktail."
+  },
+  'cinderella': {
+    flavor: {"su": 3, "ac": 2, "am": 1, "as": 0, "fo": 0},
+    ings: [{"id": "orange", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ananas", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron", "qty": 22.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "grenadine", "qty": 5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}, {"id": "eau-gazeuse", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}]
+  },
+  'citronnade-maison': {
+    garn: "mint",
+    garnish: "Rondelle de citron",
+    ings: [{"id": "limonade", "qty": 225, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "menthe", "qty": 4, "unit": "feuille", "sub": false, "opt": true, "alts": []}],
+    steps: ["Verser la limonade dans le verre.", "Ajouter des glaçons, quelques feuilles de menthe et une rondelle de citron."]
+  },
+  'cafe-frappe': {
+    ings: [{"id": "cafe", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sucre-blanc", "qty": 2, "unit": "c. à café", "sub": false, "opt": true, "alts": []}, {"id": "lait", "qty": 30, "unit": "ml", "sub": false, "opt": true, "alts": []}, {"id": "eau", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Shaker le café et le sucre jusqu’à obtenir une mousse épaisse.", "Verser dans un verre rempli de glace.", "Compléter avec l’eau froide, et le lait si on le souhaite."]
+  },
+  'ca-phe-sua-da': {
+    glass: "Highball"
+  },
+  'cloudy-tokyo': {
+    steps: ["Shaker le thé vert froid et le lait de coco, d’abord sans glace, puis avec.", "Verser un fond de soda à la noix de coco dans le verre.", "Filtrer le contenu du shaker par-dessus.", "Compléter avec le reste du soda."]
+  },
+  'cold-brew-julep': {
+    flavor: {"su": 3, "ac": 0, "am": 3, "as": 2, "fo": 0},
+    ings: [{"id": "menthe", "qty": 10, "unit": "feuille", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 30, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "cold-brew", "qty": 90, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    note: "Pour un résultat plus crémeux, vous pouvez rajouter de la crème épaisse sur le dessus."
+  },
+  'chartreuse-swizzle': {
+    author: "Marcovaldo Dionysos, Harry Denton’s Starlight Room (San Francisco), 2003",
+    color: "#d8ea2e"
+  },
+  'corn-n-oil': {
+    method: "Verre à mélange",
+    flavor: {"su": 2, "ac": 1, "am": 1, "as": 0, "fo": 5},
+    ings: [{"id": "rhum-brun", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "falernum", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}, {"id": "rhum-noir", "qty": 10, "unit": "ml", "sub": false, "opt": true, "alts": []}],
+    steps: ["Remuer le rhum, le falernum et l’Angostura avec des glaçons.", "Filtrer sur de la glace pilée.", "Si désiré, verser un filet de rhum noir sur le dessus."],
+    note: "Selon l’acidité du falernum, il peut être nécessaire d’ajouter un trait de jus de citron vert.",
+    source: "Classique de la Barbade"
+  },
+  'chilcano': {
+    ings: [{"id": "pisco", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ginger-ale", "qty": 120, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}]
+  },
+  'charlie-chaplin': {
+    garn: "",
+    garnish: "Quartier d’abricot",
+    color: "#d66524"
+  },
+  'chocolate-taza': {
+    flavor: {"su": 3, "ac": 0, "am": 2, "as": 1, "fo": 0},
+    ings: [{"id": "lait", "qty": 250, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "chocolat", "qty": 100, "unit": "g", "sub": false, "opt": false, "alts": [], "tip": "70 %"}, {"id": "sucre-blanc", "qty": 1, "unit": "c. à café", "sub": false, "opt": true, "alts": []}, {"id": "sel", "qty": 0.25, "unit": "pincée", "sub": false, "opt": false, "alts": []}, {"id": "maizena", "qty": 3.75, "unit": "g", "sub": false, "opt": true, "alts": []}],
+    steps: ["Chauffer le lait sans le faire bouillir.", "Ajouter le chocolat haché et le sel, fouetter jusqu’à épaississement.", "Servir bien chaud, idéalement avec des churros."],
+    note: "Ajouter du sucre au lait chaud avant le chocolat si celui-ci est trop amer.\nSi vous utilisez de la maïzena (ou une autre fécule), la délayer dans le lait froid avant de le chauffer, puis suivre les mêmes étapes : la texture sera plus épaisse."
+  },
+  'cafe-de-olla': {
+    ings: [{"id": "cafe", "qty": 200, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sucre-roux", "qty": 2, "unit": "c. à café", "sub": true, "opt": false, "alts": []}, {"id": "cannelle", "qty": 1, "unit": "", "sub": false, "opt": false, "alts": []}],
+    note: "Traditionnellement préparé dans un pot en terre cuite avec du piloncillo.\nIl est aussi possible d’ajouter des zestes d’orange, des clous de girofle ou de l’anis étoilé dans l’infusion."
+  },
+  'dalgona': {
+    ings: [{"id": "cafe-soluble", "qty": 2, "unit": "c. à café", "sub": false, "opt": false, "alts": []}, {"id": "sucre-blanc", "qty": 2, "unit": "c. à café", "sub": false, "opt": false, "alts": []}, {"id": "eau", "qty": 2, "unit": "c. à café", "sub": false, "opt": false, "alts": []}, {"id": "lait", "qty": 200, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Fouetter le café soluble, le sucre et l’eau bouillante jusqu’à obtenir une mousse ferme.", "Remplir un verre de glace et de lait (froid ou chaud).", "Déposer la mousse de café sur le dessus."],
+    note: "Popularisé en Corée du Sud en 2020 durant la pandémie de COVID-19.",
+    source: "Recette originaire de Macao, popularisée en Corée du Sud"
+  },
+  'citronnade-fraise': {
+    garn: "wedge-lemon",
+    garnish: "Fraise",
+    ings: [{"id": "fraise", "qty": 5, "unit": "pièce", "sub": false, "opt": false, "alts": []}, {"id": "limonade", "qty": 225, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Mixer les fraises avec la limonade.", "Filtrer et servir sur glace.", "Décorer d’un quartier de citron et d’une fraise."]
+  },
+  'concombre-menthe': {
+    note: "Cette recette s’adapte très facilement à d’autres fruits ou plantes « verts », comme le kiwi ou le basilic : n’hésitez pas à essayer avec ce que vous avez (mais ne mixez jamais les feuilles, pour éviter l’amertume).\nVous pouvez aussi mixer le concombre (avec ou sans la peau) avec le jus de citron vert et le sirop, ou encore en faire un milkshake en remplaçant l’eau gazeuse par du lait."
+  },
+  'calisson': {
+    note: "Si vous n’êtes pas amateur d’amaretto ou n’en avez pas, le pastis seul fonctionne aussi.\nPour éviter que les pommes ne s’oxydent, les congeler avec tout ou partie du jus de citron."
+  },
+  'paloma': {
+    steps: ["Givrer de sel le bord d’un verre highball.", "Y verser la tequila et presser le citron vert.", "Ajouter la glace et la pincée de sel, puis compléter avec le soda au pamplemousse.", "Remuer doucement.", "Décorer d’un quartier de citron vert."]
+  },
+  'angel-face': {
+    source: "Harry Craddock, The Savoy Cocktail Book (1930)"
+  },
+  'old-pal': {
+    author: "Harry MacElhone, Harry’s New York Bar (Paris), 1922"
+  },
+  'jungle-bird': {
+    author: "Jeffrey Ong, Aviary Bar du Hilton (Kuala Lumpur), 1978"
+  },
+  'japanese-cocktail': {
+    author: "Jerry Thomas, Bar-Tender’s Guide (1862)"
+  },
+  'remember-the-maine': {
+    author: "Charles H. Baker, The Gentleman’s Companion (1939)"
   }
 };
 Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
+
+/* Recettes modifiées dans l'appli puis reprises dans le catalogue (sauvegarde envoyée), par version des données :
+   lors de la mise à jour vers cette version, ces recettes reprennent la version du catalogue (relue et corrigée)
+   au lieu de garder la copie modifiée de l'appareil. Une photo prise dans l'appli est conservée. */
+const SYNCED_EDITS = {
+  26: ['casino', 'clover-club', 'caipirinha', 'champagne-cocktail', 'corpse-reviver-2', 'cosmopolitan', 'canchanchara', 'campari-orange', 'campari-spritz', 'cinderella', 'citronnade-maison', 'cafe-frappe', 'ca-phe-sua-da', 'cloudy-tokyo', 'cold-brew-julep', 'chartreuse-swizzle', 'corn-n-oil', 'chilcano', 'charlie-chaplin', 'chocolate-taza', 'cafe-de-olla', 'dalgona', 'citronnade-fraise', 'concombre-menthe', 'calisson']
+};
+
+/* Étape de garniture, ajoutée en fin de recette quand les étapes n'en parlent pas encore (zeste exprimé, rondelle, cerise…).
+   GARNISH_RE repère une étape qui parle déjà de la garniture : l'étape n'est alors pas ajoutée (voir aussi upgrade() dans app.js). */
+const GARNISH_RE = /d[ée]cor|garni|exprim|zeste|rondelle|quartier|cerise|brin|ruban|olive|c[ée]leri|feuille|grains? de caf|saupoudr|râp|ananas|framboise|fraise|tranche|bâton|pétale|morceau/i;
+const GARNISH_STEPS = {
+  'angel-face': "Décorer d’un quartier de pomme.",
+  'aviation': "Décorer d’une cerise.",
+  'between-the-sheets': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'daiquiri': "Décorer d’une rondelle de citron vert.",
+  'gin-fizz': "Décorer d’une rondelle de citron.",
+  'last-word': "Décorer d’une cerise.",
+  'mary-pickford': "Décorer d’une cerise.",
+  'monkey-gland': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'paradise': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'ramos-fizz': "Décorer d’une rondelle de citron.",
+  'rusty-nail': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'sidecar': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'stinger': "Décorer d’un brin de menthe.",
+  'tuxedo': "Exprimer un zeste de citron au-dessus du verre, puis le déposer. Décorer d’une cerise.",
+  'vieux-carre': "Exprimer un zeste de citron au-dessus du verre, puis le déposer. Décorer d’une cerise.",
+  'whiskey-sour': "Décorer d’une rondelle d’orange et d’une cerise.",
+  'white-lady': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'bellini': "Décorer d’un quartier de pêche.",
+  'champagne-cocktail': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer. Décorer d’une cerise.",
+  'cosmopolitan': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'french-75': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'grasshopper': "Décorer d’un brin de menthe.",
+  'hemingway-special': "Décorer d’une rondelle de citron vert.",
+  'long-island': "Décorer d’un quartier de citron.",
+  'margarita': "Décorer d’une rondelle de citron vert.",
+  'mimosa': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'mint-julep': "Décorer d’un brin de menthe.",
+  'mojito': "Décorer d’un brin de menthe et d’une rondelle de citron vert.",
+  'moscow-mule': "Décorer d’une rondelle de citron vert.",
+  'pina-colada': "Décorer d’un morceau d’ananas et d’une cerise.",
+  'sea-breeze': "Décorer d’un quartier de citron vert.",
+  'sex-on-the-beach': "Décorer d’une rondelle d’orange.",
+  'singapore-sling': "Décorer d’un morceau d’ananas et d’une cerise.",
+  'tequila-sunrise': "Décorer d’une rondelle d’orange.",
+  'vesper': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'zombie': "Décorer d’un brin de menthe, d’un morceau d’ananas et d’une cerise.",
+  'barracuda': "Décorer d’un morceau d’ananas.",
+  'bees-knees': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'bramble': "Décorer de quelques mûres et d’une rondelle de citron.",
+  'canchanchara': "Décorer d’une rondelle de citron vert.",
+  'dark-n-stormy': "Décorer d’un quartier de citron vert.",
+  'french-martini': "Décorer d’une framboise.",
+  'lemon-drop': "Décorer d’une rondelle de citron.",
+  'new-york-sour': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'old-cuban': "Décorer d’un brin de menthe.",
+  'paloma': "Décorer d’un quartier de citron vert.",
+  'penicillin': "Décorer d’un morceau de gingembre confit.",
+  'russian-spring-punch': "Décorer de quelques fruits rouges et d’une rondelle de citron.",
+  'southside': "Décorer d’un brin de menthe.",
+  'spicy-fifty': "Décorer d’une fine rondelle de piment rouge.",
+  'suffering-bastard': "Décorer d’un brin de menthe et d’une rondelle d’orange.",
+  'tipperary': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'tommys-margarita': "Décorer d’un quartier de citron vert.",
+  'vento': "Décorer d’un grain de raisin blanc.",
+  'yellow-bird': "Décorer d’une rondelle de citron vert.",
+  'rum-sour': "Décorer d’une rondelle de citron vert.",
+  'rum-mule': "Décorer d’un quartier de citron vert.",
+  'gin-sour': "Décorer d’une rondelle de citron.",
+  'gimlet': "Décorer d’une rondelle de citron vert.",
+  'el-diablo': "Décorer d’un quartier de citron vert.",
+  'gold-rush': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'arnold-palmer': "Décorer d’un quartier de citron.",
+  'pussyfoot': "Décorer d’une rondelle d’orange.",
+  'cinderella': "Décorer d’une rondelle d’orange.",
+  'espresso-tonic': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'diabolo-menthe': "Décorer d’un brin de menthe.",
+  'agua-sandia': "Décorer d’un quartier de citron vert.",
+  'agua-pepino': "Décorer d’une rondelle de citron vert et d’un brin de menthe.",
+  'switchel': "Décorer d’un quartier de citron.",
+  'nimbu-pani': "Décorer d’une rondelle de citron vert.",
+  'sekanjabin': "Décorer d’un brin de menthe.",
+  'limonana': "Décorer d’un brin de menthe.",
+  'chai-glace': "Décorer d’un bâton de cannelle.",
+  'shrub-soda': "Décorer de quelques fruits rouges.",
+  'mazagran': "Décorer d’une rondelle de citron.",
+  'agua-limon-chia': "Décorer d’une rondelle de citron vert.",
+  'the-glace-peche': "Décorer d’un quartier de citron.",
+  'pamplemousse-romarin': "Décorer d’un brin de romarin.",
+  'ginger-no-jito': "Décorer d’un brin de menthe.",
+  'pegu-club': "Décorer d’une rondelle de citron vert.",
+  'jack-rose': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'old-pal': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'algonquin': "Décorer d’un morceau d’ananas et d’une cerise.",
+  'pink-lady': "Décorer d’une cerise.",
+  'bobby-burns': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'blood-and-sand': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'gin-rickey': "Décorer d’un quartier de citron vert.",
+  'greyhound': "Décorer d’un quartier de citron vert.",
+  'bamboo': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'hot-toddy': "Décorer d’une rondelle de citron et d’un bâton de cannelle.",
+  'vin-chaud': "Décorer d’une rondelle d’orange et d’un bâton de cannelle.",
+  'blue-lagoon': "Décorer d’une rondelle de citron vert.",
+  'jungle-bird': "Décorer d’un morceau d’ananas.",
+  'hurricane': "Décorer d’une rondelle d’orange et d’une cerise.",
+  'strawberry-daiquiri': "Décorer de quelques fruits rouges.",
+  'porn-star-martini': "Décorer d’un demi-fruit de la passion.",
+  'breakfast-martini': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'siesta': "Décorer d’une rondelle de citron vert.",
+  'gin-gin-mule': "Décorer d’un brin de menthe.",
+  'red-hook': "Décorer d’une cerise.",
+  'division-bell': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'enzoni': "Décorer d’un grain de raisin.",
+  'jasmine': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'greenpoint': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'fitzgerald': "Décorer d’une rondelle de citron.",
+  'bitter-giuseppe': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'amaretto-sour': "Exprimer un zeste de citron au-dessus du verre, puis le déposer. Décorer d’une cerise.",
+  'pink-gin': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'corn-n-oil': "Décorer d’un quartier de citron vert.",
+  'el-presidente': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'hotel-nacional': "Décorer d’une rondelle de citron vert.",
+  'air-mail': "Décorer d’une rondelle de citron vert.",
+  'japanese-cocktail': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'scofflaw': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'ward-eight': "Décorer d’une cerise.",
+  'chilcano': "Décorer d’une rondelle de citron vert.",
+  'charlie-chaplin': "Décorer d’un quartier d’abricot.",
+  'satans-whiskers': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'toronto': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
+  'remember-the-maine': "Décorer d’une cerise.",
+  'brown-derby': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'cafe-de-olla': "Décorer d’un bâton de cannelle.",
+  'cidre-chaud': "Décorer d’une rondelle d’orange et d’un bâton de cannelle.",
+  'aguapanela': "Décorer d’une rondelle de citron.",
+  'terere': "Décorer d’un brin de menthe.",
+  'sharbat-rose': "Décorer de quelques pétales de rose.",
+  'the-gingembre-citron': "Décorer d’une rondelle de citron.",
+  'concombre-menthe': "Décorer d’un brin de menthe.",
+  'orangeade': "Décorer d’une rondelle d’orange.",
+  'le-verger': "Décorer d’un quartier de pomme."
+};
+const addGarnishStep = r => { const g = GARNISH_STEPS[r.id]; if (g && Array.isArray(r.steps) && !GARNISH_RE.test(r.steps.join(' '))) r.steps = [...r.steps, g]; };
+RECIPES.forEach(addGarnishStep);
 /* Le kirsch, sec et marqué par le noyau, est le meilleur remplaçant du marasquin (avec un trait de sirop pour le sucre). */
 RECIPES.forEach(r => r.ings.forEach(i => { if (i.id === 'marasquin' && !i.alts.includes('kirsch')) i.alts = [...i.alts, 'kirsch']; }));
 
@@ -1335,7 +1625,25 @@ const PHOTOS = {
   'sex-on-the-beach': 'photos/sex-on-the-beach.jpg',
   'spritz': 'photos/aperol-spritz.jpg',
   'tequila-sunrise': 'photos/tequila-sunrise.jpg',
-  'vin-chaud': 'photos/vin-chaud.jpg'
+  'vin-chaud': 'photos/vin-chaud.jpg',
+  'ca-phe-sua-da': 'photos/ca-phe-sua-da.jpg',
+  'cafe-de-olla': 'photos/cafe-de-olla.jpg',
+  'cafe-frappe': 'photos/cafe-frappe.jpg',
+  'campari-spritz': 'photos/campari-spritz.jpg',
+  'campari-orange': 'photos/campari-orange.jpg',
+  'dalgona': 'photos/dalgona.jpg',
+  'canchanchara': 'photos/canchanchara.jpg',
+  'casino': 'photos/casino.jpg',
+  'champagne-cocktail': 'photos/champagne-cocktail.jpg',
+  'chartreuse-swizzle': 'photos/chartreuse-swizzle.jpg',
+  'chilcano': 'photos/chilcano.jpg',
+  'chocolate-taza': 'photos/chocolate-taza.jpg',
+  'citronnade-fraise': 'photos/citronnade-fraise.jpg',
+  'citronnade-maison': 'photos/citronnade-maison.jpg',
+  'cold-brew-julep': 'photos/cold-brew-julep.jpg',
+  'concombre-menthe': 'photos/concombre-menthe.jpg',
+  'corpse-reviver-2': 'photos/corpse-reviver-2.jpg',
+  'cuba-libre': 'photos/cuba-libre.jpg'
 };
 RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
@@ -1373,14 +1681,14 @@ const PHOTO_CREDITS = {
   'brandy-crusta': { by: 'Ralf Roletschek', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:15-09-26-RalfR-WLC-0306.jpg' },
   'breakfast-martini': { by: 'popvoid', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Breakfast_Martini.jpg' },
   'brown-derby': { by: 'Steven Guzzardi', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/rTUVeP' },
-  'ca-phe-sua-da': { by: 'Demi DeHerrera', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/tasse-en-verre-remplie-de-glace-latte-sur-la-table-L-sm1B4L1Ns'},
-  'dalgona': { by: 'Wikieditkid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Homemade_Dalgona_Coffee.jpg'},
-  'cafe-de-olla': { by: 'ProtoplasmaKid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Caf%C3%A9_de_olla_.jpg'},
-  'cafe-frappe': { by: 'Kary Shea', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/creme-glacee-brune-et-blanche-sur-table-en-bois-brun-1e5V69AQjgA'},
-  'caipirinha': { by: 'Anil Sharma', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-rempli-de-glace-et-une-garniture-de-citron-vert-qwAl49ERSeg'},
-   'campari-orange': { by: 'eWikiLearner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Campari_Orange.jpg'},
-   'campari-spritz': { by: 'Eric Laslau', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dune-personne-assise-a-une-table-avec-une-boisson-XxnB8l-_mrg'},
-  'clover-club': { by: 'Ferals Studio' },
+  'ca-phe-sua-da': { by: 'Demi DeHerrera', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/tasse-en-verre-remplie-de-glace-latte-sur-la-table-L-sm1B4L1Ns' },
+  'dalgona': { by: 'Wikieditkid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Homemade_Dalgona_Coffee.jpg' },
+  'cafe-de-olla': { by: 'ProtoplasmaKid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Caf%C3%A9_de_olla_.jpg' },
+  'cafe-frappe': { by: 'Kary Shea', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/creme-glacee-brune-et-blanche-sur-table-en-bois-brun-1e5V69AQjgA' },
+  'caipirinha': { by: 'Anil Sharma', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-rempli-de-glace-et-une-garniture-de-citron-vert-qwAl49ERSeg' },
+  'campari-orange': { by: 'eWikiLearner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Campari_Orange.jpg' },
+  'campari-spritz': { by: 'Eric Laslau', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dune-personne-assise-a-une-table-avec-une-boisson-XxnB8l-_mrg' },
+  'clover-club': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2pKyRNm' },
   'daiquiri': { by: 'Marta Smith' },
   'dark-n-stormy': { by: 'Elissa Landry' },
   'espresso-martini': { by: 'Nima Naseri' },
@@ -1402,7 +1710,20 @@ const PHOTO_CREDITS = {
   'sangria': { by: 'Srijal Maharjan' },
   'sex-on-the-beach': { by: 'Hope Kauffman' },
   'tequila-sunrise': { by: 'Diego Arenas de Rodrigo' },
-  'vin-chaud': { by: 'Gaby Dyson' }
+  'vin-chaud': { by: 'Gaby Dyson' },
+  'canchanchara': { by: 'Miriam Gómez Blanes', lic: 'CC BY 2.0', url: 'https://commons.wikimedia.org/wiki/File:Canchanchara.jpg' },
+  'casino': { by: 'Adrian Scottow', lic: 'CC BY-SA 2.0', url: 'https://commons.wikimedia.org/wiki/File:Casino_Cocktail_(9120690108).jpg' },
+  'champagne-cocktail': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/DJVVE6' },
+  'chartreuse-swizzle': { by: 'BanjoZebra', lic: 'CC BY 4.0', url: 'https://commons.wikimedia.org/wiki/File:Chartreuse_swizzle.jpg' },
+  'chilcano': { by: 'Dtarazona', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:Chilcano_Superba_B_09012010.jpg' },
+  'chocolate-taza': { by: 'Theo Crazzolara', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-biere-BpcTCHoruSo' },
+  'citronnade-fraise': { by: 'Boba Jaglicic', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/jus-de-fraise-et-de-citron-dans-des-verres-highball-T5ruxJf7NVE' },
+  'citronnade-maison': { by: 'Juliet Frías', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-du-jus-de-citron-WDgN0XclV_w' },
+  'cold-brew-julep': { by: 'Matt Hoffman', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/the-dans-un-verre-a-boire-UXkA-bvjNxo' },
+  'concombre-menthe': { by: 'Chris Reyem', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-highball-vdzjEa71U_I' },
+  'corpse-reviver-2': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:Corpse_Reviver_2.jpg' },
+  'cosmopolitan': { by: 'Pavel Shitov', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-rouge-avec-une-garniture-decorce-dorange-6qiYDDruhTc' },
+  'cuba-libre': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2nnyiC3' }
 };
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
 
@@ -1447,7 +1768,28 @@ const PHOTO_STATUS = {
   'bramble': 'ok',
   'brandy-crusta': 'ok',
   'breakfast-martini': 'ok',
-  'brown-derby': 'ok'
+  'brown-derby': 'ok',
+  'ca-phe-sua-da': 'ok',
+  'cafe-de-olla': 'ok',
+  'cafe-frappe': 'ok',
+  'caipirinha': 'ok',
+  'campari-spritz': 'ok',
+  'campari-orange': 'ok',
+  'dalgona': 'ok',
+  'canchanchara': 'ok',
+  'casino': 'ok',
+  'champagne-cocktail': 'ok',
+  'chartreuse-swizzle': 'ok',
+  'chilcano': 'ok',
+  'chocolate-taza': 'ok',
+  'citronnade-fraise': 'ok',
+  'citronnade-maison': 'ok',
+  'clover-club': 'ok',
+  'cold-brew-julep': 'ok',
+  'concombre-menthe': 'ok',
+  'corpse-reviver-2': 'ok',
+  'cosmopolitan': 'ok',
+  'cuba-libre': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });

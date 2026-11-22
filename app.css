@@ -711,3 +711,7 @@ input[type=radio]{accent-color:var(--accent)}
 /* ---------- catalogue : la recherche reste visible en haut de l'écran pendant le défilement ---------- */
 .cat-search{position:sticky;top:calc(var(--topbar-h,57px) + env(safe-area-inset-top,0px));z-index:15;background:var(--bg);margin-block:-8px;padding-block:8px}
 @media (min-width:1024px),(orientation:landscape) and (max-height:540px) and (min-width:560px){.cat-search{top:0;padding-top:16px}}
+
+/* ---------- liste d'ingrédients : facultatif ---------- */
+.opt-tag{display:inline-block;margin-left:8px;padding:1px 7px;border:1px solid var(--muted);border-radius:999px;font:600 10px var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);vertical-align:2px;white-space:nowrap}
+.ings li:has(.opt-tag) .q{color:var(--muted)}
