@@ -1376,8 +1376,10 @@ const PHOTO_CREDITS = {
   'ca-phe-sua-da': { by: 'Demi DeHerrera', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/tasse-en-verre-remplie-de-glace-latte-sur-la-table-L-sm1B4L1Ns'},
   'dalgona': { by: 'Wikieditkid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Homemade_Dalgona_Coffee.jpg'},
   'cafe-de-olla': { by: 'ProtoplasmaKid', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Caf%C3%A9_de_olla_.jpg'},
-  
-  'caipirinha': { by: 'Leighann Blackwood' },
+  'cafe-frappe': { by: 'Kary Shea', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/creme-glacee-brune-et-blanche-sur-table-en-bois-brun-1e5V69AQjgA'},
+  'caipirinha': { by: 'Anil Sharma', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-rempli-de-glace-et-une-garniture-de-citron-vert-qwAl49ERSeg'},
+   'campari-orange': { by: 'eWikiLearner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Campari_Orange.jpg'},
+   'campari-spritz': { by: 'Eric Laslau', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dune-personne-assise-a-une-table-avec-une-boisson-XxnB8l-_mrg'},
   'clover-club': { by: 'Ferals Studio' },
   'daiquiri': { by: 'Marta Smith' },
   'dark-n-stormy': { by: 'Elissa Landry' },
