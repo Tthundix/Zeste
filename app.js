@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.43.1';
+const APP_VERSION = '0.43.2';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1557,9 +1557,9 @@ function openForm(id, variantOf, keep) {
   const src = id ? S.recipes.find(r => r.id === id) : null;
   const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
   /* Nouvelle variante : on part de la recette de base (à modifier), comme création personnelle liée à elle. */
-  /* On ne reprend que ce qui fait la recette : ingrédients, préparation, méthode, verre, garniture et couleur. */
+  /* On ne reprend que ce qui fait la recette : ingrédients, préparation, méthode, verre, garniture, couleur et profil de goût. */
   if (base) {
-    ['ings', 'steps', 'method', 'glass', 'garn', 'garnish', 'rim', 'color'].forEach(k => { r[k] = clone(base[k]); });
+    ['ings', 'steps', 'method', 'glass', 'garn', 'garnish', 'rim', 'color', 'flavor'].forEach(k => { r[k] = clone(base[k]); });
     Object.assign(r, { parent: base.id }, keep || { name: base.name + ' (variante)' });
   }
   /* Recette de base possible : toutes, sauf elle-même et ses propres variantes (pas de boucle). Un nom porté par deux recettes est précisé par l'id. */
