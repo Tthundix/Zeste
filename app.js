@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.42.0';
+const APP_VERSION = '0.43.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -88,6 +88,15 @@ function upgrade(d) {
     d.v = 2; d.dataVersion = 0;
   }
   if (d.dataVersion !== DATA_VERSION) {
+    // Les recettes du catalogue ne se suppriment plus : celles supprimées avant reviennent (sauf celles retirées du catalogue).
+    d.removed = [];
+    // Ingrédients remplacés (ING_RENAMED dans data.js) : recettes, préparations, bar et liste d'ingrédients.
+    Object.entries(ING_RENAMED).forEach(([from, to]) => {
+      const fix = rows => (rows || []).forEach(x => { if (x.id === from) x.id = to; if (Array.isArray(x.alts)) x.alts = x.alts.map(a => a === from ? to : a); });
+      d.recipes.forEach(r => fix(r.ings)); d.preps.forEach(p => { fix(p.ings); if (p.makes === from) p.makes = to; });
+      if (Array.isArray(d.owned)) d.owned = [...new Set(d.owned.map(x => x === from ? to : x))];
+      delete d.ings[from];
+    });
     // Recettes modifiées puis reprises dans le catalogue : elles reprennent la version du catalogue (voir SYNCED_EDITS dans data.js).
     const keepPhoto = {};
     Object.keys(SYNCED_EDITS).filter(v => +v > (d.dataVersion || 0) && +v <= DATA_VERSION).forEach(v => SYNCED_EDITS[v].forEach(id => {
@@ -112,8 +121,17 @@ function upgrade(d) {
         if (d.removed.includes(b.id)) return;
         /* Recette déjà créée par l'utilisateur sous le même nom (une création reprise dans le catalogue) :
            sa version devient la recette de départ, marquée comme modifiée, au lieu d'un doublon. */
-        const own = d.recipes.find(r => r.src !== 'builtin' && norm(r.name) === norm(b.name));
-        if (own) { renameRecipe(d, own.id, b.id); Object.assign(own, { src: 'builtin', edited: true }); if (!okPhoto(own.photo) && b.photo) { own.photo = b.photo; if (b.photoCredit) own.photoCredit = clone(b.photoCredit); } }
+        /* Création reprise dans le catalogue (même nom, ou un des anciens noms listés dans « aka ») : elle devient la recette
+           du catalogue, relue, au lieu d'un doublon. Ses liens (listes, notes, courses, variantes) suivent ; une photo prise
+           dans l'appli est conservée. */
+        const names = [b.name, ...(b.aka || [])].map(norm);
+        const own = d.recipes.find(r => r.src !== 'builtin' && names.includes(norm(r.name)));
+        if (own) {
+          renameRecipe(d, own.id, b.id);
+          const mine = typeof own.photo === 'string' && own.photo.startsWith('data:') ? own.photo : '';
+          Object.keys(own).forEach(k => delete own[k]); Object.assign(own, clone(b));
+          if (mine) { own.photo = mine; delete own.photoCredit; own.edited = true; }
+        }
         else d.recipes.push(clone(b));
       }
       else if (d.recipes[k].src === 'builtin' && !d.recipes[k].edited) d.recipes[k] = clone(b);
@@ -299,6 +317,7 @@ function garnIcon(key) {
 }
 /* Ligne d'ingrédient : étiquette « Facultatif » bien visible, et lien direct vers la préparation maison
    (son nom n'est ajouté que s'il diffère de celui de l'ingrédient, souvent identique). */
+const DICE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>';
 const OPT_TAG = '<span class="opt-tag">Facultatif</span>';
 const homeLink = (prepId, ingId) => {
   const pn = prepName(prepId), same = norm(pn) === norm(ingName(ingId));
@@ -511,6 +530,7 @@ function renderCatalogue(m) {
       <div class="seg" role="group" aria-label="Disponibilité">${[['all', 'Tous', all.length], ['ok', 'Réalisables', nOk], ['one', 'Manque 1', nOne]].map(([v, l, n]) => `<button data-act="avail" data-v="${v}" class="${UI.avail === v ? 'on' : ''}" aria-pressed="${UI.avail === v}">${l}<span class="n">${n}</span></button>`).join('')}</div>
       <div class="ctl-row">
         <button class="btn small btn-filters" data-act="toggle-filters" aria-expanded="${UI.filtersOpen}">Filtres<span id="nf-badge">${nf ? ` · ${nf}` : ''}</span></button>
+        <button class="btn small" data-act="random" title="Ouvrir une recette au hasard parmi les résultats affichés (tous, ou seulement les réalisables)">${DICE_ICON} Au hasard</button>
         <label class="sort" for="cf-sort">Trier par <select id="cf-sort">${opts([['name', 'Nom'], ['rating', 'Ma note'], ['ready', 'Le plus faisable'], ['recent', 'Ajout récent']], UI.sort)}</select></label>
       </div>
       ${UI.f.ings.length ? `<div class="chips f-active"><span class="hint">${UI.f.ings.length > 1 ? (UI.f.ingMode === 'all' ? 'Avec tous ces ingrédients :' : 'Avec au moins un de :') : 'Avec :'}</span>${UI.f.ings.map(id => `<button class="chip on" data-act="f-ing-rm" data-id="${esc(id)}" aria-label="Retirer ${esc(ingName(id))}">${esc(ingName(id))} ×</button>`).join('')}</div>` : ''}
@@ -565,6 +585,7 @@ function renderResults() {
   else if (UI.sort === 'ready') list.sort((x, y) => x.a.miss.length - y.a.miss.length || byName(x, y));
   else if (UI.sort === 'recent') list.sort((x, y) => (y.r.created || 0) - (x.r.created || 0) || byName(x, y));
   else list.sort(byName);
+  UI.lastResults = list.map(x => x.r.id);
   el.innerHTML = list.length ? list.map(({ r, a }) => {
     const [cls, txt] = statusPill(a), rt = S.ratings[r.id] || 0;
     return `<button class="card" data-act="open" data-id="${esc(r.id)}" style="--c:${okColor(r.color)}">
@@ -900,6 +921,11 @@ const byRecName = (a, b) => a.name.localeCompare(b.name, 'fr');
 /* Variantes : `parent` est l'id de la recette de base. Un lien vers une recette supprimée est ignoré. */
 const parentOf = r => (r && r.parent && r.parent !== r.id && S.recipes.find(x => x.id === r.parent)) || null;
 const variantsOf = r => S.recipes.filter(x => x.parent === r.id && x.id !== r.id).sort(byRecName);
+/* Recette créée sur l'appareil (pas une recette du catalogue) : seule celle-ci peut être supprimée. */
+const isMine = r => r.src !== 'builtin' && !BUILTIN.has(r.id);
+/* Toutes les recettes dérivées : variantes directes, puis variantes de variantes (ex. les Espresso Martini sous le Martini). */
+const allVariantsOf = r => { const ids = descendantIds(r.id); ids.delete(r.id); const direct = variantsOf(r);
+  return [...direct, ...S.recipes.filter(x => ids.has(x.id) && !direct.includes(x)).sort(byRecName)]; };
 function descendantIds(id) {
   const out = new Set(), todo = [id];
   while (todo.length) { const c = todo.pop(); S.recipes.forEach(x => { if (x.parent === c && !out.has(x.id)) { out.add(x.id); todo.push(x.id); } }); }
@@ -1164,13 +1190,9 @@ function rateHTML(id, rt) {
   const st = '<span>★</span>'.repeat(5);
   return `<div class="rate"><div class="rate-stars" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${rt}" aria-valuetext="${rt ? fmtRating(rt) + ' sur 5' : 'Pas de note'}" data-id="${esc(id)}" data-v="${rt}"><span class="r-bg">${st}</span><span class="r-fg" style="width:${rt / 5 * 100}%">${st}</span></div><span class="rate-l">${rt ? fmtRating(rt) + '/5' : 'Pas encore noté'}</span>${rt ? `<button class="btn link small" data-act="rate-clear" data-id="${esc(id)}">Effacer</button>` : ''}</div>`;
 }
-/* Source de la recette : le texte (source ou auteur) est dans le bandeau au-dessus du titre, pour toutes les recettes ;
-   la ligne « Source » des infos n'apparaît que s'il y a un lien (http ou https). */
-function sourceFact(r) {
-  const url = /^https?:\/\//i.test(r.url || '') ? r.url : '';
-  if (!url) return '';
-  return `<div class="wide"><dt>Source</dt><dd><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">voir la source</a></dd></div>`;
-}
+/* Source de la recette : le texte (source ou auteur) est dans le bandeau au-dessus du titre ; s'il y a un lien (http ou https),
+   c'est ce texte qui devient cliquable. */
+const sourceURL = r => /^https?:\/\//i.test(r.url || '') ? r.url : '';
 /* Crédit d'une photo sous licence libre ; le lien n'est affiché que s'il commence par http(s). */
 const creditWho = c => /^https?:\/\//.test(c.url || '') ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.by)}</a>` : esc(c.by);
 function creditHTML(r) {
@@ -1284,7 +1306,7 @@ function openDetail(id, keep, back) {
   sheetState = { type: 'detail', id, back: back || null };
   if (!keep) { S.views = S.views || {}; const v = S.views[id] || { n: 0 }; v.n++; v.t = Date.now(); S.views[id] = v; save(); }
   const a = analyze(r, ownedSet()), abv = estAbv(r), rt = S.ratings[r.id] || 0, del = UI.confirm === 'del:' + r.id, nt = S.notes[r.id] || { text: '', pub: false }, pv = nt.pub ? '1' : '0';
-  const top = !!String(nt.text || '').trim(), gl = garnLabel(r), par = parentOf(r), vars = variantsOf(r);
+  const top = !!String(nt.text || '').trim(), gl = garnLabel(r), par = parentOf(r), vars = allVariantsOf(r), mine = isMine(r);
   const avis = cls => `<section class="sec mynote${top ? ' top' : ''} ${cls}"><div class="shead"><h2>Mon avis</h2><div class="seg mini" role="group" aria-label="Visibilité de l'avis">${[['0', 'Privé'], ['1', 'Public']].map(([v, l]) => `<button data-act="note-vis" data-id="${esc(r.id)}" data-v="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${l}</button>`).join('')}</div></div>
       <label class="sr" for="my-note">Mon avis sur ce cocktail</label><textarea id="my-note" data-id="${esc(r.id)}" rows="${top ? 2 : 4}" placeholder="Ressenti, ajustements, accords…">${esc(nt.text)}</textarea>
       <p class="hint" id="note-st">${esc(noteHint(S.notes[r.id]))}</p></section>`;
@@ -1302,7 +1324,7 @@ function openDetail(id, keep, back) {
     return `<li><span class="dot ${s.st === 'ok' ? '' : s.st}" aria-label="${{ ok: 'Dans le bar', sub: 'Substitut disponible', home: 'À faire maison', miss: 'Manquant', opt: 'Facultatif, absent' }[s.st]}"></span><span class="q">${esc(fmtQty(row, kServ))}</span><span class="nm"><button class="ing-link" data-act="ing-info" data-id="${esc(row.id)}" title="Voir la fiche de cet ingrédient">${esc(ingName(row.id))}</button>${row.opt ? OPT_TAG : ''}${row.tip ? `<small class="tip">Conseil : ${esc(row.tip)}</small>` : ''}${info.length ? `<small>${info.join(' · ')}</small>` : ''}</span></li>`;
   }).join('');
   sh.innerHTML = `
-  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="share" data-id="${esc(r.id)}" aria-label="Partager" title="Partager">${SHARE_ICON}</button><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button><button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button></div></div>
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="back">‹ ${back ? 'Collection' : 'Retour'}</button><span class="grow"></span><button class="btn small" data-act="share" data-id="${esc(r.id)}" aria-label="Partager" title="Partager">${SHARE_ICON}</button><button class="btn small" data-act="edit" data-id="${esc(r.id)}">Modifier</button>${mine ? `<button class="btn small ghost danger" data-act="del" data-id="${esc(r.id)}">${del ? 'Confirmer' : 'Supprimer'}</button>` : ''}</div></div>
   <div class="sheet-body"><article class="inner wide detail" style="--c:${okColor(r.color)}">
     <div class="d-left cols dz">
       <div class="d-hero dhero o1">${visual(r)}</div>${creditHTML(r)}
@@ -1312,8 +1334,8 @@ function openDetail(id, keep, back) {
     </div>
     <div class="d-right cols dz">
       <div class="d-head dz">
-      <header class="dhead o2"><p class="eyebrow"><span class="orig">${esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${par ? `<p class="variant-of">Variante de <button type="button" class="variant-link" data-act="open" data-id="${esc(par.id)}">${esc(par.name)}</button></p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
-      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div>${sourceFact(r)}</dl>
+      <header class="dhead o2"><p class="eyebrow"><span class="orig">${sourceURL(r) ? `<a href="${esc(sourceURL(r))}" target="_blank" rel="noopener noreferrer" title="Voir la source">${esc(origLabel(r))}</a>` : esc(origLabel(r))}</span></p><h1>${esc(r.name)}</h1>${r.subtitle ? `<p class="subtitle">${esc(r.subtitle)}</p>` : ''}${par ? `<p class="variant-of">Variante de <button type="button" class="variant-link" data-act="open" data-id="${esc(par.id)}">${esc(par.name)}</button></p>` : ''}${rateHTML(r.id, rt)}${top ? avis('') : ''}</header>
+      <dl class="facts o3"><div><dt>Méthode</dt><dd>${esc(r.method)}${isEasy(r) ? ' · Facile' : ''}</dd></div><div><dt>Verre</dt><dd>${esc(r.glass)}</dd></div><div class="wide"><dt>Garniture</dt><dd>${esc(gl || 'Aucune')}</dd></div>${r.rim ? `<div><dt>Bord du verre</dt><dd>${esc(rimLabel(r.rim))}</dd></div>` : ''}<div title="Estimation après dilution par la glace"${r.rim ? '' : ' class="wide"'}><dt>Degré estimé</dt><dd class="mono">${isNA(r) ? 'Sans alcool' : abv == null ? '—' : `≈ ${abv} % vol.`}</dd></div></dl>
       <div class="o4 lists-pick"><div class="chips" aria-label="Listes">${S.lists.map(l => { const on = l.items.includes(r.id); return `<button class="chip ${on ? 'on' : ''}" data-act="tog-list" data-list="${esc(l.id)}" data-id="${esc(r.id)}" aria-pressed="${on}">${on ? '✓ ' : '+ '}${esc(l.name)}</button>`; }).join('')}<button class="chip chip-new" data-act="new-list-open" data-id="${esc(r.id)}" aria-expanded="${UI.newList === r.id}">+ Nouvelle liste</button></div>
         ${UI.newList === r.id ? `<div class="inline-form"><input id="nl-detail" type="text" aria-label="Nom de la nouvelle liste" placeholder="Nom de la liste" maxlength="40" autocomplete="off"><button class="btn primary small" data-act="new-list-ok" data-id="${esc(r.id)}">Créer et ajouter</button><button class="btn small ghost" data-act="new-list-cancel" data-id="${esc(r.id)}">Annuler</button></div>` : ''}</div>
     </div>
@@ -1325,7 +1347,8 @@ function openDetail(id, keep, back) {
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot home"></i>À faire maison</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
       ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><ul class="notes">${String(r.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-      ${vars.length ? `<section class="sec o11"><div class="shead"><h2>Variantes</h2><span class="count">${vars.length}</span></div><p class="hint">Recettes dérivées de celle-ci : un autre alcool, un ingrédient en moins ou en plus. Utile pour trouver une alternative.</p><div class="rgrid">${vars.map(v => rcardHTML(v, ownedSet())).join('')}</div></section>` : ''}
+      ${vars.length ? `<section class="sec o11"><div class="shead"><h2>Variantes</h2><span class="count">${vars.length}</span></div><p class="hint">Recettes dérivées de celle-ci : un autre alcool, un ingrédient en moins ou en plus. Utile pour trouver une alternative.</p><div class="rgrid">${vars.map(v => v.parent === r.id ? rcardHTML(v, ownedSet()) : `<div class="subvar">${rcardHTML(v, ownedSet())}<span class="subvar-of">Variante de ${esc((parentOf(v) || {}).name || '')}</span></div>`).join('')}</div></section>` : ''}
+      <div class="o12 row-btns"><button class="btn" data-act="new-variant" data-id="${esc(r.id)}">Créer une variante</button></div>
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
@@ -1527,9 +1550,15 @@ function rowHTML(row) {
 }
 function checkNew(fr) { const v = fr.querySelector('.f-ing').value.trim(); fr.querySelector('.frow-new').hidden = !v || !!findIng(v); }
 const CUT_KEYS = GARNISH_CUTS.map(c => c[0]);
-function openForm(id) {
-  const src = id ? S.recipes.find(r => r.id === id) : null;
+function openForm(id, variantOf) {
+  const base = !id && variantOf ? S.recipes.find(r => r.id === variantOf) : null;
+  const src = id ? S.recipes.find(r => r.id === id) : base;
   const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
+  /* Nouvelle variante : on part de la recette de base (à modifier), comme création personnelle liée à elle. */
+  if (base) {
+    ['id', 'src', 'edited', 'created', 'photoCredit', 'subtitle', 'source', 'url', 'easy'].forEach(k => delete r[k]);
+    Object.assign(r, { name: base.name + ' (variante)', origin: 'Original', by: 'me', author: '', photo: '', parent: base.id });
+  }
   /* Recette de base possible : toutes, sauf elle-même et ses propres variantes (pas de boucle). Un nom porté par deux recettes est précisé par l'id. */
   const noParent = new Set(id ? [id, ...descendantIds(id)] : []);
   const pCand = S.recipes.filter(x => !noParent.has(x.id)).sort(byRecName), pCount = {};
@@ -1544,7 +1573,7 @@ function openForm(id) {
   const gTiles = [['none', 'Aucune'], ...GARNISH_CUTS, ...GARNISH_OTHERS];
   const sh = $('#sheet');
   sh.innerHTML = `
-  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="${id ? 'back-detail' : 'close'}" data-id="${esc(id || '')}">Annuler</button><span class="grow sheet-title">${id ? 'Modifier la recette' : 'Nouvelle recette'}</span><button class="btn primary small" data-act="form-save">Enregistrer</button></div></div>
+  <div class="sheet-bar"><div class="sheet-bar-in"><button class="btn ghost" data-act="${id || base ? 'back-detail' : 'close'}" data-id="${esc(id || (base && base.id) || '')}">Annuler</button><span class="grow sheet-title">${id ? 'Modifier la recette' : base ? 'Nouvelle variante' : 'Nouvelle recette'}</span><button class="btn primary small" data-act="form-save">Enregistrer</button></div></div>
   <div class="sheet-body"><form class="inner wide form" id="rform" novalidate>
     <datalist id="dl-ings">${Object.values(S.ings).map(i => i.name).sort((a, b) => a.localeCompare(b, 'fr')).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
     <datalist id="dl-cats">${cats.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
@@ -1837,6 +1866,8 @@ document.addEventListener('click', async e => {
     case 'back': goBack(); break;
     case 'back-detail': history.back(); break;
     case 'edit': openForm(id); break;
+    case 'new-variant': openForm(null, id); break;
+    case 'random': { const ids = UI.lastResults || []; if (!ids.length) { toast('Aucune recette parmi les résultats'); break; } openDetail(ids[Math.floor(Math.random() * ids.length)]); break; }
     case 'avail': UI.avail = b.dataset.v; renderCatalogue($('#view')); break;
     case 'toggle-filters': UI.filtersOpen = !UI.filtersOpen; { const f = $('.filters'); if (f) f.classList.toggle('closed', !UI.filtersOpen); const t = $('.btn-filters'); if (t) t.setAttribute('aria-expanded', UI.filtersOpen); } break;
     case 'clear-filters': UI.f = F_DEFAULT(); renderCatalogue($('#view')); break;
@@ -1920,7 +1951,7 @@ document.addEventListener('click', async e => {
     case 'del':
       if (UI.confirm === 'del:' + id) {
         const r = S.recipes.find(x => x.id === id);
-        if (r && (r.src === 'builtin' || BUILTIN.has(id)) && !S.removed.includes(id)) S.removed.push(id);
+        if (!r || !isMine(r)) { UI.confirm = null; openDetail(id, true); break; } // les recettes du catalogue ne se suppriment pas
         S.recipes = S.recipes.filter(x => x.id !== id); S.recipes.forEach(x => { if (x.parent === id) x.parent = ''; }); S.lists.forEach(l => l.items = l.items.filter(x => x !== id)); delete S.ratings[id]; delete S.notes[id]; S.shop.recs = S.shop.recs.filter(x => x.id !== id);
         save(); closeSheet(); toast('Recette supprimée');
       } else { UI.confirm = 'del:' + id; openDetail(id, true); }

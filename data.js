@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 26;
+const DATA_VERSION = 27;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -40,7 +40,6 @@ const INGREDIENTS = [
   ['rhum-agricole', 'Rhum agricole ambré', 'Rhum ambré', 'Spiritueux', 'Rhum & cachaça', 50],
   ['rhum-agricole-blanc', 'Rhum agricole blanc', 'Rhum blanc', 'Spiritueux', 'Rhum & cachaça', 50],
   ['rhum-brun', 'Rhum brun (Jamaïque)', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
-  ['rhum-noir', 'Rhum noir (blackstrap)', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['rhum-demerara', 'Rhum Demerara', 'Rhum brun', 'Spiritueux', 'Rhum & cachaça', 40],
   ['cachaca', 'Cachaça', 'Cachaça', 'Spiritueux', 'Rhum & cachaça', 40],
   ['tequila', 'Tequila blanco', 'Tequila', 'Spiritueux', 'Tequila & mezcal', 40],
@@ -105,6 +104,7 @@ const INGREDIENTS = [
   ['champagne', 'Champagne', 'Vin effervescent', 'Vins & vermouths', '', 12],
   ['cremant', 'Crémant', 'Vin effervescent', 'Vins & vermouths', '', 12],
   ['vin-blanc', 'Vin blanc sec', 'Vin blanc', 'Vins & vermouths', '', 12],
+  ['cidre', 'Cidre brut', 'Cidre', 'Vins & vermouths', '', 5],
   ['vin-rouge', 'Vin rouge', 'Vin rouge', 'Vins & vermouths', '', 13],
   ['porto', 'Porto tawny', 'Porto', 'Vins & vermouths', '', 20],
   ['xeres', 'Xérès fino', 'Xérès', 'Vins & vermouths', '', 15],
@@ -223,6 +223,7 @@ const INGREDIENTS = [
   ['the-vert', 'Thé vert infusé', 'Thé vert', 'Épicerie', '', 0],
   ['infusion-hibiscus', "Infusion d'hibiscus", 'Hibiscus', 'Épicerie', '', 0],
   ['cold-brew', 'Café infusé à froid', 'Café froid', 'Épicerie', '', 0],
+  ['cold-brew-concentrate', 'Concentré de café infusé à froid', 'Café froid', 'Épicerie', '', 0],
   ['cafe-soluble', 'Café soluble', 'Café soluble', 'Épicerie', '', 0],
   ['lait-riz', 'Lait de riz', 'Lait végétal', 'Épicerie', '', 0],
   ['lait-concentre', 'Lait concentré sucré', 'Lait concentré', 'Épicerie', '', 0],
@@ -242,7 +243,7 @@ const INGREDIENTS = [
 
 /* Garnitures dessinées. Les fruits se déclinent en rondelle, quartier ou zeste. */
 const GARNISH_CUTS = [['wheel', 'Rondelle'], ['wedge', 'Quartier'], ['zest', 'Zeste']];
-const GARNISH_FRUITS = [['lime', 'citron vert', '#7DB83A'], ['lemon', 'citron', '#F2D23C'], ['orange', 'orange', '#F2902E']];
+const GARNISH_FRUITS = [['lime', 'citron vert', '#7DB83A'], ['lemon', 'citron', '#F2D23C'], ['orange', 'orange', '#F2902E'], ['grapefruit', 'pamplemousse', '#F07A63']];
 const GARNISH_OTHERS = [['cherry', 'Cerise'], ['mint', 'Brin de menthe'], ['coffee', 'Grains de café'], ['olive', 'Olive'], ['berry', 'Mûre'], ['pineapple', "Quartier d'ananas"], ['celery', 'Branche de céleri']];
 const RIMS = [['', 'Aucun'], ['sel', 'Sel'], ['sucre', 'Sucre'], ['sel-moitie', 'Sel, à moitié'], ['sucre-moitie', 'Sucre, à moitié']];
 
@@ -656,7 +657,7 @@ RECIPES.push(
   BY(R('pussyfoot', 'Pussyfoot', 'S', 'Highball', 'wheel-orange', '', '', '#F59A4A', '33010', 'Fruité,Brunch',
     [['menthe', 7, 'feuille'], ['orange', 120], ['citron', 15], ['citron-vert', 15], ['grenadine', 15], ['jaune-oeuf', 15]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer, reverser dans le shaker et shaker de nouveau sans glace.', 'Filtrer finement dans un verre highball rempli de glace.'],
-    'Créé en 1920 à l’Embassy Club de Londres, nommé d’après William « Pussyfoot » Johnson, militant de la Prohibition.'), 'Robert Vermeire, Embassy Club (Londres) · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/1620/pussyfoot-mocktail'),
+    'Créé en 1920 à l’Embassy Club de Londres, nommé d’après William « Pussyfoot » Johnson, militant de la Prohibition.'), 'Robert Vermeire, Embassy Club (Londres)', ''),
   NA(R('cinderella', 'Cinderella', 'S', 'Highball', 'wheel-orange', '', '', '#F6B65A', '33000', 'Fruité,Festif',
     [['orange', 30], ['ananas', 30], ['citron', 30], ['grenadine', 5], ['eau-gazeuse', 0, 'à compléter']],
     ['Shaker les jus et la grenadine avec des glaçons.', 'Filtrer dans un verre highball rempli de glace.', 'Compléter avec l’eau gazeuse.']), 'Classique sans alcool'),
@@ -672,12 +673,6 @@ RECIPES.push(
     [['tonic', 120], ['expresso', 30]],
     ['Remplir un verre de glaçons et verser le tonic bien froid.', 'Verser l’expresso doucement par-dessus pour créer deux couches.'],
     'Apparu en 2007 : préparé à Oslo, puis mis à la carte par Koppi à Helsingborg sous le nom « Kaffe & Tonic ».'), 'Koppi (Helsingborg, Suède)', 'https://en.wikipedia.org/wiki/Espresso_and_tonic'),
-  NA(R('diabolo-menthe', 'Diabolo menthe', 'D', 'Highball', 'mint', '', '', '#7FD18A', '41000', 'Rafraîchissant,Estival',
-    [['sirop-menthe', 20], ['limonade', 200]],
-    ['Verser le sirop de menthe au fond du verre.', 'Ajouter des glaçons puis la limonade bien froide.']), 'Classique français'),
-  NA(R('diabolo-grenadine', 'Diabolo grenadine', 'D', 'Highball', '', '', '', '#F2667A', '41000', 'Rafraîchissant,Fruité',
-    [['grenadine', 20], ['limonade', 200]],
-    ['Verser la grenadine au fond du verre.', 'Ajouter des glaçons puis la limonade bien froide.']), 'Classique français'),
   NA(R('citronnade-maison', 'Citronnade maison', 'D', 'Highball', 'wheel-lemon', '', '', '#F5EDB0', '34000', 'Rafraîchissant,Estival',
     [['citron', 40], ['sirop-sucre', 30, 'ml', 's'], ['eau', 150], ['menthe', 4, 'feuille', 'o']],
     ['Mélanger le jus de citron et le sirop dans le verre.', 'Ajouter des glaçons, l’eau fraîche et quelques feuilles de menthe.', 'Remuer et ajouter une rondelle de citron.']), 'Recette traditionnelle'),
@@ -766,17 +761,17 @@ RECIPES.push(
   // Créations de bars
   BY(R('cloudy-tokyo', 'Cloudy Tokyo', 'D', 'Highball', '', '', '', '#DDE6C8', '21020', 'Rafraîchissant',
     [['the-vert', 150], ['lait-coco', 15], ['soda-coco', 150]],
-    ['Mélanger le thé vert froid et le lait de coco dans le verre.', 'Compléter avec le soda à la noix de coco bien froid.']), 'Christopher Harris, Entente (Chicago) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+    ['Mélanger le thé vert froid et le lait de coco dans le verre.', 'Compléter avec le soda à la noix de coco bien froid.']), 'Christopher Harris, Entente (Chicago)', ''),
   BY(R('distinguished-guest', 'Distinguished Guest', 'S', 'Coupe', '', 'Rondelle de concombre', '', '#D9405A', '33010', 'Fruité',
     [['cranberry', 60], ['citron-vert', 22.5], ['sirop-sucre', 22.5, 'ml', 's'], ['concombre', 2, 'tranche'], ['sel', 1, 'pincée']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer finement dans une coupe et décorer d’une rondelle de concombre.'],
-    'La recette d’origine utilise 5 gouttes de solution saline à 10 % ; une petite pincée de sel s’en approche.'), 'Alex Howell, Easy Bistro & Bar (Chattanooga) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+    'La recette d’origine utilise 5 gouttes de solution saline à 10 % ; une petite pincée de sel s’en approche.'), 'Alex Howell, Easy Bistro & Bar (Chattanooga)', ''),
   BY(R('cold-brew-julep', 'Cold Brew Julep', 'D', 'Timbale', 'mint', '', '', '#4A2E1E', '20320', 'Réconfortant',
     [['menthe', 10, 'feuille'], ['sirop-sucre', 15, 'ml', 's'], ['cold-brew', 90]],
-    ['Écraser doucement la moitié de la menthe au fond du verre.', 'Remplir de glace pilée, ajouter le sirop et le café et remuer.', 'Décorer avec le reste de la menthe.']), 'Hayley Charles, Carbon (Denver) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/'),
+    ['Écraser doucement la moitié de la menthe au fond du verre.', 'Remplir de glace pilée, ajouter le sirop et le café et remuer.', 'Décorer avec le reste de la menthe.']), 'Hayley Charles, Carbon (Denver)', ''),
   BY(R('sparkling-almond', 'Sparkling Almond', 'D', 'Highball', 'wheel-lemon', 'Brin de menthe', '', '#F0EAD8', '43000', 'Rafraîchissant,Pétillant',
     [['citron', 30], ['orgeat', 45], ['eau-gazeuse', 120]],
-    ['Remplir un verre de glace pilée.', 'Verser le jus de citron et le sirop d’orgeat, puis compléter avec l’eau gazeuse.', 'Décorer d’une rondelle de citron et de menthe.']), 'Erick Castro, Polite Provisions (San Diego) · VinePair', 'https://vinepair.com/articles/best-non-alcoholic-cocktail-recipes/')
+    ['Remplir un verre de glace pilée.', 'Verser le jus de citron et le sirop d’orgeat, puis compléter avec l’eau gazeuse.', 'Décorer d’une rondelle de citron et de menthe.']), 'Erick Castro, Polite Provisions (San Diego)', '')
 );
 
 /* ---------- Sans alcool : troisième lot (recettes de bars et classiques à compléter) ---------- */
@@ -784,29 +779,29 @@ RECIPES.push(
   NA(R('virgin-mary', 'Virgin Mary', 'V', 'Highball', 'celery', '', '', '#C8382B', '12110', 'Brunch',
     [['tomate', 150], ['citron', 15], ['tabasco', 8, 'goutte'], ['worcestershire', 4, 'trait'], ['raifort', 0.5, 'c. de bar'], ['sel-celeri', 2, 'pincée'], ['poivre', 2, 'pincée']],
     ['Verser tous les ingrédients dans un shaker avec de la glace et les faire rouler d’un verre à l’autre, sans shaker.', 'Filtrer dans un verre rempli de glaçons.', 'Décorer d’une branche de céleri.'],
-    'Version sans alcool du Bloody Mary. La sauce Worcestershire contient de l’anchois.'), 'Classique', 'https://www.diffordsguide.com/cocktails/recipe/252/virgin-mary-or-bloody-shame'),
+    'Version sans alcool du Bloody Mary. La sauce Worcestershire contient de l’anchois.'), 'Classique', ''),
   NA(R('prohibition-daisy', 'Prohibition Daisy', 'S', 'Old fashioned', 'pineapple', 'Rondelle d’orange et framboises', '', '#F2845C', '43000', 'Fruité,Rafraîchissant',
     [['orange', 30], ['citron-vert', 15], ['citron', 15], ['ananas', 30], ['sirop-framboise', 30]],
-    ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans un verre rempli de glace pilée et remuer à la cuillère.', 'Décorer d’un quartier d’ananas, d’une rondelle d’orange et de framboises, et servir avec une paille.']), 'Classique sans alcool · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3963/prohibition-daisy-alcohol-free'),
+    ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans un verre rempli de glace pilée et remuer à la cuillère.', 'Décorer d’un quartier d’ananas, d’une rondelle d’orange et de framboises, et servir avec une paille.']), 'Classique sans alcool', ''),
   BY(R('pinch-hitter', 'Pinch Hitter', 'S', 'Coupe', 'wheel-lemon', '', '', '#F3E6A8', '24010', 'Rafraîchissant',
     [['citron', 60], ['sirop-gingembre', 30, 'ml', { alts: ['gingembre'] }], ['vinaigre-cidre', 1, 'c. à café'], ['aquafaba', 15], ['sel', 1, 'pincée']],
     ['Shaker tous les ingrédients avec des glaçons, énergiquement et assez longtemps pour bien faire mousser l’aquafaba.', 'Filtrer dans une coupe et décorer d’une rondelle de citron.'],
-    'La recette d’origine utilise 6 gouttes de solution saline ; une petite pincée de sel s’en approche. Sirop de gingembre : sucre et eau à parts égales, infusés avec du gingembre râpé.'), 'Derek Brown, Columbia Room (Washington) · Saveur', 'https://www.saveur.com/story/recipes/pinch-hitter'),
+    'La recette d’origine utilise 6 gouttes de solution saline ; une petite pincée de sel s’en approche. Sirop de gingembre : sucre et eau à parts égales, infusés avec du gingembre râpé.'), 'Derek Brown, Columbia Room (Washington)', ''),
   BY(R('dawn-patrol', 'Dawn Patrol', 'D', 'Old fashioned', 'mint', '', '', '#E0A526', '33120', 'Rafraîchissant,Brunch',
     [['the-noir', 45], ['sirop-curcuma', 22.5], ['citron', 22.5], ['bitters-sans-alcool', 3, 'trait']],
     ['Remplir un verre de glace pilée.', 'Ajouter le thé glacé, le sirop de curcuma, le jus de citron et les bitters.', 'Remuer brièvement et décorer d’un bouquet de menthe.'],
-    'Variation autour de l’Arnold Palmer. La recette d’origine propose aussi d’ajouter 30 ml de mezcal. Sirop de curcuma : 2 parts de sucre pour 1 part d’eau, avec du curcuma en poudre.'), 'Iain Griffiths, Bar Snack (New York) · Punch', 'https://punchdrink.com/recipes/dawn-patrol/'),
+    'Variation autour de l’Arnold Palmer. La recette d’origine propose aussi d’ajouter 30 ml de mezcal. Sirop de curcuma : 2 parts de sucre pour 1 part d’eau, avec du curcuma en poudre.'), 'Iain Griffiths, Bar Snack (New York)', ''),
   BY(R('big-juicy', 'Big Juicy', 'S', 'Highball', 'wedge-lime', '', '', '#D6405A', '43000', 'Fruité,Festif',
     [['cranberry', 75], ['ananas', 45], ['citron-vert', 30], ['sirop-sucre-riche', 7.5, 'ml', 's'], ['grenadine', 7.5], ['eau-gazeuse', 0, 'à compléter']],
-    ['Shaker le cranberry, l’ananas, le citron vert, le sirop et la grenadine avec des glaçons.', 'Filtrer dans un verre rempli de glace.', 'Compléter avec l’eau gazeuse, remuer et servir avec des pailles.']), 'Jose « Juice » Miranda, WD-50 (New York, 2006) · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/2294/big-juicy'),
+    ['Shaker le cranberry, l’ananas, le citron vert, le sirop et la grenadine avec des glaçons.', 'Filtrer dans un verre rempli de glace.', 'Compléter avec l’eau gazeuse, remuer et servir avec des pailles.']), 'Jose « Juice » Miranda, WD-50 (New York, 2006)', ''),
   BY(R('berry-blast', 'Berry Blast', 'S', 'Highball', 'mint', 'Rondelle de citron', '', '#C2364F', '43010', 'Fruité,Rafraîchissant',
     [['framboise', 8, 'pièce'], ['citron', 22.5], ['sirop-passion', 22.5], ['the-noir', 60], ['cranberry', 60]],
     ['Écraser les framboises au fond du shaker.', 'Ajouter le reste des ingrédients et shaker avec des glaçons.', 'Filtrer dans un verre rempli de glace et décorer.'],
-    'Adapté par Difford’s Guide d’un cocktail des bars Jamie’s Italian. Utiliser un thé noir infusé puis refroidi.'), 'Adapté d’un cocktail de Jamie’s Italian · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3358/berry-blast'),
+    'Utiliser un thé noir infusé puis refroidi.'), 'Adapté d’un cocktail de Jamie’s Italian', ''),
   BY(R('ginger-no-jito', 'Ginger No-jito', 'D', 'Highball', 'mint', '', '', '#CFE3A0', '33000', 'Rafraîchissant,Herbacé',
     [['citron-vert', 22.5], ['sirop-sucre-riche', 15, 'ml', 's'], ['menthe', 12, 'feuille'], ['ginger-beer', 105]],
     ['Verser le jus de citron vert et le sirop dans le verre, puis le remplir à moitié de glace pilée.', 'Ajouter la menthe et bien remuer en soulevant la glace.', 'Compléter de glace pilée, verser le ginger beer et remuer brièvement.'],
-    'Adapté par Difford’s Guide d’une boisson de Jamie’s Italian ; le nom « No-jito » est emprunté à Wagamama.'), 'Adapté d’un cocktail de Jamie’s Italian · Difford’s Guide', 'https://www.diffordsguide.com/cocktails/recipe/3361/ginger-no-jito-temperance-ginger-mojito')
+    'Le nom « No-jito » est emprunté à Wagamama.'), 'Adapté d’un cocktail de Jamie’s Italian', '')
 );
 
 /* ---------- Deuxième lot : classiques et classiques modernes ---------- */
@@ -1077,7 +1072,10 @@ RECIPES.push(
 /* Créations originales de Zeste (par opposition aux classiques et aux recettes d'autres barmen). */
 const isZeste = r => r.origin === 'Original' && r.by === 'other' && r.author === 'Zeste';
 
-const RETIRED_IDS = ['potion-soin'];
+/* Ingrédients retirés, remplacés par un autre (ancien id : nouvel id) ; appliqué aussi sur l'appareil (upgrade() dans app.js). */
+const ING_RENAMED = { 'rhum-noir': 'rhum-brun' };
+
+const RETIRED_IDS = ['potion-soin', 'diabolo-menthe', 'diabolo-grenadine'];
 
 /* Collection anisée : créations personnelles à base de pastis */
 RECIPES.push(
@@ -1127,6 +1125,35 @@ RECIPES.push(Object.assign(
     'Ce cocktail de la famille des Corpse Reviver est souvent associé à Frank Meier, bien qu’il ne l’ait jamais revendiqué. Il a néanmoins été popularisé par Harry Craddock dans The Savoy Cocktail Book (1930).'),
   { source: 'Harry Craddock, The Savoy Cocktail Book (1930)' }
 ));
+
+/* Variantes ajoutées depuis l'appli (sauvegarde du 23/11/2026). « aka » : ancien nom dans l'appli, pour reprendre la copie de l'appareil. */
+RECIPES.push(
+  Object.assign(R('frozen-daiquiri', 'Frozen Daiquiri', 'B', 'Coupe', 'wedge-lime', '', '', '#F6EBC8', '32003', 'Rafraîchissant,Estival,Apéritif',
+    [['rhum-blanc', 60], ['citron-vert', 25], ['marasquin', 5], ['sirop-sucre', 20]],
+    ['Mixer tous les ingrédients avec beaucoup de glace pilée.', 'Servir dans une coupe refroidie.', 'Décorer d’un quartier de citron vert.']),
+    { source: 'Constantino Ribalaigua, El Floridita (La Havane), années 1930', aka: ['Daiquiri (frozen)'] }),
+  R('apple-cider-dark-n-stormy', "Apple Cider Dark 'n' Stormy", 'D', 'Highball', '', 'Quartier de pomme', '', '#552E16', '31013', 'Rafraîchissant,Fin de soirée,Pétillant',
+    [['rhum-ambre', 60], ['ginger-beer', 90], ['cidre', 90]],
+    ['Remplir un verre highball de glaçons, puis verser le cidre et la ginger beer.', 'Faire flotter le rhum sur le dessus.', 'Décorer d’un quartier de pomme.'],
+    'Une variante au cidre du classique Dark ’n’ Stormy.'),
+  Object.assign(R('mexican-el-diablo', 'Mexican El Diablo', 'S', 'Highball', 'wedge-lime', '', '', '#8D1136', '33012', 'Fruité,Festif,Apéritif',
+    [['mezcal', 60], ['creme-cassis', 15], ['citron-vert', 22.5], ['ginger-beer', 0, 'à compléter']],
+    ['Shaker tous les ingrédients sauf la ginger beer avec des glaçons.', 'Verser dans un verre highball rempli de glaçons.', 'Compléter avec la ginger beer.', 'Décorer d’un quartier de citron vert.'],
+    'Le mezcal remplace la tequila et donne au cocktail un goût fumé.'), { subtitle: 'Smoky Devil' }),
+  Object.assign(BY(R('espresso-martini-morgenthaler', 'Espresso Martini (Jeffrey Morgenthaler)', 'S', 'Martini', 'coffee', '', '', '#3B2416', '30323', 'Festif,Digestif',
+    [['vodka', 22.5], ['liqueur-cafe', 22.5, 'ml', { tip: 'Kahlúa' }], ['cold-brew-concentrate', 30]],
+    ['Exprimer un zeste de citron dans le shaker, puis ajouter tous les ingrédients et des glaçons.', 'Shaker énergiquement et filtrer finement dans le verre.', 'Poser trois grains de café sur la mousse.'],
+    'Le concentré de café infusé à froid remplace l’expresso : une bonne solution sans machine à expresso.'), 'Jeffrey Morgenthaler', '')),
+  BY(R('espresso-martini-erickson', 'Espresso Martini (Anders Erickson)', 'S', 'Martini', 'coffee', '', '', '#3B2416', '30323', 'Festif,Digestif',
+    [['cognac', 30], ['liqueur-cafe', 30, 'ml', { tip: 'Mr. Black' }], ['sirop-sucre-riche', 7.5, 'ml', 's'], ['expresso', 30]],
+    ['Exprimer un zeste de citron dans le shaker, puis ajouter tous les ingrédients et des glaçons.', 'Shaker énergiquement et filtrer finement dans le verre.', 'Poser trois grains de café sur la mousse.'],
+    'Le cognac remplace la vodka et apporte de la rondeur.'), 'Anders Erickson', ''),
+  NA(R('pineapple-espresso-tonic', 'Pineapple Espresso Tonic', 'D', 'Highball', '', 'Feuille d’ananas', '', '#9A4A1E', '32320', 'Rafraîchissant,Fruité,Estival,Brunch',
+    [['ananas', 45], ['expresso', 30], ['tonic', 120], ['sirop-sucre', 15, 'ml', 'o']],
+    ['Remplir un verre de glace pilée, puis verser le jus d’ananas et le tonic.', 'Laisser l’expresso refroidir quelques minutes, puis le verser doucement par-dessus pour créer deux couches.', 'Décorer d’une feuille d’ananas.'],
+    'Le sirop de sucre est facultatif, selon le sucre du jus d’ananas.'))
+);
+
 
 /* Retouches de recettes du catalogue (appliquées après leur définition). */
 const RECIPE_EDITS = {
@@ -1346,8 +1373,8 @@ const RECIPE_EDITS = {
   'corn-n-oil': {
     method: "Verre à mélange",
     flavor: {"su": 2, "ac": 1, "am": 1, "as": 0, "fo": 5},
-    ings: [{"id": "rhum-brun", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "falernum", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}, {"id": "rhum-noir", "qty": 10, "unit": "ml", "sub": false, "opt": true, "alts": []}],
-    steps: ["Remuer le rhum, le falernum et l’Angostura avec des glaçons.", "Filtrer sur de la glace pilée.", "Si désiré, verser un filet de rhum noir sur le dessus."],
+    ings: [{"id": "rhum-brun", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "falernum", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "angostura", "qty": 3, "unit": "trait", "sub": false, "opt": false, "alts": []}, {"id": "rhum-brun", "qty": 10, "unit": "ml", "sub": false, "opt": true, "alts": [], "tip": "Très foncé, type blackstrap"}],
+    steps: ["Remuer le rhum, le falernum et l’Angostura avec des glaçons.", "Filtrer sur de la glace pilée.", "Si désiré, verser un filet de rhum brun très foncé sur le dessus."],
     note: "Selon l’acidité du falernum, il peut être nécessaire d’ajouter un trait de jus de citron vert.",
     source: "Classique de la Barbade"
   },
@@ -1404,6 +1431,69 @@ const RECIPE_EDITS = {
   },
   'remember-the-maine': {
     author: "Charles H. Baker, The Gentleman’s Companion (1939)"
+  },
+  'daiquiri': {
+    flavor: {"su": 2, "ac": 3, "am": 0, "as": 0, "fo": 3},
+    ings: [{"id": "rhum-blanc", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 20, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 10, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Shaker tous les ingrédients avec de la glace.", "Filtrer finement dans une coupe refroidie.", "Décorer d’une rondelle de citron vert."],
+    note: "",
+    source: "Jennings Cox, in Cuba, 1898"
+  },
+  'dark-n-stormy': {
+    garn: "wheel-lime",
+    tags: ["Rafraîchissant", "Pétillant"],
+    ings: [{"id": "rhum-ambre", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ginger-beer", "qty": 100, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Remplir un verre highball de glaçons et verser la ginger beer.", "Faire flotter le rhum sur le dessus.", "Décorer d’une rondelle de citron vert."],
+    note: "Une version plus proche d’un Daiquiri ajoute 20 ml de jus de citron vert, 10 ml de sirop de sucre (1:1) et 2 traits d’Angostura.",
+    source: "Aurait été inventé aux Bermudes après la 1ere Guerre Mondiale"
+  },
+  'espresso-martini': {
+    ings: [{"id": "vodka", "qty": 50, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "liqueur-cafe", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 5, "unit": "ml", "sub": true, "opt": false, "alts": [], "qty2": 15}, {"id": "expresso", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer finement dans le verre et exprimer un zeste de citron.", "Poser trois grains de café sur la mousse."],
+    note: "La qualité de l’expresso est ici l’élément le plus important. Sans machine à expresso, la variante de Jeffrey Morgenthaler, au concentré de café infusé à froid, est une bonne solution.\nLa quantité de sucre est à ajuster selon la liqueur de café utilisée : certaines sont bien plus sucrées que d’autres.",
+    source: "Dick Bradsell, Soho Brasserie (London), 1983"
+  },
+  'el-diablo': {
+    method: "Shaker",
+    ings: [{"id": "tequila-reposado", "qty": 60, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "creme-cassis", "qty": 15, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "citron-vert", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ginger-beer", "qty": 0, "unit": "à compléter", "sub": false, "opt": false, "alts": []}],
+    note: "Il peut aussi se préparer directement dans le verre, en ajoutant la crème de cassis en dernier pour la voir couler.\nCertaines versions remplacent la ginger beer par du sirop de gingembre et de l’eau gazeuse.",
+    source: "Victor Bergeron, Trader Vic's Book of Food and Drink (1946)"
+  },
+  'espresso-tonic': {
+    author: "Koppi (Helsingborg, Suède), 2007",
+    garn: "zest-lemon",
+    flavor: {"su": 2, "ac": 2, "am": 3, "as": 2, "fo": 0},
+    ings: [{"id": "tonic", "qty": 120, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "expresso", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre-riche", "qty": 5, "unit": "ml", "sub": true, "opt": false, "alts": []}],
+    steps: ["Remplir un verre de glaçons et verser le tonic bien froid.", "Laisser l’expresso refroidir quelques minutes, puis le verser doucement par-dessus pour créer deux couches.", "Exprimer un zeste de citron au-dessus du verre, puis le déposer."]
+  },
+  'dawn-patrol': {
+    note: "Variation autour de l’Arnold Palmer. La recette d’origine propose aussi d’ajouter 30 ml de mezcal."
+  },
+  'strawberry-daiquiri': {
+    garn: "",
+    garnish: "Fraise"
+  },
+  'division-bell': {
+    flavor: {"su": 2, "ac": 2, "am": 3, "as": 1, "fo": 3},
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans une coupe refroidie.", "Exprimer un zeste de pamplemousse au-dessus du verre, puis le déposer."],
+    garn: "zest-grapefruit"
+  },
+  'enzoni': {
+    ings: [{"id": "gin", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "campari", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron", "qty": 22.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 15, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "raisin", "qty": 5, "unit": "", "sub": false, "opt": false, "alts": []}]
+  },
+  'eggnog': {
+    garn: "zest-orange",
+    flavor: {"su": 2, "ac": 0, "am": 0, "as": 0, "fo": 3},
+    ings: [{"id": "brandy", "qty": 25, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "rhum-ambre", "qty": 25, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "lait", "qty": 25, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "oeuf", "qty": 1, "unit": "", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 15, "unit": "ml", "sub": true, "opt": false, "alts": []}],
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Retirer la glace et shaker de nouveau pour émulsionner l’œuf.", "Filtrer sur glace.", "Exprimer un zeste d’orange, puis râper un peu de muscade sur le dessus."],
+    note: "Les spiritueux de base de ce cocktail varient beaucoup d’une recette à l’autre : n’hésitez pas à essayer d’autres associations, en mélange comme seuls !",
+    source: "Cocktail traditionnel de la saison de Noel en Amérique"
+  },
+  'el-presidente': {
+    flavor: {"su": 2, "ac": 0, "am": 1, "as": 1, "fo": 4},
+    ings: [{"id": "rhum-blanc", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "vermouth-blanc", "qty": 22.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "curacao", "qty": 7.5, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "grenadine", "qty": 1, "unit": "c. de bar", "sub": false, "opt": false, "alts": []}, {"id": "sel", "qty": 1, "unit": "pincée", "sub": false, "opt": false, "alts": []}],
+    note: "On peut aussi remplacer la moitié du vermouth blanc par du vermouth sec.",
+    source: "Classique cubain des années 1920"
   }
 };
 Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
@@ -1484,7 +1574,6 @@ const GARNISH_STEPS = {
   'pussyfoot': "Décorer d’une rondelle d’orange.",
   'cinderella': "Décorer d’une rondelle d’orange.",
   'espresso-tonic': "Exprimer un zeste d’orange au-dessus du verre, puis le déposer.",
-  'diabolo-menthe': "Décorer d’un brin de menthe.",
   'agua-sandia': "Décorer d’un quartier de citron vert.",
   'agua-pepino': "Décorer d’une rondelle de citron vert et d’un brin de menthe.",
   'switchel': "Décorer d’un quartier de citron.",
@@ -1519,7 +1608,7 @@ const GARNISH_STEPS = {
   'siesta': "Décorer d’une rondelle de citron vert.",
   'gin-gin-mule': "Décorer d’un brin de menthe.",
   'red-hook': "Décorer d’une cerise.",
-  'division-bell': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
+  'division-bell': "Exprimer un zeste de pamplemousse au-dessus du verre, puis le déposer.",
   'enzoni': "Décorer d’un grain de raisin.",
   'jasmine': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
   'greenpoint': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
@@ -1643,7 +1732,17 @@ const PHOTOS = {
   'cold-brew-julep': 'photos/cold-brew-julep.jpg',
   'concombre-menthe': 'photos/concombre-menthe.jpg',
   'corpse-reviver-2': 'photos/corpse-reviver-2.jpg',
-  'cuba-libre': 'photos/cuba-libre.jpg'
+  'cuba-libre': 'photos/cuba-libre.jpg',
+  'strawberry-daiquiri': 'photos/strawberry-daiquiri.jpg',
+  'frozen-daiquiri': 'photos/frozen-daiquiri.jpg',
+  'egg-cream': 'photos/egg-cream.jpg',
+  'el-diablo': 'photos/el-diablo.jpg',
+  'el-presidente': 'photos/el-presidente.jpg',
+  'enzoni': 'photos/enzoni.jpg',
+  'espresso-martini-morgenthaler': 'photos/espresso-martini-morgenthaler.jpg',
+  'espresso-martini-erickson': 'photos/espresso-martini-erickson.jpg',
+  'espresso-tonic': 'photos/espresso-tonic.jpg',
+  'pineapple-espresso-tonic': 'photos/pineapple-espresso-tonic.jpg'
 };
 RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
@@ -1689,9 +1788,9 @@ const PHOTO_CREDITS = {
   'campari-orange': { by: 'eWikiLearner', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Campari_Orange.jpg' },
   'campari-spritz': { by: 'Eric Laslau', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dune-personne-assise-a-une-table-avec-une-boisson-XxnB8l-_mrg' },
   'clover-club': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2pKyRNm' },
-  'daiquiri': { by: 'Marta Smith' },
-  'dark-n-stormy': { by: 'Elissa Landry' },
-  'espresso-martini': { by: 'Nima Naseri' },
+  'daiquiri': { by: 'Marta Smith', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dun-verre-sur-une-table-mhV9qSuVKv8' },
+  'dark-n-stormy': { by: 'Elissa Landry', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-soda-avec-une-tranche-de-citron-sur-le-cote-GimpmaoSW-o' },
+  'espresso-martini': { by: 'Nima Naseri', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-assise-sur-une-table-a-cote-dune-grille-metallique-Jg8qNgt71OI' },
   'french-75': { by: 'Stephen Harlan' },
   'gin-basil-smash': { by: 'Patrycja Jadach' },
   'gin-tonic': { by: 'Adrian Infernus' },
@@ -1723,7 +1822,18 @@ const PHOTO_CREDITS = {
   'concombre-menthe': { by: 'Chris Reyem', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-highball-vdzjEa71U_I' },
   'corpse-reviver-2': { by: 'Will Shenton', lic: 'CC BY-SA 3.0', url: 'https://commons.wikimedia.org/wiki/File:Corpse_Reviver_2.jpg' },
   'cosmopolitan': { by: 'Pavel Shitov', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-rouge-avec-une-garniture-decorce-dorange-6qiYDDruhTc' },
-  'cuba-libre': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2nnyiC3' }
+  'cuba-libre': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2nnyiC3' },
+  'strawberry-daiquiri': { by: 'Tai’s Captures', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-margarita-transparent-sur-la-photographie-a-mise-au-point-selective-2EBTwzczg2A' },
+  'frozen-daiquiri': { by: 'AlbertRA', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Daiquiri_a_l%27aeroport.jpg' },
+  'egg-cream': { by: 'fishy fishy', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/cafe-glace-avec-creme-et-cacao-ZD5lqf5ZOQ0' },
+  'eggnog': { by: 'Aleisha Kalina', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-liquide-brun-et-glace-xnul8XAMae0' },
+  'el-diablo': { by: 'CET Hồ Chí Minh', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gobelet-en-verre-transparent-RL3SnlcHAK8' },
+  'el-presidente': { by: 'popvoid', lic: 'CC BY 2.0', url: 'https://flic.kr/p/2kZpsMk' },
+  'enzoni': { by: 'popvoid', lic: 'CC BY 2.0', url: 'https://flic.kr/p/2kZyy9n' },
+  'espresso-martini-morgenthaler': { by: 'Rick Barrett (Ambitious Studio)', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-martini-pose-sur-une-table-nYk7YcmalHs' },
+  'espresso-martini-erickson': { by: 'Nellie Adamyan', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-personne-assise-a-une-table-avec-un-verre-E6yxjv-ipBw' },
+  'espresso-tonic': { by: 'Max Nayman', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/bocal-en-verre-transparent-avec-un-liquide-orange-sur-une-table-en-bois-brun-ZLhJiLWg74E' },
+  'pineapple-espresso-tonic': { by: 'Zoran Borojevic', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-de-la-creme-glacee-sur-plaque-en-ceramique-verte-cvgd-jRsalg' }
 };
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
 
@@ -1789,7 +1899,21 @@ const PHOTO_STATUS = {
   'concombre-menthe': 'ok',
   'corpse-reviver-2': 'ok',
   'cosmopolitan': 'ok',
-  'cuba-libre': 'ok'
+  'cuba-libre': 'ok',
+  'daiquiri': 'ok',
+  'strawberry-daiquiri': 'ok',
+  'frozen-daiquiri': 'ok',
+  'dark-n-stormy': 'ok',
+  'egg-cream': 'ok',
+  'eggnog': 'ok',
+  'el-diablo': 'ok',
+  'el-presidente': 'ok',
+  'enzoni': 'ok',
+  'espresso-martini': 'ok',
+  'espresso-martini-morgenthaler': 'ok',
+  'espresso-martini-erickson': 'ok',
+  'espresso-tonic': 'ok',
+  'pineapple-espresso-tonic': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
@@ -1797,6 +1921,8 @@ if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== '
 /* Variantes : { id de la variante: id de la recette de base }. Seuls les cas évidents sont liés.
    Le lien est un champ de la recette (`parent`), modifiable dans le formulaire comme les autres. */
 const PARENTS = {
+  'frozen-daiquiri': 'daiquiri', 'apple-cider-dark-n-stormy': 'dark-n-stormy', 'mexican-el-diablo': 'el-diablo',
+  'espresso-martini-morgenthaler': 'espresso-martini', 'espresso-martini-erickson': 'espresso-martini', 'pineapple-espresso-tonic': 'espresso-tonic',
   'red-negronito': 'negroni',
   'espresso-martini': 'dry-martini', 'french-martini': 'dry-martini', 'lemon-drop': 'dry-martini', 'blue-hawaiian': 'pina-colada', 'porn-star-martini': 'dry-martini', 'breakfast-martini': 'dry-martini',
   'rum-old-fashioned': 'old-fashioned', 'oaxaca-old-fashioned': 'old-fashioned',
@@ -1873,7 +1999,7 @@ const COLLECTIONS = [
     ] },
   { id: 'sans-alcool-classiques', group: 'Sans alcool', name: 'Les classiques sans alcool', curator: 'Sélection Zeste', desc: 'Des boissons pensées sans alcool dès le départ, du Shirley Temple aux créations de bars.',
     blocks: [
-      { type: 'recipes', title: 'Les grands classiques', cols: 3, ids: ['shirley-temple', 'roy-rogers', 'arnold-palmer', 'pussyfoot', 'cinderella', 'lime-rickey', 'egg-cream', 'diabolo-menthe', 'citronnade-maison', 'virgin-mary', 'prohibition-daisy'] },
+      { type: 'recipes', title: 'Les grands classiques', cols: 3, ids: ['shirley-temple', 'roy-rogers', 'arnold-palmer', 'pussyfoot', 'cinderella', 'lime-rickey', 'egg-cream', 'citronnade-maison', 'virgin-mary', 'prohibition-daisy'] },
       { type: 'tip', text: 'Un verre sans alcool mérite le même soin : glaçons en quantité, agrumes pressés au dernier moment et verre refroidi.' },
       { type: 'recipes', title: 'Créations de bars', cols: 3, ids: ['espresso-tonic', 'cloudy-tokyo', 'distinguished-guest', 'cold-brew-julep', 'sparkling-almond', 'pinch-hitter', 'dawn-patrol', 'big-juicy', 'berry-blast', 'ginger-no-jito'] }
     ] },
@@ -1955,6 +2081,10 @@ const PREPS = [
     [['gingembre', 200, 'g'], ['sucre-blanc', 300, 'g'], ['eau', 300, 'ml']],
     ['Éplucher le gingembre et le couper en fines lamelles.', 'Porter l\'eau et le sucre à frémissement, ajouter le gingembre et laisser frémir 15 à 20 minutes.', 'Éteindre et laisser infuser 30 minutes de plus pour un goût plus fort.', 'Filtrer en pressant bien, laisser refroidir et mettre en bouteille.'],
     'Au réfrigérateur : 2 à 3 semaines.', 'Pour un sirop plus piquant, râper le gingembre au lieu de le couper.', 'Formule classique de bar'),
+  P('prep-sirop-curcuma', 'Sirop de curcuma', 'sirop-curcuma', 'Sirops & cordials', 700,
+    [['curcuma', 30, 'g'], ['sucre-blanc', 400, 'g'], ['eau', 475, 'ml']],
+    ['Faire griller le curcuma à sec dans une poêle, à feu moyen, jusqu’à ce qu’il devienne parfumé.', 'Ajouter le sucre, puis l’eau, et remuer pour mélanger.', 'Laisser chauffer en retirant du feu avant l’ébullition.', 'Laisser refroidir, puis filtrer à travers un linge fin et mettre en bouteille.'],
+    'Au réfrigérateur : environ 2 semaines.', 'Griller le curcuma réveille ses arômes. Le linge fin retient la poudre, qu’un filtre plus grossier laisserait passer.', 'Iain Griffiths, recette du Dawn Patrol'),
   P('prep-sirop-cannelle', 'Sirop de cannelle', 'sirop-cannelle', 'Sirops & cordials', 450,
     [['sucre-blanc', 300, 'g'], ['eau', 300, 'ml'], ['cannelle', 4, 'pièce']],
     ['Porter l\'eau et le sucre à frémissement en remuant jusqu\'à dissolution.', 'Ajouter les bâtons de cannelle cassés en deux et laisser frémir 10 minutes.', 'Éteindre, couvrir et laisser infuser 1 heure.', 'Retirer la cannelle, laisser refroidir et mettre en bouteille.'],
