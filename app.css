@@ -518,7 +518,8 @@ input[type=radio]{accent-color:var(--accent)}
 .blk-text p{line-height:1.6}
 .blk-tip{border-left:4px solid var(--accent);background:var(--surface);border-radius:0 10px 10px 0;padding:14px 18px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
 .blk-tip .lbl{color:var(--accent)}
-.rgrid{display:grid;grid-template-columns:1fr;gap:14px}
+.rgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.rgrid>*{min-width:0}
 @media (min-width:640px){.rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1280px){.rgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.rgrid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .rcard{appearance:none;text-align:left;font:inherit;color:inherit;padding:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;min-width:0;transition:transform .15s ease,border-color .15s ease}
