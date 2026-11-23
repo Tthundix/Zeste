@@ -295,7 +295,7 @@ input[type=radio]{accent-color:var(--accent)}
 @media (max-width:1023px){
   .detail .dz{display:contents}
   .detail .o1{order:1}.detail .o2{order:2}.detail .o3{order:3}.detail .o4{order:4}.detail .o5{order:5}
-  .detail .o6{order:6}.detail .o7{order:7}.detail .o8{order:8}.detail .o9{order:9}.detail .o10{order:10}.detail .o11{order:11}
+  .detail .o6{order:6}.detail .o7{order:7}.detail .o8{order:8}.detail .o9{order:9}.detail .o10{order:10}.detail .o11{order:11}.detail .o12{order:12}
 }
 .dhero{position:relative;overflow:hidden;aspect-ratio:4/3;max-width:100%;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);background:color-mix(in srgb,var(--c) 20%,var(--surface-2));color:var(--fg)}
 .dhero .glass{height:84%;width:auto}
@@ -642,7 +642,7 @@ input[type=radio]{accent-color:var(--accent)}
   main{padding:14px 20px 28px max(20px,env(safe-area-inset-left,0px))}
   h1.view{font-size:40px}
   .sheet-body{padding:18px 24px}
-  .detail .o1,.detail .o2,.detail .o3,.detail .o4,.detail .o5,.detail .o6,.detail .o7,.detail .o8,.detail .o9,.detail .o10,.detail .o11{order:0}
+  .detail .o1,.detail .o2,.detail .o3,.detail .o4,.detail .o5,.detail .o6,.detail .o7,.detail .o8,.detail .o9,.detail .o10,.detail .o11,.detail .o12{order:0}
   .detail .dz{display:flex}
   .detail.inner.wide{gap:20px 28px}
   .bar-layout{grid-template-columns:minmax(0,1fr) 300px;gap:20px}
@@ -715,3 +715,10 @@ input[type=radio]{accent-color:var(--accent)}
 /* ---------- liste d'ingrédients : facultatif ---------- */
 .opt-tag{display:inline-block;margin-left:8px;padding:1px 7px;border:1px solid var(--muted);border-radius:999px;font:600 10px var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);vertical-align:2px;white-space:nowrap}
 .ings li:has(.opt-tag) .q{color:var(--muted)}
+
+/* ---------- variantes de variantes ; source cliquable ---------- */
+.subvar{position:relative;display:flex;flex-direction:column}
+.subvar .rcard{flex:1}
+.subvar-of{display:block;margin-top:4px;font-size:12px;color:var(--muted)}
+.eyebrow .orig a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px}
+.eyebrow .orig a:hover{text-decoration-color:currentColor}
