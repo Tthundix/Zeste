@@ -722,3 +722,10 @@ input[type=radio]{accent-color:var(--accent)}
 .subvar-of{display:block;margin-top:4px;font-size:12px;color:var(--muted)}
 .eyebrow .orig a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px}
 .eyebrow .orig a:hover{text-decoration-color:currentColor}
+
+/* Variantes : bloc pleine largeur sous les deux colonnes de la fiche, pour qu'une longue liste ne déséquilibre pas les colonnes. */
+.d-full{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (min-width:1024px),(orientation:landscape) and (max-height:540px) and (min-width:560px){
+  .detail .d-full{grid-column:1/-1}
+  .detail .d-full .rgrid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}

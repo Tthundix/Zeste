@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 27;
+const DATA_VERSION = 28;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -797,11 +797,11 @@ RECIPES.push(
   BY(R('berry-blast', 'Berry Blast', 'S', 'Highball', 'mint', 'Rondelle de citron', '', '#C2364F', '43010', 'Fruité,Rafraîchissant',
     [['framboise', 8, 'pièce'], ['citron', 22.5], ['sirop-passion', 22.5], ['the-noir', 60], ['cranberry', 60]],
     ['Écraser les framboises au fond du shaker.', 'Ajouter le reste des ingrédients et shaker avec des glaçons.', 'Filtrer dans un verre rempli de glace et décorer.'],
-    'Utiliser un thé noir infusé puis refroidi.'), 'Adapté d’un cocktail de Jamie’s Italian', ''),
+    'Adapté par le Difford’s Guide d’un cocktail des bars Jamie’s Italian. Utiliser un thé noir infusé puis refroidi.'), 'Difford’s Guide, d’après Jamie’s Italian', ''),
   BY(R('ginger-no-jito', 'Ginger No-jito', 'D', 'Highball', 'mint', '', '', '#CFE3A0', '33000', 'Rafraîchissant,Herbacé',
     [['citron-vert', 22.5], ['sirop-sucre-riche', 15, 'ml', 's'], ['menthe', 12, 'feuille'], ['ginger-beer', 105]],
     ['Verser le jus de citron vert et le sirop dans le verre, puis le remplir à moitié de glace pilée.', 'Ajouter la menthe et bien remuer en soulevant la glace.', 'Compléter de glace pilée, verser le ginger beer et remuer brièvement.'],
-    'Le nom « No-jito » est emprunté à Wagamama.'), 'Adapté d’un cocktail de Jamie’s Italian', '')
+    'Adapté par le Difford’s Guide d’une boisson de Jamie’s Italian ; le nom « No-jito » est emprunté à Wagamama.'), 'Difford’s Guide, d’après Jamie’s Italian', '')
 );
 
 /* ---------- Deuxième lot : classiques et classiques modernes ---------- */
@@ -1444,7 +1444,7 @@ const RECIPE_EDITS = {
     tags: ["Rafraîchissant", "Pétillant"],
     ings: [{"id": "rhum-ambre", "qty": 60, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "ginger-beer", "qty": 100, "unit": "ml", "sub": false, "opt": false, "alts": []}],
     steps: ["Remplir un verre highball de glaçons et verser la ginger beer.", "Faire flotter le rhum sur le dessus.", "Décorer d’une rondelle de citron vert."],
-    note: "Une version plus proche d’un Daiquiri ajoute 20 ml de jus de citron vert, 10 ml de sirop de sucre (1:1) et 2 traits d’Angostura.",
+    note: "Le Difford’s Guide en donne une version plus proche d’un Daiquiri, avec 20 ml de jus de citron vert, 10 ml de sirop de sucre (1:1) et 2 traits d’Angostura.",
     source: "Aurait été inventé aux Bermudes après la 1ere Guerre Mondiale"
   },
   'espresso-martini': {

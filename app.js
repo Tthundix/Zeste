@@ -1,7 +1,7 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.43.0';
+const APP_VERSION = '0.43.1';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
@@ -1347,8 +1347,10 @@ function openDetail(id, keep, back) {
         <p class="legend"><span><i class="dot"></i>Dans le bar</span><span><i class="dot sub"></i>Substitut dispo</span><span><i class="dot home"></i>À faire maison</span><span><i class="dot miss"></i>Manquant</span><span><i class="dot opt"></i>Facultatif</span></p></section>
       ${r.steps.length ? `<section class="sec o7"><h2>Préparation</h2><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></section>` : ''}
       ${r.note ? `<section class="sec o10"><h2>Notes de la recette</h2><ul class="notes">${String(r.note).split('\n').map(x => x.trim()).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-      ${vars.length ? `<section class="sec o11"><div class="shead"><h2>Variantes</h2><span class="count">${vars.length}</span></div><p class="hint">Recettes dérivées de celle-ci : un autre alcool, un ingrédient en moins ou en plus. Utile pour trouver une alternative.</p><div class="rgrid">${vars.map(v => v.parent === r.id ? rcardHTML(v, ownedSet()) : `<div class="subvar">${rcardHTML(v, ownedSet())}<span class="subvar-of">Variante de ${esc((parentOf(v) || {}).name || '')}</span></div>`).join('')}</div></section>` : ''}
-      <div class="o12 row-btns"><button class="btn" data-act="new-variant" data-id="${esc(r.id)}">Créer une variante</button></div>
+    </div>
+    <div class="d-full o11">
+      ${vars.length ? `<section class="sec"><div class="shead"><h2>Variantes</h2><span class="count">${vars.length}</span></div><p class="hint">Recettes dérivées de celle-ci : un autre alcool, un ingrédient en moins ou en plus. Utile pour trouver une alternative.</p><div class="rgrid">${vars.map(v => v.parent === r.id ? rcardHTML(v, ownedSet()) : `<div class="subvar">${rcardHTML(v, ownedSet())}<span class="subvar-of">Variante de ${esc((parentOf(v) || {}).name || '')}</span></div>`).join('')}</div></section>` : ''}
+      <div class="row-btns"><button class="btn" data-act="new-variant" data-id="${esc(r.id)}">Créer une variante</button></div>
     </div>
   </article></div>`;
   showSheet(); const nta = $('#my-note'); if (nta) autosize(nta); sh.scrollTop = st;
@@ -1550,14 +1552,15 @@ function rowHTML(row) {
 }
 function checkNew(fr) { const v = fr.querySelector('.f-ing').value.trim(); fr.querySelector('.frow-new').hidden = !v || !!findIng(v); }
 const CUT_KEYS = GARNISH_CUTS.map(c => c[0]);
-function openForm(id, variantOf) {
+function openForm(id, variantOf, keep) {
   const base = !id && variantOf ? S.recipes.find(r => r.id === variantOf) : null;
-  const src = id ? S.recipes.find(r => r.id === id) : base;
+  const src = id ? S.recipes.find(r => r.id === id) : null;
   const r = src ? clone(src) : { name: '', origin: 'Original', by: 'me', author: '', method: 'Shaker', glass: 'Coupe', garn: '', garnish: '', rim: '', color: '#FFC21A', photo: '', flavor: { su: null, ac: null, am: null, as: null, fo: null }, tags: [], ings: [], steps: [], note: '' };
   /* Nouvelle variante : on part de la recette de base (à modifier), comme création personnelle liée à elle. */
+  /* On ne reprend que ce qui fait la recette : ingrédients, préparation, méthode, verre, garniture et couleur. */
   if (base) {
-    ['id', 'src', 'edited', 'created', 'photoCredit', 'subtitle', 'source', 'url', 'easy'].forEach(k => delete r[k]);
-    Object.assign(r, { name: base.name + ' (variante)', origin: 'Original', by: 'me', author: '', photo: '', parent: base.id });
+    ['ings', 'steps', 'method', 'glass', 'garn', 'garnish', 'rim', 'color'].forEach(k => { r[k] = clone(base[k]); });
+    Object.assign(r, { parent: base.id }, keep || { name: base.name + ' (variante)' });
   }
   /* Recette de base possible : toutes, sauf elle-même et ses propres variantes (pas de boucle). Un nom porté par deux recettes est précisé par l'id. */
   const noParent = new Set(id ? [id, ...descendantIds(id)] : []);
@@ -1653,7 +1656,7 @@ function openForm(id, variantOf) {
     </div>
   </form></div>`;
   sh.querySelectorAll('.frow').forEach(checkNew);
-  updatePrev(); syncHSL(); showSheet(); sh.scrollTop = 0; pushNav();
+  updatePrev(); syncHSL(); showSheet(); sh.scrollTop = 0; if (keep) replaceNav(); else pushNav();
 }
 function currentGarn() {
   const c = $('#rf-gcut') ? $('#rf-gcut').value : 'none';
@@ -2083,6 +2086,18 @@ document.addEventListener('input', e => {
   if (t.id && t.id.startsWith('rf-') && t.type === 'range') { const k = t.id.slice(3); $('#ro-' + k).textContent = t.value; const u = $('#uk-' + k); if (u && u.checked) { u.checked = false; $('#sl-' + k).classList.remove('unk'); } }
 });
 document.addEventListener('change', e => {
+  /* Nouvelle recette : choisir une recette de base dans « Variante de » reprend sa recette (si aucun ingrédient n'est encore saisi). */
+  if (e.target.id === 'rf-parent' && sheetState && sheetState.type === 'form' && !sheetState.id) {
+    const pid = sheetState.pmap && sheetState.pmap.get(norm(e.target.value));
+    const filled = [...document.querySelectorAll('#rform .f-ing')].some(x => x.value.trim());
+    if (pid && !filled) {
+      const g = x => ($('#' + x) || {}).value || '';
+      const keep = { name: g('rf-name') || ((S.recipes.find(x => x.id === pid) || {}).name || '') + ' (variante)', subtitle: g('rf-sub'), note: g('rf-note') };
+      const st = $('#sheet').scrollTop; openForm(null, pid, keep); $('#sheet').scrollTop = st;
+      toast('Recette de base reprise : il reste à la modifier');
+    } else if (pid && filled) toast('Les ingrédients déjà saisis sont conservés');
+    return;
+  }
   const t = e.target;
   if (t.name === 'rf-by') { syncOrig(); return; }
   if (t.classList.contains('uk')) { const k = t.dataset.k; $('#sl-' + k).classList.toggle('unk', t.checked); $('#ro-' + k).textContent = t.checked ? '—' : $('#rf-' + k).value; return; }
