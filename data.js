@@ -2,7 +2,7 @@
    Les étapes sont rédigées pour Zeste. */
 'use strict';
 
-const DATA_VERSION = 28;
+const DATA_VERSION = 29;
 
 /* Familles du bar, dans l'ordre d'affichage. Les sous-familles s'affichent en volets dépliables. */
 const FAMILIES = [
@@ -123,6 +123,7 @@ const INGREDIENTS = [
   ['orgeat', "Sirop d'orgeat", 'Orgeat', 'Sirops & sucres', '', 0],
   ['grenadine', 'Sirop de grenadine', 'Grenadine', 'Sirops & sucres', '', 0],
   ['sirop-framboise', 'Sirop de framboise', 'Sirop de framboise', 'Sirops & sucres', '', 0],
+  ['sirop-de-fraise', 'Sirop de fraise', 'Sirop de fraise', 'Sirops & sucres', '', 0],
   ['sirop-cannelle', 'Sirop de cannelle', 'Sirop de cannelle', 'Sirops & sucres', '', 0],
   ['sirop-gingembre', 'Sirop de gingembre', 'Sirop de gingembre', 'Sirops & sucres', '', 0],
   ['sirop-vanille', 'Sirop de vanille', 'Sirop de vanille', 'Sirops & sucres', '', 0],
@@ -276,7 +277,7 @@ const RECIPES = [
     [['cognac', 30, 'ml', { alts: ['gin'] }], ['creme-cacao', 30], ['creme-liquide', 30]],
     ['Shaker le cognac, la crème de cacao et la crème avec des glaçons.', 'Filtrer dans une coupe refroidie.', 'Râper un peu de noix de muscade sur le dessus.'],
     "Il s'agit ici de sa version moderne ; le Brandy Alexander. L'original se faisait à base de gin au lieu du brandy."),
-  Object.assign(R('americano', 'Americano', 'D', 'Old fashioned', 'wheel-orange', '', '', '#B8322A', '20412', 'Apéritif,Amer',
+  Object.assign(R('americano', 'Americano', 'D', 'Old fashioned', 'wheel-orange', '', '', '#B8322A', '20412', 'Apéritif',
     [['campari', 30], ['vermouth-rouge', 30, 'ml', 's'], ['eau-gazeuse', 0, 'à compléter']],
     ['Remplir le verre de glaçons.', 'Verser le Campari et le vermouth, puis allonger avec un trait d’eau gazeuse.', 'Remuer doucement et ajouter la rondelle d’orange.'],
     'On peut très bien en faire un long drink en utilisant un highball et en augmentant toutes les quantités.'), { easy: true }),
@@ -289,7 +290,7 @@ const RECIPES = [
   R('between-the-sheets', 'Between the Sheets', 'S', 'Coupe', 'zest-lemon', '', '', '#E8C47A', '23014', 'Festif',
     [['rhum-blanc', 30], ['cognac', 30], ['triple-sec', 30, 'ml', 's'], ['citron', 20]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
-  R('boulevardier', 'Boulevardier', 'V', 'Coupe', 'zest-orange', '', '', '#8E2A1E', '20425', 'Digestif,Amer,Hivernal',
+  R('boulevardier', 'Boulevardier', 'V', 'Coupe', 'zest-orange', '', '', '#8E2A1E', '20425', 'Digestif,Hivernal',
     [['bourbon', 45, 'ml', 's'], ['campari', 30], ['vermouth-rouge', 30]],
     ['Verser tous les ingrédients dans un verre à mélange rempli de glaçons.', 'Remuer 30 secondes.', 'Filtrer dans une coupe refroidie et exprimer un zeste d’orange.']),
   R('brandy-crusta', 'Brandy Crusta', 'V', 'Coupe', 'zest-lemon', 'En long ruban sur le bord intérieur du verre', 'sucre', '#D9A24E', '22114', 'Festif',
@@ -312,7 +313,7 @@ const RECIPES = [
     [['gin', 45], ['citron', 30], ['sirop-sucre', 10, 'ml', 's'], ['eau-gazeuse', 0, 'à compléter']],
     ['Shaker le gin, le jus de citron et le sirop avec des glaçons.', 'Filtrer dans un verre highball sans glace.', 'Compléter avec un trait d’eau gazeuse.'],
     'Traditionnellement servi sans glace.'),
-  R('hanky-panky', 'Hanky Panky', 'V', 'Coupe', 'zest-orange', '', '', '#7A2E22', '20414', 'Digestif,Amer',
+  R('hanky-panky', 'Hanky Panky', 'V', 'Coupe', 'zest-orange', '', '', '#7A2E22', '20414', 'Digestif',
     [['gin', 45], ['vermouth-rouge', 45], ['fernet', 7.5]],
     ['Verser tous les ingrédients dans un verre à mélange rempli de glaçons.', 'Remuer 30 secondes.', 'Filtrer dans une coupe refroidie et exprimer un zeste d’orange.']),
   R('john-collins', 'John Collins', 'D', 'Highball', 'wheel-lemon', 'Cerise', '', '#EEEBD0', '33002', 'Rafraîchissant,Pétillant',
@@ -334,7 +335,7 @@ const RECIPES = [
   R('monkey-gland', 'Monkey Gland', 'S', 'Coupe', 'zest-orange', '', '', '#F08A4B', '32003', 'Fruité',
     [['gin', 45], ['orange', 45], ['absinthe', 1, 'c. à soupe'], ['grenadine', 1, 'c. à soupe']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
-  R('negroni', 'Negroni', 'D', 'Old fashioned', 'wheel-orange', '', '', '#B3202A', '20424', 'Apéritif,Amer',
+  R('negroni', 'Negroni', 'D', 'Old fashioned', 'wheel-orange', '', '', '#B3202A', '20424', 'Apéritif',
     [['gin', 30], ['campari', 30], ['vermouth-rouge', 30]],
     ['Remplir un verre old fashioned de glaçons.', 'Verser le gin, le Campari et le vermouth.', 'Remuer doucement et décorer d’une demi-rondelle d’orange.']),
   R('old-fashioned', 'Old Fashioned', 'D', 'Old fashioned', 'zest-orange', 'Cerise', '', '#B5651D', '20215', 'Digestif,Réconfortant',
@@ -501,7 +502,7 @@ const RECIPES = [
   R('espresso-martini', 'Espresso Martini', 'S', 'Martini', 'coffee', '', '', '#3A2418', '30323', 'Festif,Digestif',
     [['vodka', 50], ['liqueur-cafe', 30], ['sirop-sucre', 10, 'ml', 's'], ['expresso', 30]],
     ['Préparer un expresso serré.', 'Shaker très énergiquement tous les ingrédients avec des glaçons.', 'Filtrer finement dans le verre et poser trois grains de café sur la mousse.']),
-  R('fernandito', 'Fernandito', 'D', 'Old fashioned', '', '', '', '#2A1A14', '20412', 'Amer,Festif',
+  R('fernandito', 'Fernandito', 'D', 'Old fashioned', '', '', '', '#2A1A14', '20412', 'Festif',
     [['fernet', 50], ['cola', 0, 'à compléter']],
     ['Verser le Fernet-Branca dans un verre rempli de glaçons.', 'Compléter avec le cola et remuer doucement.']),
   R('french-martini', 'French Martini', 'S', 'Martini', 'berry', 'Framboise', '', '#C24A6A', '41013', 'Fruité,Festif',
@@ -525,7 +526,7 @@ const RECIPES = [
   R('paloma', 'Paloma', 'D', 'Highball', 'wedge-lime', '', 'sel', '#F4B3A6', '22113', 'Rafraîchissant,Estival',
     [['tequila', 50], ['citron-vert', 5], ['sel', 1, 'pincée'], ['soda-pamplemousse', 100]],
     ['Verser la tequila dans un verre highball et presser le citron vert.', 'Ajouter la glace et la pincée de sel, puis compléter avec le soda au pamplemousse.', 'Remuer doucement.']),
-  R('paper-plane', 'Paper Plane', 'S', 'Coupe', '', '', '', '#E07A3A', '23313', 'Amer',
+  R('paper-plane', 'Paper Plane', 'S', 'Coupe', '', '', '', '#E07A3A', '23313', 'Apéritif',
     [['bourbon', 30], ['amaro-nonino', 30], ['aperol', 30], ['citron', 30]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
   R('penicillin', 'Penicillin', 'S', 'Old fashioned', '', 'Gingembre confit', '', '#D9A24E', '33124', 'Réconfortant,Hivernal',
@@ -553,7 +554,7 @@ const RECIPES = [
   R('tommys-margarita', "Tommy's Margarita", 'S', 'Old fashioned', 'wedge-lime', '', '', '#DCE2A0', '34013', 'Rafraîchissant',
     [['tequila-reposado', 60, 'ml', 's'], ['citron-vert', 30], ['sirop-agave', 30]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans un verre old fashioned rempli de glace.']),
-  R('trinidad-sour', 'Trinidad Sour', 'S', 'Coupe', '', '', '', '#8A2A20', '32424', 'Amer',
+  R('trinidad-sour', 'Trinidad Sour', 'S', 'Coupe', '', '', '', '#8A2A20', '32424', 'Apéritif',
     [['angostura', 45], ['orgeat', 30], ['citron', 22.5], ['rye', 15]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.'], 'L’Angostura est ici la base du cocktail, pas un simple trait.'),
   R('vento', 'VE.N.TO', 'S', 'Old fashioned', '', 'Raisin blanc', '', '#EFE6B8', '33013', 'Floral',
@@ -584,7 +585,7 @@ const RECIPES = [
   R('whisky-ginger', 'Whisky Ginger', 'D', 'Highball', 'wedge-lemon', '', '', '#D9A04A', '31002', 'Rafraîchissant',
     [['bourbon', 50, 'ml', 's'], ['ginger-ale', 120, 'ml', { alts: ['ginger-beer'] }]],
     ['Remplir un verre highball de glaçons.', 'Verser le whisky puis le ginger ale.', 'Remuer une fois et ajouter un quartier de citron.']),
-  R('campari-orange', 'Campari Orange', 'D', 'Highball', 'wheel-orange', '', '', '#E5502E', '32302', 'Apéritif,Amer',
+  R('campari-orange', 'Campari Orange', 'D', 'Highball', 'wheel-orange', '', '', '#E5502E', '32302', 'Apéritif',
     [['campari', 50], ['orange', 100]],
     ['Remplir un verre highball de glaçons.', 'Verser le Campari puis le jus d’orange.', 'Remuer doucement et ajouter une rondelle d’orange.']),
   R('limoncello-spritz', 'Limoncello Spritz', 'D', 'Verre à vin', 'wheel-lemon', 'Feuilles de menthe', '', '#F3E27A', '43011', 'Apéritif,Estival,Pétillant',
@@ -626,11 +627,11 @@ const RECIPES = [
   R('whisky-highball', 'Whisky Highball', 'D', 'Highball', 'zest-lemon', '', '', '#E8C98A', '10012', 'Rafraîchissant,Apéritif',
     [['scotch', 50, 'ml', { alts: ['bourbon', 'whiskey-irlandais'] }], ['eau-gazeuse', 150]],
     ['Remplir un verre highball de glaçons et remuer pour refroidir le verre.', 'Verser le whisky, puis l’eau gazeuse le long d’une cuillère.', 'Remuer une fois et exprimer un zeste de citron.']),
-  R('negroni-sbagliato', 'Negroni Sbagliato', 'D', 'Old fashioned', 'wheel-orange', '', '', '#C2382E', '30312', 'Apéritif,Amer,Pétillant',
+  R('negroni-sbagliato', 'Negroni Sbagliato', 'D', 'Old fashioned', 'wheel-orange', '', '', '#C2382E', '30312', 'Apéritif,Pétillant',
     [['campari', 30], ['vermouth-rouge', 30, 'ml', 's'], ['prosecco', 30, 'ml', 's']],
     ['Remplir le verre de glaçons.', 'Verser le Campari et le vermouth, puis compléter avec le prosecco.', 'Remuer doucement et ajouter une rondelle d’orange.'],
     'Littéralement le « Negroni raté » : du prosecco à la place du gin.'),
-  R('campari-spritz', 'Campari Spritz', 'D', 'Verre à vin', 'wheel-orange', '', '', '#D9302F', '20412', 'Apéritif,Amer,Pétillant',
+  R('campari-spritz', 'Campari Spritz', 'D', 'Verre à vin', 'wheel-orange', '', '', '#D9302F', '20412', 'Apéritif,Pétillant',
     [['prosecco', 90, 'ml', 's'], ['campari', 40], ['eau-gazeuse', 0, 'à compléter']],
     ['Remplir le verre de glaçons.', 'Verser le prosecco, puis le Campari.', 'Ajouter un trait d’eau gazeuse et une rondelle d’orange.'])
 ];
@@ -815,7 +816,7 @@ RECIPES.push(
   R('jack-rose', 'Jack Rose', 'S', 'Coupe', 'zest-lemon', '', '', '#E07A7A', '33014', 'Fruité',
     [['calvados', 60], ['citron', 22.5], ['grenadine', 15]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
-  BY(R('old-pal', 'Old Pal', 'V', 'Coupe', 'zest-lemon', '', '', '#B8402E', '10424', 'Apéritif,Amer',
+  BY(R('old-pal', 'Old Pal', 'V', 'Coupe', 'zest-lemon', '', '', '#B8402E', '10424', 'Apéritif',
     [['rye', 30, 'ml', 's'], ['campari', 30], ['vermouth-sec', 30]],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']), 'Harry MacElhone (Paris), 1922'),
   BY(R('algonquin', 'Algonquin', 'S', 'Coupe', 'pineapple', 'cerise', '', '#E8C47A', '21114', '',
@@ -874,7 +875,7 @@ RECIPES.push(
   BY(R('painkiller', 'Painkiller', 'S', 'Hurricane', 'pineapple', 'Muscade râpée', '', '#F0C060', '51003', 'Tiki,Crémeux',
     [['rhum-brun', 60, 'ml', 's'], ['ananas', 120], ['orange', 30], ['creme-coco', 30]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Verser dans un grand verre rempli de glace.', 'Râper de la muscade sur le dessus.']), 'Daphne Henderson, Soggy Dollar Bar (îles Vierges britanniques), années 1970'),
-  BY(R('jungle-bird', 'Jungle Bird', 'S', 'Old fashioned', 'pineapple', '', '', '#D2502E', '33313', 'Tiki,Amer',
+  BY(R('jungle-bird', 'Jungle Bird', 'S', 'Old fashioned', 'pineapple', '', '', '#D2502E', '33313', 'Tiki',
     [['rhum-brun', 45, 'ml', 's'], ['campari', 22.5], ['ananas', 45], ['citron-vert', 15], ['sirop-sucre', 15, 'ml', 's']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans un verre old fashioned rempli de glace.']), 'Jeffrey Ong, Aviary Bar, Hilton (Kuala Lumpur), 1978'),
   BY(R('hurricane', 'Hurricane', 'S', 'Hurricane', 'wheel-orange', 'Cerise', '', '#E8503A', '43014', 'Tiki,Festif',
@@ -892,10 +893,10 @@ RECIPES.push(
   BY(R('breakfast-martini', 'Breakfast Martini', 'S', 'Martini', 'zest-orange', '', '', '#F2C060', '33114', 'Brunch',
     [['gin', 50], ['cointreau', 15, 'ml', 's'], ['citron', 15], ['marmelade', 1, 'c. à café']],
     ['Remuer la marmelade avec le gin dans le shaker pour la dissoudre.', 'Ajouter le reste des ingrédients et des glaçons, puis shaker.', 'Filtrer finement dans un verre à martini.']), 'Salvatore Calabrese, The Lanesborough (Londres), 1996'),
-  BY(R('siesta', 'Siesta', 'S', 'Coupe', 'wheel-lime', '', '', '#F08070', '23313', 'Rafraîchissant,Amer',
+  BY(R('siesta', 'Siesta', 'S', 'Coupe', 'wheel-lime', '', '', '#F08070', '23313', 'Rafraîchissant',
     [['tequila', 45, 'ml', 's'], ['campari', 15], ['citron-vert', 15], ['pamplemousse', 15], ['sirop-sucre', 15, 'ml', 's']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']), 'Katie Stipe, Flatiron Lounge (New York), 2006'),
-  BY(R('little-italy', 'Little Italy', 'V', 'Coupe', 'cherry', '', '', '#7A2E1E', '20325', 'Digestif,Amer',
+  BY(R('little-italy', 'Little Italy', 'V', 'Coupe', 'cherry', '', '', '#7A2E1E', '20325', 'Digestif',
     [['rye', 60, 'ml', 's'], ['cynar', 15], ['vermouth-rouge', 22.5]],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie et ajouter une cerise.']), 'Audrey Saunders, Pegu Club (New York), 2005'),
   BY(R('gin-gin-mule', 'Gin-Gin Mule', 'S', 'Highball', 'mint', '', '', '#DCE8C0', '33012', 'Rafraîchissant',
@@ -904,10 +905,10 @@ RECIPES.push(
   BY(R('red-hook', 'Red Hook', 'V', 'Coupe', 'cherry', '', '', '#8A2E22', '20315', 'Digestif',
     [['rye', 60, 'ml', 's'], ['vermouth-rouge', 15], ['marasquin', 7.5]],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.'], 'La recette d’origine utilise le vermouth amer Punt e Mes.'), 'Vincenzo Errico, Milk & Honey (New York), 2003'),
-  BY(R('division-bell', 'Division Bell', 'S', 'Coupe', 'zest-lemon', '', '', '#F0A050', '23213', 'Amer',
+  BY(R('division-bell', 'Division Bell', 'S', 'Coupe', 'zest-lemon', '', '', '#F0A050', '23213', 'Apéritif',
     [['mezcal', 30], ['aperol', 22.5], ['marasquin', 15], ['citron-vert', 22.5]],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']), 'Phil Ward, Mayahuel (New York), 2009'),
-  BY(R('enzoni', 'Enzoni', 'S', 'Old fashioned', '', 'Grain de raisin', '', '#C8502E', '33313', 'Fruité,Amer',
+  BY(R('enzoni', 'Enzoni', 'S', 'Old fashioned', '', 'Grain de raisin', '', '#C8502E', '33313', 'Fruité',
     [['gin', 30], ['campari', 30], ['citron', 22.5], ['sirop-sucre', 15, 'ml', 's'], ['raisin', 5, 'pièce']],
     ['Écraser les raisins dans le shaker.', 'Ajouter le reste des ingrédients et des glaçons, puis shaker.', 'Filtrer finement dans un verre rempli de glace.']), 'Vincenzo Errico, Milk & Honey (New York), 2003'),
   BY(R('jasmine', 'Jasmine', 'S', 'Coupe', 'zest-lemon', '', '', '#F2B0A0', '24214', 'Rafraîchissant',
@@ -925,10 +926,10 @@ RECIPES.push(
   BY(R('fitzgerald', 'Fitzgerald', 'S', 'Old fashioned', 'wheel-lemon', '', '', '#EFE6C0', '33114', 'Rafraîchissant',
     [['gin', 45], ['citron', 22.5], ['sirop-sucre', 22.5, 'ml', 's'], ['angostura', 2, 'trait']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans un verre rempli de glace.']), 'Dale DeGroff, Rainbow Room (New York), années 1990'),
-  BY(R('white-negroni', 'White Negroni', 'V', 'Old fashioned', 'zest-lemon', '', '', '#F0E6A0', '20324', 'Apéritif,Amer',
+  BY(R('white-negroni', 'White Negroni', 'V', 'Old fashioned', 'zest-lemon', '', '', '#F0E6A0', '20324', 'Apéritif',
     [['gin', 45], ['lillet', 30], ['suze', 22.5]],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer sur un gros glaçon et exprimer un zeste de citron.']), 'Wayne Collins, Vinexpo (Bordeaux), 2001'),
-  BY(R('bitter-giuseppe', 'Bitter Giuseppe', 'V', 'Old fashioned', 'zest-lemon', '', '', '#5A2E1E', '21423', 'Apéritif,Amer',
+  BY(R('bitter-giuseppe', 'Bitter Giuseppe', 'V', 'Old fashioned', 'zest-lemon', '', '', '#5A2E1E', '21423', 'Apéritif',
     [['cynar', 60], ['vermouth-rouge', 30], ['citron', 1, 'c. de bar'], ['orange-bitters', 6, 'trait']],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer sur un gros glaçon.']), 'Stephen Cole, The Violet Hour (Chicago)'),
   BY(R('queens-park-swizzle', "Queen's Park Swizzle", 'D', 'Highball', 'mint', '', '', '#C8A060', '33114', 'Tiki,Rafraîchissant',
@@ -987,7 +988,7 @@ RECIPES.push(
   R('satans-whiskers', "Satan's Whiskers", 'S', 'Coupe', 'zest-orange', '', '', '#E8904A', '32114', 'Fruité',
     [['gin', 22.5], ['vermouth-rouge', 22.5], ['vermouth-sec', 22.5], ['orange', 22.5], ['grand-marnier', 15, 'ml', 's'], ['orange-bitters', 1, 'trait']],
     ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
-  R('toronto', 'Toronto', 'V', 'Coupe', 'zest-orange', '', '', '#7A3A1E', '20425', 'Digestif,Amer',
+  R('toronto', 'Toronto', 'V', 'Coupe', 'zest-orange', '', '', '#7A3A1E', '20425', 'Digestif',
     [['rye', 60, 'ml', 's'], ['fernet', 7.5], ['sirop-sucre', 7.5, 'ml', 's'], ['angostura', 2, 'trait']],
     ['Remuer tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.']),
   BY(R('black-manhattan', 'Black Manhattan', 'V', 'Coupe', 'cherry', '', '', '#3A1E14', '20325', 'Digestif,Fin de soirée',
@@ -1154,6 +1155,26 @@ RECIPES.push(
     'Le sirop de sucre est facultatif, selon le sucre du jus d’ananas.'))
 );
 
+
+/* Variantes du French 75 ajoutées depuis l'appli (sauvegarde du 28/11/2026). */
+RECIPES.push(
+  R('french-125', 'French 125', 'S', 'Flûte', 'zest-lemon', '', '', '#DC7C38', '23002', 'Apéritif,Rafraîchissant,Festif,Pétillant',
+    [['cognac', 30], ['citron', 15], ['sirop-sucre', 15, 'ml', 's'], ['champagne', 0, 'à compléter', 's']],
+    ['Shaker le cognac, le jus de citron et le sirop avec des glaçons.', 'Filtrer dans une flûte.', 'Compléter avec le champagne et remuer doucement.', 'Exprimer un zeste de citron au-dessus du verre, puis le déposer.'],
+    'Le cognac remplace le gin du French 75.'),
+  R('french-95', 'French 95', 'S', 'Flûte', 'zest-lemon', '', '', '#DF9649', '23002', 'Apéritif,Rafraîchissant,Festif,Pétillant',
+    [['bourbon', 30], ['citron', 15], ['sirop-sucre', 15, 'ml', 's'], ['champagne', 0, 'à compléter', 's']],
+    ['Shaker le bourbon, le jus de citron et le sirop avec des glaçons.', 'Filtrer dans une flûte.', 'Compléter avec le champagne et remuer doucement.', 'Exprimer un zeste de citron au-dessus du verre, puis le déposer.'],
+    'Le bourbon remplace le gin du French 75.'),
+  Object.assign(R('french-75-vermeire', 'French 75 (Robert Vermeire, 1922)', 'S', 'Coupe', 'zest-lemon', '', '', '#E15856', '20003', 'Apéritif,Festif,Fruité',
+    [['gin', 40], ['calvados', 20], ['citron', 5], ['grenadine', 7.5]],
+    ['Shaker tous les ingrédients avec des glaçons.', 'Filtrer dans une coupe refroidie.', 'Exprimer un zeste de citron au-dessus du verre, puis le déposer.'],
+    'Une des premières recettes publiées sous ce nom, sans vin effervescent.'),
+    { source: 'Robert Vermeire, Cocktails: How to Mix Them (1922)' }),
+  R('strawberry-french-75', 'Strawberry French 75', 'S', 'Flûte', '', 'Fraise, zeste de citron', '', '#CC2424', '23002', 'Apéritif,Rafraîchissant,Festif,Fruité,Pétillant',
+    [['gin', 30], ['citron', 15], ['sirop-de-fraise', 15], ['champagne', 0, 'à compléter', 's']],
+    ['Shaker le gin, le jus de citron et le sirop avec des glaçons.', 'Filtrer dans une flûte.', 'Compléter avec le champagne et remuer doucement.', 'Exprimer un zeste de citron au-dessus du verre, puis le jeter.', 'Entailler une fraise et la poser sur le bord du verre, queue vers le haut.'])
+);
 
 /* Retouches de recettes du catalogue (appliquées après leur définition). */
 const RECIPE_EDITS = {
@@ -1471,7 +1492,8 @@ const RECIPE_EDITS = {
   },
   'strawberry-daiquiri': {
     garn: "",
-    garnish: "Fraise"
+    garnish: "Fraise",
+    steps: ["Mixer tous les ingrédients, puis ajouter une poignée de glace et mixer de nouveau.", "Verser dans un verre refroidi.", "Décorer d’une fraise sur le bord du verre."]
   },
   'division-bell': {
     flavor: {"su": 2, "ac": 2, "am": 3, "as": 1, "fo": 3},
@@ -1494,6 +1516,40 @@ const RECIPE_EDITS = {
     ings: [{"id": "rhum-blanc", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "vermouth-blanc", "qty": 22.5, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "curacao", "qty": 7.5, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "grenadine", "qty": 1, "unit": "c. de bar", "sub": false, "opt": false, "alts": []}, {"id": "sel", "qty": 1, "unit": "pincée", "sub": false, "opt": false, "alts": []}],
     note: "On peut aussi remplacer la moitié du vermouth blanc par du vermouth sec.",
     source: "Classique cubain des années 1920"
+  },
+  'french-75': {
+    tags: ["Festif", "Pétillant", "Apéritif", "Rafraîchissant"],
+    ings: [{"id": "gin", "qty": 30, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "citron", "qty": 15, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "sirop-sucre", "qty": 15, "unit": "ml", "sub": true, "opt": false, "alts": []}, {"id": "champagne", "qty": 0, "unit": "à compléter", "sub": true, "opt": false, "alts": []}],
+    note: "Si le vin effervescent est plus sucré qu’un champagne brut, n’en verser que les deux tiers et compléter avec de l’eau gazeuse, ou réduire le sirop de sucre.\nLa version originale date de la Première Guerre mondiale et est attribuée à Henry Tépé ; la variante « French 75 (Robert Vermeire, 1922) » s’en rapproche.\nSon nom vient d’un canon de l’armée française : le canon de 75 modèle 1897.",
+    source: "Judge Jr. , Here’s How (1927)",
+    subtitle: "Soixante-Quinze"
+  },
+  'french-connection': {
+    method: "Verre à mélange",
+    garn: "zest-orange",
+    ings: [{"id": "cognac", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "amaretto", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Remuer le cognac et l’amaretto avec des glaçons.", "Filtrer dans un verre old fashioned sur glace.", "Exprimer un zeste d’orange au-dessus du verre, puis le déposer."],
+    note: "Fait partie de la série de cocktails à deux ingrédients de Brian F. Rea, avec le Godmother, le Godfather et le Godchild. Ce dernier est presque le même cocktail, à quelques proportions près : il figure donc en sous-titre.",
+    source: "Brian F. Rea, Brian’s Booze Guide (1976)",
+    subtitle: "Godchild"
+  },
+  'fernandito': {
+    tags: ["Amer", "Festif"],
+    source: "Iconique de la province de Córdoba (Argentine) dans les années 1980",
+    subtitle: "Fernet con coca"
+  },
+  'french-martini': {
+    garn: "pineapple",
+    garnish: "",
+    color: "#e55a3e",
+    tags: ["Festif", "Fruité"],
+    ings: [{"id": "vodka", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}, {"id": "liqueur-framboise", "qty": 15, "unit": "ml", "sub": true, "opt": false, "alts": [], "tip": "Chambord"}, {"id": "ananas", "qty": 45, "unit": "ml", "sub": false, "opt": false, "alts": []}],
+    steps: ["Shaker tous les ingrédients avec des glaçons.", "Filtrer dans un verre à martini refroidi.", "Décorer d’un quartier d’ananas."],
+    note: "La liqueur de framboise Chambord, française, donne son nom au cocktail.\nMalgré son nom, il n’a rien d’un Martini : il ne figure donc pas parmi ses variantes.",
+    source: "Keith McNally, New York City, années 1980"
+  },
+  'frozen-daiquiri': {
+    steps: ["Mixer tous les ingrédients avec beaucoup de glace pilée.", "Servir dans une coupe refroidie.", "Décorer d’un quartier de citron vert et d’une paille."]
   }
 };
 Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === id); if (r) Object.assign(r, RECIPE_EDITS[id]); });
@@ -1502,7 +1558,8 @@ Object.keys(RECIPE_EDITS).forEach(id => { const r = RECIPES.find(x => x.id === i
    lors de la mise à jour vers cette version, ces recettes reprennent la version du catalogue (relue et corrigée)
    au lieu de garder la copie modifiée de l'appareil. Une photo prise dans l'appli est conservée. */
 const SYNCED_EDITS = {
-  26: ['casino', 'clover-club', 'caipirinha', 'champagne-cocktail', 'corpse-reviver-2', 'cosmopolitan', 'canchanchara', 'campari-orange', 'campari-spritz', 'cinderella', 'citronnade-maison', 'cafe-frappe', 'ca-phe-sua-da', 'cloudy-tokyo', 'cold-brew-julep', 'chartreuse-swizzle', 'corn-n-oil', 'chilcano', 'charlie-chaplin', 'chocolate-taza', 'cafe-de-olla', 'dalgona', 'citronnade-fraise', 'concombre-menthe', 'calisson']
+  26: ['casino', 'clover-club', 'caipirinha', 'champagne-cocktail', 'corpse-reviver-2', 'cosmopolitan', 'canchanchara', 'campari-orange', 'campari-spritz', 'cinderella', 'citronnade-maison', 'cafe-frappe', 'ca-phe-sua-da', 'cloudy-tokyo', 'cold-brew-julep', 'chartreuse-swizzle', 'corn-n-oil', 'chilcano', 'charlie-chaplin', 'chocolate-taza', 'cafe-de-olla', 'dalgona', 'citronnade-fraise', 'concombre-menthe', 'calisson'],
+  29: ['french-75', 'french-connection', 'fernandito', 'french-martini', 'strawberry-daiquiri', 'frozen-daiquiri']
 };
 
 /* Étape de garniture, ajoutée en fin de recette quand les étapes n'en parlent pas encore (zeste exprimé, rondelle, cerise…).
@@ -1550,7 +1607,7 @@ const GARNISH_STEPS = {
   'bramble': "Décorer de quelques mûres et d’une rondelle de citron.",
   'canchanchara': "Décorer d’une rondelle de citron vert.",
   'dark-n-stormy': "Décorer d’un quartier de citron vert.",
-  'french-martini': "Décorer d’une framboise.",
+  'french-martini': "Décorer d’un quartier d’ananas.",
   'lemon-drop': "Décorer d’une rondelle de citron.",
   'new-york-sour': "Exprimer un zeste de citron au-dessus du verre, puis le déposer.",
   'old-cuban': "Décorer d’un brin de menthe.",
@@ -1742,7 +1799,11 @@ const PHOTOS = {
   'espresso-martini-morgenthaler': 'photos/espresso-martini-morgenthaler.jpg',
   'espresso-martini-erickson': 'photos/espresso-martini-erickson.jpg',
   'espresso-tonic': 'photos/espresso-tonic.jpg',
-  'pineapple-espresso-tonic': 'photos/pineapple-espresso-tonic.jpg'
+  'pineapple-espresso-tonic': 'photos/pineapple-espresso-tonic.jpg',
+  'fernandito': 'photos/fernandito.jpg',
+  'strawberry-french-75': 'photos/strawberry-french-75.jpg',
+  'french-connection': 'photos/french-connection.jpg',
+  'french-martini': 'photos/french-martini.jpg'
 };
 RECIPES.forEach(r => { if (PHOTOS[r.id]) r.photo = PHOTOS[r.id]; });
 
@@ -1791,7 +1852,7 @@ const PHOTO_CREDITS = {
   'daiquiri': { by: 'Marta Smith', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dun-verre-sur-une-table-mhV9qSuVKv8' },
   'dark-n-stormy': { by: 'Elissa Landry', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-soda-avec-une-tranche-de-citron-sur-le-cote-GimpmaoSW-o' },
   'espresso-martini': { by: 'Nima Naseri', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-boisson-assise-sur-une-table-a-cote-dune-grille-metallique-Jg8qNgt71OI' },
-  'french-75': { by: 'Stephen Harlan' },
+  'french-75': { by: 'Stephen Harlan', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-liquide-vert-avec-une-tranche-de-citron-sur-une-table-DzW0mvg6yr4' },
   'gin-basil-smash': { by: 'Patrycja Jadach' },
   'gin-tonic': { by: 'Adrian Infernus' },
   'hot-toddy': { by: 'Monika Grabkowska' },
@@ -1824,7 +1885,7 @@ const PHOTO_CREDITS = {
   'cosmopolitan': { by: 'Pavel Shitov', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-rouge-avec-une-garniture-decorce-dorange-6qiYDDruhTc' },
   'cuba-libre': { by: 'Malmaison Hotels', lic: 'CC BY-ND 2.0', url: 'https://flic.kr/p/2nnyiC3' },
   'strawberry-daiquiri': { by: 'Tai’s Captures', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-margarita-transparent-sur-la-photographie-a-mise-au-point-selective-2EBTwzczg2A' },
-  'frozen-daiquiri': { by: 'AlbertRA', lic: 'CC BY-SA 4.0', url: 'https://commons.wikimedia.org/wiki/File:Daiquiri_a_l%27aeroport.jpg' },
+  'frozen-daiquiri': { by: 'Tom Caillarec', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-cocktail-glace-repose-sur-une-surface-rouge-brillante-J-cr1OARw3w' },
   'egg-cream': { by: 'fishy fishy', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/cafe-glace-avec-creme-et-cacao-ZD5lqf5ZOQ0' },
   'eggnog': { by: 'Aleisha Kalina', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-liquide-brun-et-glace-xnul8XAMae0' },
   'el-diablo': { by: 'CET Hồ Chí Minh', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/gobelet-en-verre-transparent-RL3SnlcHAK8' },
@@ -1833,7 +1894,11 @@ const PHOTO_CREDITS = {
   'espresso-martini-morgenthaler': { by: 'Rick Barrett (Ambitious Studio)', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-verre-de-martini-pose-sur-une-table-nYk7YcmalHs' },
   'espresso-martini-erickson': { by: 'Nellie Adamyan', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-personne-assise-a-une-table-avec-un-verre-E6yxjv-ipBw' },
   'espresso-tonic': { by: 'Max Nayman', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/bocal-en-verre-transparent-avec-un-liquide-orange-sur-une-table-en-bois-brun-ZLhJiLWg74E' },
-  'pineapple-espresso-tonic': { by: 'Zoran Borojevic', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-de-la-creme-glacee-sur-plaque-en-ceramique-verte-cvgd-jRsalg' }
+  'pineapple-espresso-tonic': { by: 'Zoran Borojevic', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-de-la-creme-glacee-sur-plaque-en-ceramique-verte-cvgd-jRsalg' },
+  'fernandito': { by: 'Fachy Marín', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gobelet-en-plastique-avec-paille-et-bouteilles-posees-au-sol-m_6A9V5WU9s' },
+  'strawberry-french-75': { by: 'Stefano Intintoli', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/un-gros-plan-dun-verre-de-jus-avec-une-fraise-sur-le-bord-iDhtNW9DxiY' },
+  'french-connection': { by: 'Pylyp Sukhenko', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/verre-a-boire-transparent-avec-un-liquide-brun-sur-une-table-en-bois-brun-ibh9J-fIgZU' },
+  'french-martini': { by: 'Mulberry Digital', lic: 'Licence Unsplash', url: 'https://unsplash.com/fr/photos/une-personne-qui-tend-la-main-pour-prendre-un-verre-sur-une-table-IAiIoxSUh_g' }
 };
 RECIPES.forEach(r => { if (PHOTO_CREDITS[r.id]) r.photoCredit = PHOTO_CREDITS[r.id]; });
 
@@ -1913,7 +1978,12 @@ const PHOTO_STATUS = {
   'espresso-martini-morgenthaler': 'ok',
   'espresso-martini-erickson': 'ok',
   'espresso-tonic': 'ok',
-  'pineapple-espresso-tonic': 'ok'
+  'pineapple-espresso-tonic': 'ok',
+  'fernandito': 'ok',
+  'french-75': 'ok',
+  'strawberry-french-75': 'ok',
+  'french-connection': 'ok',
+  'french-martini': 'ok'
 };
 const photoState = id => PHOTO_STATUS[id] === 'ok' ? 'ok' : PHOTO_STATUS[id] === 'test' ? 'test' : 'unverified';
 if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; } });
@@ -1921,10 +1991,11 @@ if (PUBLIC_RELEASE) RECIPES.forEach(r => { if (r.photo && photoState(r.id) !== '
 /* Variantes : { id de la variante: id de la recette de base }. Seuls les cas évidents sont liés.
    Le lien est un champ de la recette (`parent`), modifiable dans le formulaire comme les autres. */
 const PARENTS = {
+  'french-125': 'french-75', 'french-95': 'french-75', 'french-75-vermeire': 'french-75', 'strawberry-french-75': 'french-75',
   'frozen-daiquiri': 'daiquiri', 'apple-cider-dark-n-stormy': 'dark-n-stormy', 'mexican-el-diablo': 'el-diablo',
   'espresso-martini-morgenthaler': 'espresso-martini', 'espresso-martini-erickson': 'espresso-martini', 'pineapple-espresso-tonic': 'espresso-tonic',
   'red-negronito': 'negroni',
-  'espresso-martini': 'dry-martini', 'french-martini': 'dry-martini', 'lemon-drop': 'dry-martini', 'blue-hawaiian': 'pina-colada', 'porn-star-martini': 'dry-martini', 'breakfast-martini': 'dry-martini',
+  'espresso-martini': 'dry-martini', 'lemon-drop': 'dry-martini', 'blue-hawaiian': 'pina-colada', 'porn-star-martini': 'dry-martini', 'breakfast-martini': 'dry-martini',
   'rum-old-fashioned': 'old-fashioned', 'oaxaca-old-fashioned': 'old-fashioned',
   'tommys-margarita': 'margarita',
   'strawberry-daiquiri': 'daiquiri', 'hemingway-special': 'daiquiri',

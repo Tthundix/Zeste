@@ -1,14 +1,18 @@
 /* Zeste : logique de l'application. Les données de départ sont dans data.js. */
 'use strict';
 
-const APP_VERSION = '0.43.2';
+const APP_VERSION = '0.44.0';
 const KEY = 'zeste-v1';
 const UNITS = ['ml', 'cl', ['oz', 'oz (→ ml)'], ['cup', 'cup (→ ml)'], 'g', ['', 'sans unité'], 'trait', 'goutte', 'c. de bar', 'c. à café', 'c. à soupe', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée', 'à compléter'];
 const PLURAL_UNITS = ['trait', 'goutte', 'pièce', 'feuille', 'brin', 'quartier', 'tranche', 'pincée'];
 const ML = { ml: 1, cl: 10, trait: .9, goutte: .05, 'c. de bar': 5, 'c. à café': 5, 'c. à soupe': 15, 'à compléter': 60 };
 const DIL = { 'Shaker': .25, 'Verre à mélange': .2, 'Dans le verre': .1, 'Dans un pichet': .1, 'À la casserole': 0, 'Blender': .4 };
 const TASTE = [['su', 'Sucré'], ['ac', 'Acide'], ['am', 'Amer'], ['as', 'Astringent'], ['fo', 'Force']];
-const TAG_SUGG = ['Apéritif', 'Digestif', 'Rafraîchissant', 'Réconfortant', 'Festif', 'Estival', 'Hivernal', 'Fin de soirée', 'Fruité', 'Herbacé', 'Floral', 'Crémeux', 'Pétillant', 'Amer', 'Brunch', 'Tiki', 'Univers JV', 'Univers ciné'];
+const TAG_SUGG = ['Apéritif', 'Digestif', 'Rafraîchissant', 'Réconfortant', 'Festif', 'Estival', 'Hivernal', 'Fin de soirée', 'Fruité', 'Herbacé', 'Floral', 'Crémeux', 'Pétillant', 'Brunch', 'Tiki', 'Univers JV', 'Univers ciné'];
+/* Tags : toujours dans l'ordre de TAG_SUGG (puis alphabétique), quel que soit l'ordre des clics ; « Amer » est retiré, le profil de goût le dit déjà. */
+const TAG_DROP = ['Amer'];
+const normTags = t => [...new Set((t || []).filter(x => x && !TAG_DROP.includes(x)))].sort((a, b) => { const i = TAG_SUGG.indexOf(a), j = TAG_SUGG.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b, 'fr'); });
+RECIPES.forEach(r => { r.tags = normTags(r.tags); });
 const ORIGIN_F = [['', 'Toutes'], ['classic', 'Classiques'], ['zeste', 'Cocktails Zeste'], ['mine', 'Mes créations'], ['other', "Originaux d'autres barmen"]];
 const FAM_MAP = { 'Liqueurs & apéritifs': 'Liqueurs', 'Agrumes & jus': 'Jus & purées', 'Softs': 'Softs & eaux', 'Frais & autres': 'Épicerie' };
 const FAM_IDS = FAMILIES.map(f => f.id);
@@ -175,6 +179,8 @@ function upgrade(d) {
   if (PUBLIC_RELEASE) d.recipes.forEach(r => {
     if (r.src === 'builtin' && typeof r.photo === 'string' && r.photo.startsWith('photos/') && photoState(r.id) !== 'ok') { r.photo = ''; delete r.photoCredit; }
   });
+  // À chaque chargement : tags dans l'ordre fixe, force calculée quand c'est possible.
+  d.recipes.forEach(r => { r.tags = normTags(r.tags); if (r.flavor) { const f = autoForce(r, d.ings); if (f != null) r.flavor.fo = f; } });
   return d;
 }
 
@@ -420,12 +426,22 @@ function statusPill(a) {
   if (!a.miss.length) return a.home.length ? ['sub', 'Avec préparation maison'] : a.subs ? ['sub', 'Avec substitut'] : ['ok', 'Réalisable'];
   return a.miss.length === 1 ? ['one', 'Manque 1'] : ['many', `Manque ${a.miss.length}`];
 }
-function estAbv(r) {
+/* Force (0 à 5) calculée d'après le degré estimé, quand tous les ingrédients ont un degré connu.
+   Seuils calés sur les forces saisies à la main dans le catalogue : < 0,5 % → 0 ; < 7 → 1 ; < 13 → 2 ; < 19 → 3 ; < 28 → 4 ; sinon 5. */
+const FORCE_TH = [7, 13, 19, 28];
+function autoForce(r, ings) {
+  ings = ings || S.ings;
+  if (!r.ings.length || r.ings.some(row => !ings[row.id] || !Number.isFinite(+ings[row.id].abv))) return null;
+  const a = estAbv(r, ings, true); if (a == null) return null;
+  return a < .5 ? 0 : 1 + FORCE_TH.filter(t => a >= t).length;
+}
+function estAbv(r, ings, raw) {
+  ings = ings || S.ings;
   let alc = 0, vol = 0;
-  r.ings.forEach(row => { const f = ML[row.unit]; if (f == null) return; const ml = row.unit === 'à compléter' ? f : qMid(row) * f; const i = S.ings[row.id]; vol += ml; alc += ml * ((i && +i.abv) || 0) / 100; });
+  r.ings.forEach(row => { const f = ML[row.unit]; if (f == null) return; const ml = row.unit === 'à compléter' ? f : qMid(row) * f; const i = ings[row.id]; vol += ml; alc += ml * ((i && +i.abv) || 0) / 100; });
   if (!vol) return null;
-  const d = DIL[r.method] != null ? DIL[r.method] : .15;
-  return Math.round(alc / (vol * (1 + d)) * 100);
+  const d = DIL[r.method] != null ? DIL[r.method] : .15, v = alc / (vol * (1 + d)) * 100;
+  return raw ? v : Math.round(v);
 }
 // Unités américaines saisies dans le formulaire : converties en ml à l'enregistrement (1 oz = 30 ml, 1 cup = 240 ml, arrondi à 5 ml).
 function usToMl(q, unit) { const ml = q * (unit === 'cup' ? 240 : 30); return ml >= 20 ? Math.round(ml / 5) * 5 : Math.round(ml); }
@@ -497,7 +513,7 @@ const SEARCH_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
 function renderCatalogue(m) {
   const own = ownedSet(), all = S.recipes.map(r => analyze(r, own));
   const nOk = all.filter(a => !a.miss.length).length, nOne = all.filter(a => a.miss.length === 1).length;
-  const tags = [...new Set(S.recipes.flatMap(r => r.tags))].sort((a, b) => a.localeCompare(b, 'fr'));
+  const tags = normTags(S.recipes.flatMap(r => r.tags));
   const nf = filterCount();
   m.innerHTML = `
   ${S.example ? `<div class="note-banner"><p><b>Données d'exemple.</b> Le bar, les notes et les listes sont pré-remplis pour la découverte. Tout reste modifiable.</p><button class="btn small" data-act="dismiss-example">Compris</button></div>` : ''}
@@ -1642,7 +1658,9 @@ function openForm(id, variantOf, keep) {
       <div id="frows" class="frows">${rows.map(rowHTML).join('')}</div>
       <div><button type="button" class="btn small" data-act="row-add">+ Ajouter un ingrédient</button></div>
     </section>
-    <section class="sec"><h2>Profil de goût</h2><p class="hint">De 0 à 5, pour les filtres du catalogue. Un goût difficile à évaluer peut rester « non renseigné ».</p><div class="sliders">${TASTE.map(([k, l]) => { const v = r.flavor[k], u = v == null; return `<div class="slider${u ? ' unk' : ''}" id="sl-${k}"><label for="rf-${k}">${l}</label><input type="range" id="rf-${k}" min="0" max="5" step="1" value="${u ? 0 : v}"><output id="ro-${k}" for="rf-${k}">${u ? '—' : v}</output><label class="unk-l" for="uk-${k}"><input type="checkbox" id="uk-${k}" class="uk" data-k="${k}"${u ? ' checked' : ''}> Non renseigné</label></div>`; }).join('')}</div></section>
+    <section class="sec"><h2>Profil de goût</h2><p class="hint">De 0 à 5, pour les filtres du catalogue. Un goût difficile à évaluer peut rester « non renseigné ».</p><div class="sliders">${TASTE.map(([k, l]) => { const v = r.flavor[k], u = v == null;
+      if (k === 'fo' && (!r.ings.length || autoForce(r) != null)) return `<div class="slider auto" id="sl-fo"><label for="rf-fo">${l}</label><input type="range" id="rf-fo" min="0" max="5" step="1" value="${u ? 0 : v}" disabled aria-describedby="fo-auto"><output id="ro-fo" for="rf-fo">${u ? '—' : v}</output><span class="unk-l" id="fo-auto">Calculée</span><input type="checkbox" id="uk-fo" class="uk" data-k="fo" hidden${u ? ' checked' : ''}></div>`;
+      return `<div class="slider${u ? ' unk' : ''}" id="sl-${k}"><label for="rf-${k}">${l}</label><input type="range" id="rf-${k}" min="0" max="5" step="1" value="${u ? 0 : v}"><output id="ro-${k}" for="rf-${k}">${u ? '—' : v}</output><label class="unk-l" for="uk-${k}"><input type="checkbox" id="uk-${k}" class="uk" data-k="${k}"${u ? ' checked' : ''}> Non renseigné</label></div>`; }).join('')}</div><p class="hint">La force se calcule d'après le degré d'alcool estimé des ingrédients, à l'enregistrement.</p></section>
     <section class="sec"><h2>Mood et tags</h2>
       <label class="field" for="rf-tags"><span>Tags, séparés par des virgules</span><input type="text" id="rf-tags" value="${esc(r.tags.join(', '))}" autocomplete="off"></label>
       <div class="chips">${tagsAll.map(t => `<button type="button" class="chip ${r.tags.includes(t) ? 'on' : ''}" data-act="tag-sugg" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -1823,8 +1841,9 @@ function saveForm() {
   const e = g('rf-err');
   if (errs.length) { e.textContent = errs.join('\n'); e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   Object.values(newIngs).forEach(({ id, data }) => S.ings[id] = data);
-  const tags = [...new Set(g('rf-tags').value.split(',').map(s => s.trim()).filter(Boolean))];
+  const tags = normTags(g('rf-tags').value.split(',').map(s => s.trim()).filter(Boolean));
   const flavor = {}; TASTE.forEach(([k]) => flavor[k] = g('uk-' + k).checked ? null : +g('rf-' + k).value);
+  { const fo = autoForce({ ings, method: g('rf-method').value }); if (fo != null) flavor.fo = fo; }
   const old = sheetState.id && S.recipes.find(r => r.id === sheetState.id);
   const orig = g('rf-origin').value === 'Classique' ? 'Classique' : 'Original', by = orig === 'Original' ? ((sh.querySelector('input[name=rf-by]:checked') || {}).value || 'me') : '';
   const srcTxt = g('rf-author').value.trim();
@@ -1965,7 +1984,7 @@ document.addEventListener('click', async e => {
     case 'row-del': b.closest('.frow').remove(); break;
     case 'tag-sugg': {
       const inp = $('#rf-tags'), t = b.dataset.v; let tags = inp.value.split(',').map(s => s.trim()).filter(Boolean);
-      tags = tags.includes(t) ? tags.filter(x => x !== t) : [...tags, t]; inp.value = tags.join(', '); b.classList.toggle('on', tags.includes(t)); break;
+      tags = normTags(tags.includes(t) ? tags.filter(x => x !== t) : [...tags, t]); inp.value = tags.join(', '); b.classList.toggle('on', tags.includes(t)); break;
     }
     case 'photo-pick': $('#rf-photo').click(); break;
     case 'photo-crop': if (sheetState && sheetState.photo) openCrop(sheetState.photo); break;
